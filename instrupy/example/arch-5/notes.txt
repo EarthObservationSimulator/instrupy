@@ -1,0 +1,7 @@
+sat 1: Landsat 8 OLI Blue
+sat 2: Landsat 9 OLI Blue (180 deg out of phase in TA with Landsat 8, few degrees offset of orbit plane)
+sat 3: Sentinel 2A MSI Blue
+sat 4: Sentinel 2B MSI Blue (180 deg out of phase in TA with Sentinel 2A, few degrees offset of orbit plane)
+sat 5: Landsat 10 OLI Blue (90 deg out of phase in RAAN with Landsat 8)
+
+Mission duration: 16 days
