@@ -63,6 +63,109 @@ class Instrument(Entity):
     def calc_typ_data_metrics_over_one_access_interval(self, epoch_JDUT1, SpacecraftOrbitState, AccessInfo):    
         return self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) 
 
+
+    def dshield_generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
+ 
+        ''' Generate typical data metrics per access event, per grid-point. 
+            This function iteratively calls :code:`calc_typ_data_metrics_over_one_access_interval` of the specified instrument type over all access events 
+            available in the input file.
+            CSV formatted files are supported to supply the required input data.
+
+            :param POI_filepath: Filepath to CSV file containing lat/lon co-ordinates of points of interest along with index.
+
+                                 First row contains the following header elements, and the following rows contain the data corresponding to these headers.
+                                 
+                                 Description of the header elements:
+                            
+                                 * :code:`gpi`, Index of the point-of-interest.
+                                 * :code:`lat[deg]`, :code:`lon[deg]`, latitude, longitude of the point-of-interest.  
+
+                                 .. note:: Make sure the header titles are as specified above, and the delimiters are commas.
+            :paramtype POI_filepath: str
+
+             
+            :param AccessInfo_filepath: Filepath to CSV file containing data of access events and their time-intervals.
+                               First three rows convey general information. The fourth row conveys the Epoch in Julian Days UT1.
+                               The fifth row  contains the following header elements, and the following rows contain the data corresponding to these headers.
+
+                               Description of the header elements:
+                                
+                               * :code:`accessFrom[Days]`,  The time at which access starts in [days], referenced to epoch in row-4.
+                               * :code:`duration[s]`, Duration of access in [s].
+                               * :code:`gpi` indicating index of ground-point.
+                               * :code:`eventNum` indicating index of event.
+                               * :code:`time[Days]`, Time in [Days] at which the alongside satellite-state is recorded. Referenced to the epoch specified in row-4.
+                               * :code:`x[km]`, :code:`y[km]` :code:`z[km]`, cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
+                               * :code:`vx[km/s]`, :code:`vy[km/s]`, :code:`vz[km/s]`, velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
+
+
+            :paramtype AccessInfo_filepath: str
+
+            :param Result_filepath: Filepath to CSV file in which the results are written
+                                Description of the header elements:
+                                
+                               * :code:`gpi` indicating index of ground-point.
+                               * :code:`accessFrom[JDUT1]`,  The time at which access starts in [JDUT1]
+                               * :code:`duration[s]`, Duration of access in [s].
+                               * + other header elements specific to the instrument type
+
+                               .. note:: this is an **output** file of the function
+            
+            :paramtype Result_filepath: str
+
+            .. seealso::
+                * :ref:`poi_file_description`
+                * :ref:`access_info_CSV_file_description`
+                * :ref:`basic_sensor_csv_output`
+                * :ref:`passive_optical_scanner_csv_output`
+
+        '''
+        epoch_JDUT1 = pandas.read_csv(AccessInfo_filepath, skiprows = [0], nrows=1, header=None).astype(str) # 2nd row contains the epoch
+        epoch_JDUT1 = float(epoch_JDUT1[0][0].split()[2])
+                
+        poi_info_df = pandas.read_csv(POI_filepath)
+
+        # Read the local access.csv file
+        access_info_df = pandas.read_csv(AccessInfo_filepath,skiprows = [0,1,2,3]) # read the access times (corresponding to the DSM in which the instrument was used)
+        eventIdxArray = access_info_df['eventNum']
+
+        # erase any old file and create new one
+        with open(Result_filepath,'w') as f:
+            w = csv.writer(f)
+
+        with open(Result_filepath,'a+', newline='') as f:
+            w = csv.writer(f)
+
+            # Iterate over all logged access events
+            idx = 0
+            for eventIdx in eventIdxArray:   
+                AccessInfo = dict()
+                AccessInfo["Access From [JDUT1]"] = epoch_JDUT1 + access_info_df.loc[idx]["accessFrom[Days]"] 
+                AccessInfo["Access Duration [s]"] = access_info_df.loc[idx]["duration[s]"] 
+                
+                poi_indx = access_info_df.loc[idx]["gpi"] 
+                AccessInfo["Lat [deg]"] = poi_info_df["lat[deg]"][list(poi_info_df["gpi"]).index(poi_indx)]
+                AccessInfo["Lon [deg]"] = poi_info_df["lon[deg]"][list(poi_info_df["gpi"]).index(poi_indx)]
+
+                SpacecraftOrbitState = dict()
+                SpacecraftOrbitState["Time[JDUT1]"] = epoch_JDUT1 + access_info_df.loc[idx]["time[Days]"] 
+                SpacecraftOrbitState["x[km]"] = access_info_df.loc[idx]["x[km]"] 
+                SpacecraftOrbitState["y[km]"] = access_info_df.loc[idx]["y[km]"] 
+                SpacecraftOrbitState["z[km]"] = access_info_df.loc[idx]["z[km]"] 
+                SpacecraftOrbitState["vx[km/s]"] = access_info_df.loc[idx]["vx[km/s]"] 
+                SpacecraftOrbitState["vy[km/s]"] = access_info_df.loc[idx]["vy[km/s]"] 
+                SpacecraftOrbitState["vz[km/s]"] = access_info_df.loc[idx]["vz[km/s]"] 
+
+                obsv_metrics = self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) # calculate the data metrics specific to the instrument type
+                _v = dict({'accessFrom[JDUT1]':AccessInfo["Access From [JDUT1]"], 'accessDuration[s]':AccessInfo["Access Duration [s]"], 'gpi': access_info_df['gpi'][idx]}, **obsv_metrics)
+                
+                if idx==0: #1st iteration
+                    w.writerow(_v.keys())    
+
+                w.writerow(_v.values())
+
+                idx = idx + 1
+    
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
  
         ''' Generate typical data metrics per access event, per grid-point. 

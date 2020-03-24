@@ -20,13 +20,13 @@ sys.path.insert(0, os.path.abspath('../example_use_case'))
 # -- Project information -----------------------------------------------------
 
 project = 'InstruPy'
-copyright = '2019, BAERI'
+copyright = '2020, BAERI'
 author = 'BAERI'
 
 # The short X.Y version
-version = '0.1'
+version = '0.2'
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -173,7 +173,7 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 # Add mappings
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/3.7', None),
+    'python': ('http://docs.python.org/3.8', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'pycodestyle': ('https://pycodestyle.readthedocs.io/en/latest/', None),
     'nose': ('https://nose.readthedocs.io/en/latest/', None),

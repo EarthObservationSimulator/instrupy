@@ -5,8 +5,7 @@ Python library package to calculate typical metrics of quality of observation da
 ## Installation
 
 This project was designed for Python 3.7. It requires the following non-standard (to Anaconda) packages:
- - `isodate`
- - `lowtran` (found in `third-party-tools` folder.)
+ - `lowtran`
 To make the `instrupy` library visible to the Python interpreter, from the project root directory (containing `setup.py`), run:
 ```shell
 pip install -e .
@@ -20,7 +19,7 @@ Documentation of this package is managed using [Sphinx]
 
 A html version can be generated locally by following the below steps:
 <ol>
-<li> Install Python 3.7 (a dependency fpr Sphinx) </li>
+<li> Install Python 3.8 (a dependency fpr Sphinx) </li>
 <li> Install [sphinx package](https://www.sphinx-doc.org/en/master/usage/installation.html).</li>
 <li> Add the Sphinx directory path to <code>PATH</code>. The Sphinx directory is located in subfolder named <code>Scripts</code> in the Python folder.  </li>
 <li> Fork the instrument_module git repository into a local directory. </li>

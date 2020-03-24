@@ -1,0 +1,10 @@
+[console_scripts]
+HorizontalTransmittance = HorizontalTransmittance:main
+ScatterRadiance = ScatterRadiance:main
+SolarIrradiance = SolarIrradiance:main
+ThermalRadiance = ThermalRadiance:main
+TransmittanceGround2Space = TransmittanceGround2Space:main
+UserDataHorizontalRadiance = UserDataHorizontalRadiance:main
+UserHorizontalTransmittance = UserHorizontalTransmittance:main
+Wavelength2LowtranWavenumber = Wavelength2LowtranWavenumber:main
+

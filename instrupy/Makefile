@@ -14,7 +14,7 @@ help:
 	@echo "  install    to set up the python package (pip install -e .)"
 	@echo "  runtest    to perform unit testing"
 	@echo "  testlog    to perform unit testing with no log capture"
-	@echo "  fulltest   to perform unit testing with verbose"
+	@echo "  fulltest   to perform unit testing with no log capture and with verbose"
 	@echo "  clean      to remove *.pyc files and __pycache__ directories"
 	@echo "  bare       to uninstall the package and remove *egg*"
 
@@ -24,13 +24,13 @@ install:
 	pip install -e .
 
 runtest:
-	@nosetests
+	@nosetests --exe
 
 testlog:
-	@nosetests --nologcapture
+	@nosetests --nologcapture --exe
 
 fulltest:
-	@nosetests --nologcapture -v
+	@nosetests --nologcapture -v --exe
 
 clean:
 	@echo "Cleaning up..."

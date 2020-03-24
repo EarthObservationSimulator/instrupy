@@ -20,4 +20,8 @@ core
 # compiled Python
 *.pyc
 
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
 
+# Setuptools distribution folder.
+/dist/

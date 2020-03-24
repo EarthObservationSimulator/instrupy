@@ -1,0 +1,36 @@
+{
+    "@type": "Passive Optical Scanner",
+    "name": "Landsat 8 TIRS Band1",
+    "mass": 236,
+    "volume": 0.261, 
+    "power": 380, 
+    "fieldOfView": {
+        "sensorGeometry": "RECTANGULAR",
+        "alongTrackFieldOfView": 0.0081,
+        "crossTrackFieldOfView": 15
+    },
+    "scanTechnique": "PUSHBROOM",
+    "orientation": {
+        "convention": "SIDE_LOOK",
+        "sideLookAngle": 0
+    },
+    "dataRate":  384,
+    "numberOfDetectorsRowsAlongTrack": 1,
+    "numberOfDetectorsColsCrossTrack": 1850,
+    "detectorWidth": 25e-6,
+    "focalLength": 0.178,
+    "operatingWavelength": 10.9e-6,
+    "bandwidth": 0.6e-6,
+    "quantumEff": 0.025,
+    "targetBlackBodyTemp": 290,
+    "bitsPerPixel": 12,
+    "opticsSysEff": 0.60 ,
+    "numOfReadOutE":  20,
+    "apertureDia":  0.1085366,
+    "Fnum":  1.64,
+    "maxDetectorExposureTime": 3.49e-3,
+    "snrThreshold":  25,
+    "considerAtmosLoss": true,
+    "_comments": ["Above is Total payload data-rate not just off the TIRS.",
+          "numReadOutE and snrThreshold are guessed."]
+}
