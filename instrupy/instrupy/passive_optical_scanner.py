@@ -293,29 +293,32 @@ class PassiveOpticalScanner(Entity):
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
         SpacecraftVelocity_kmps = [SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]] 
         
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(tObs_JDUT1, SpacecraftPosition_km, SpacecraftVelocity_kmps, TargetPosition_km)
-        derived_obsTime_JDUT1 = derived_coords["derived_obsTime_JDUT1"]
-        derived_obs_pos_km = derived_coords["derived_obs_pos_km"]
-        derived_range_vec_km = derived_coords["derived_range_vec_km"]
-        derived_alt_km = derived_coords["derived_alt_km"]
-        derived_incidence_angle_rad = derived_coords["derived_incidence_angle_rad"]
+        #  Calculate range vector between spacecraft and POI (Target)
+        range_vector_km = TargetPosition_km - SpacecraftPosition_km
+
+        alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
+        look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
+        incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
+
         
-        derived_range_vec_norm_km = numpy.linalg.norm(derived_range_vec_km)
+        range_vec_norm_km = numpy.linalg.norm(range_vector_km)
+
 
         ## Spatial resolutions calculation based on "Derived"satellite position, time ##
         # Calculate FOV of a single detector, i.e. the IFOV
         iFOV_deg = numpy.rad2deg(self.detectorWidth / self.focalLength)
         # Calculate the cross track spatial resolution of the ground-pixel, taking into account spherical Earth surface
-        pixelSpatialRes_CT_m = numpy.deg2rad(iFOV_deg)*derived_range_vec_norm_km*1.0e3/numpy.cos(derived_incidence_angle_rad)
+        pixelSpatialRes_CT_m = numpy.deg2rad(iFOV_deg)*range_vec_norm_km*1.0e3/numpy.cos(incidence_angle_rad)
         # Calculate along-track spatial resolution of the ground-pixel
-        pixelSpatialRes_AT_m = numpy.deg2rad(iFOV_deg)*derived_range_vec_norm_km*1.0e3
+        pixelSpatialRes_AT_m = numpy.deg2rad(iFOV_deg)*range_vec_norm_km*1.0e3
         pixelArea_m2 = pixelSpatialRes_AT_m * pixelSpatialRes_CT_m                    
-        accessDuration_s = AccessInfo["Access Duration [s]"]
-
+        
+        #accessDuration_s = AccessInfo["Access Duration [s]"]
+        accessDuration_s = numpy.deg2rad(self.fieldOfView.get_ATCT_fov()[0])*alt_km/ (MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km,SpacecraftVelocity_kmps) *1e-3) # analytical calculation of the access duration
         Ti_s = PassiveOpticalScanner.calculate_integration_time(self.scanTechnique, self.numberOfDetectorsRowsAlongTrack, self.numberOfDetectorsColsCrossTrack, accessDuration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.get_rectangular_fov_specs()[1])
         Ne = PassiveOpticalScanner.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp, 
                                                                        self.apertureDia, self.opticsSysEff, self.quantumEff,  
-                                                                       derived_obsTime_JDUT1, derived_obs_pos_km, TargetPosition_km, pixelArea_m2, Ti_s,
+                                                                       tObs_JDUT1, SpacecraftPosition_km, TargetPosition_km, pixelArea_m2, Ti_s,
                                                                        self.considerAtmosLoss)
    
         # number of noise electrons
@@ -338,7 +341,7 @@ class PassiveOpticalScanner(Entity):
         # find noise equivalent temperature difference
         Ne_new = PassiveOpticalScanner.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp + 1,
                                                                            self.apertureDia, self.opticsSysEff, self.quantumEff, 
-                                                                           derived_obsTime_JDUT1, derived_obs_pos_km, TargetPosition_km, pixelArea_m2, Ti_s,
+                                                                           tObs_JDUT1, SpacecraftPosition_km, TargetPosition_km, pixelArea_m2, Ti_s,
                                                                            self.considerAtmosLoss)
 
         deltaN = Ne_new - Ne

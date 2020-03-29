@@ -377,15 +377,15 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1 + access_time_s/(2*86400), 'x[km]': 7078.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.5, 'vz[km/s]': 0} # equatorial orbit, altitude about 700 km
         AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': access_time_s, 'Lat [deg]': 0, 'Lon [deg]': 0} # lat = 0, lon = 0 corresponds to [6378, 0, 0] km in ECI for observer position, check using Matlab function: eci2lla([6378, 0, 0] ,[2000 3 20 11 59 28.000])
         obsv_metrics = self.firesat.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
-        self.assertAlmostEqual(obsv_metrics["Ground Pixel Along-Track Resolution [m]"], 30, delta = 0.5)
-        self.assertAlmostEqual(obsv_metrics["Ground Pixel Cross-Track Resolution [m]"], 30, delta = 0.5)
+        self.assertAlmostEqual(obsv_metrics["Ground Pixel Along-Track Resolution [m]"], 30, delta = 3)
+        self.assertAlmostEqual(obsv_metrics["Ground Pixel Cross-Track Resolution [m]"], 30, delta = 3)
         # A (positive) deviation is expected since SMAD does not consider the energy from Sun reflected off Sun
         self.assertGreater(obsv_metrics["SNR"], 88)
         self.assertGreater(obsv_metrics["DR"], 332.9)
         self.assertAlmostEqual(obsv_metrics["Noise-Equivalent Delta T [K]"], 0.3 , places = 2)
         self.assertTrue(obsv_metrics["Coverage [T/F]"])
 
-        ## To do, make test with satellite in night region, thus no reflected enregy of Sun. Resutl should match SMAD.
+        ## To do, make test with satellite in night region, thus no reflected enregy of Sun. Result should match SMAD.
 
     
     def test_calculate_integration_time(self):

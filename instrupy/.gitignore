@@ -1,12 +1,7 @@
 # untracked subdirectories
-html
-latex
-xml
-example_use_case/Instruments
 .vscode
 .ipynb_checkpoints
 docs/_build/*
-!docs/_build/.gitkeep
 docs/_static/*
 !docs/_static/.gitkeep
 docs/_templates/*

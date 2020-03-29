@@ -270,7 +270,7 @@ class FieldOfView(Entity):
                 else:
                     self._coneAngleVec_deg = [float(coneAnglesVec_deg)%360]
             else:
-                self._clockAngleVec_deg = None
+                self._coneAngleVec_deg = None
             
             if(clockAnglesVec_deg):
                 if(isinstance(clockAnglesVec_deg, list)):
@@ -284,6 +284,17 @@ class FieldOfView(Entity):
             self._geometry = geometry
 
             super(FieldOfView, self).__init__(_id, "FieldOfView")
+
+        def get_ATCT_fov(self):
+            ''' Get the along-track and cross-track FOVs. Valid only for CONICAL and 
+                RECTANGULAR FOV geometry.
+            '''
+            if(self._geometry == 'CONICAL'):
+                return [2*self._coneAngleVec_deg[0], 2*self._coneAngleVec_deg[0]]
+            elif(self._geometry == 'RECTANGULAR'):
+                return FieldOfView.get_rectangular_fov_specs(self)
+            else:
+                raise Exception("Unsupported FOV geometry to obtain along-track, cross-track FOVs.")
 
         @classmethod
         def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, _id = None):
@@ -362,6 +373,8 @@ class FieldOfView(Entity):
                          aligned to the satellite body frame, and further the satellite is aligned to nadir-frame.
                          If the instrument is rotated about the satellite body frame (by specifying the non-zero orientation angles in the instrument json specs file), the actual along-track
                          and cross-track fovs simulated maybe different.
+            
+            -- warning:: Need to verify if this function works when along-track fov is greater than cross track fov
                          
 
             '''
@@ -412,6 +425,11 @@ class FieldOfView(Entity):
             else:
                 raise Exception("Invalid Sensor FOV specified")
         
+        def get_cone_clock_fov_specs(self):
+            """ Function to the get the cone and clock angle vectors from the resepective FieldOfView object.
+            """
+            return [self._coneAngleVec_deg, self._clockAngleVec_deg]
+
         def get_rectangular_fov_specs(self):
             """ Function to get the rectangular fov specifications (along-track, cross-track fovs in degrees), from the sensor initialized
                 clock, cone angles.           

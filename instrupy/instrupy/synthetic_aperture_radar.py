@@ -261,13 +261,12 @@ class SyntheticApertureRadar(Entity):
         SpacecraftVelocity_kmps = numpy.array([SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]]) 
         v_sc_kmps = numpy.linalg.norm(SpacecraftVelocity_kmps)
         
-        # Calculate the "derived" Satellite position, observation time.
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(tObs_JDUT1, SpacecraftPosition_km, SpacecraftVelocity_kmps, TargetPosition_km)
-        derived_obsTime_JDUT1 = derived_coords["derived_obsTime_JDUT1"]
-        derived_obs_pos_km = numpy.array(derived_coords["derived_obs_pos_km"])
-        derived_range_vec_km = derived_coords["derived_range_vec_km"]
-        derived_alt_km = derived_coords["derived_alt_km"]
-        derived_incidence_angle_rad = derived_coords["derived_incidence_angle_rad"]
+         #  Calculate range vector between spacecraft and POI (Target)
+        range_vector_km = TargetPosition_km - SpacecraftPosition_km
+
+        alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
+        look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
+        incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)       
 
 
       
@@ -293,13 +292,13 @@ class SyntheticApertureRadar(Entity):
         a_wa = SyntheticApertureRadar.a_wa
         T = self.sceneNoiseTemp
               
-        v_g_kmps = 1e-3 * MathUtilityFunctions.compute_satellite_footprint_speed(derived_obs_pos_km*1e3, SpacecraftVelocity_kmps*1e3) # This is approximation, since the image footprint velocity is not necessarily equal to the
+        v_g_kmps = 1e-3 * MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km*1e3, SpacecraftVelocity_kmps*1e3) # This is approximation, since the image footprint velocity is not necessarily equal to the
                                                 # satellite footprint speed. However it is reasonable approximation in case of low-altitudes and small look angles. TBD: Improve the model.
 
                                   
         instru_look_angle_rad = numpy.abs(numpy.deg2rad(self.orientation.y_rot_deg))
 
-        f_P = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, derived_alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)
+        f_P = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)
       
         isCovered = False
         rho_a = None
@@ -310,11 +309,11 @@ class SyntheticApertureRadar(Entity):
 
         if (f_P is not None): # Observation is possible at PRF = f_P        
             
-            range_km = numpy.linalg.norm(derived_range_vec_km)
+            range_km = numpy.linalg.norm(range_vector_km)
             R = range_km*1e3
 
 
-            h = derived_alt_km * 1e3
+            h = alt_km * 1e3
             Rs = Re + h
 
             lamb = c/fc
@@ -336,7 +335,7 @@ class SyntheticApertureRadar(Entity):
             # look angle to target ground pixel [2] equation 5.1.3.4
             # Note that this is not the same as incidence angle to middle of swath
 
-            theta_i = derived_incidence_angle_rad
+            theta_i = incidence_angle_rad
 
                             
             psi_g = numpy.pi/2.0 - theta_i # grazing angle                    
