@@ -246,6 +246,9 @@ class FieldOfView(Entity):
         """ Class to handle instrument field-of-view specifications.
         The Sensor FOV is maintained internally via vector of cone and clock angles. This is the same definition as that of :class:`CustomSensor` class definition in the GMAT-OC code.
        
+        :ivar _geometry: Geometry of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
+        :vartype _geometry: str
+
         :ivar _coneAngleVec_deg: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
         :vartype _coneAngleVec_deg: list, float
@@ -254,13 +257,17 @@ class FieldOfView(Entity):
                                   describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
         :vartype _clockAngleVec_deg: list, float
 
-        :ivar _geometry: Geometry of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
-        :vartype _geometry: str
+        :ivar _AT_fov_deg: Along track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
+        :vartype _AT_fov_deg: float
+
+        :ivar _CT_fov_deg: Cross track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
+        :vartype _CT_fov_deg: float
 
         .. note:: :code:`coneAnglesVec_deg[0]` ties to :code:`clockAnglesVec_deg[0]`, and so on. Except for the case of *CONICAL* FOV, in which we 
                   have just one :code:`clockAnglesVec_deg[0] = 1/2 full_cone_angle_deg` and no corresponding clock angle. 
         """
-        def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, _id = None):
+        def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, 
+                     AT_fov_deg = None, CT_fov_deg = None, _id = None):
                        
 
             if(coneAnglesVec_deg):
@@ -282,19 +289,10 @@ class FieldOfView(Entity):
                 self._clockAngleVec_deg = None
 
             self._geometry = geometry
+            self._AT_fov_deg = AT_fov_deg
+            self._CT_fov_deg = CT_fov_deg
 
             super(FieldOfView, self).__init__(_id, "FieldOfView")
-
-        def get_ATCT_fov(self):
-            ''' Get the along-track and cross-track FOVs. Valid only for CONICAL and 
-                RECTANGULAR FOV geometry.
-            '''
-            if(self._geometry == 'CONICAL'):
-                return [2*self._coneAngleVec_deg[0], 2*self._coneAngleVec_deg[0]]
-            elif(self._geometry == 'RECTANGULAR'):
-                return FieldOfView.get_rectangular_fov_specs(self)
-            else:
-                raise Exception("Unsupported FOV geometry to obtain along-track, cross-track FOVs.")
 
         @classmethod
         def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, _id = None):
@@ -346,7 +344,7 @@ class FieldOfView(Entity):
             if(full_cone_angle_deg < 0 or full_cone_angle_deg > 180):
                 raise Exception("Specified full-cone angle of CONICAL sensor must be within the range 0 deg to 180 deg")
 
-            return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, _id)
+            return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, full_cone_angle_deg, full_cone_angle_deg, _id)
 
         @classmethod
         def from_rectangularFOV(cls, along_track_fov_deg = None, cross_track_fov_deg = None, _id = None):
@@ -405,7 +403,7 @@ class FieldOfView(Entity):
 
             clockAngles_deg = [clock_deg, 180.0 - clock_deg, 180.0 + clock_deg, -clock_deg]
 
-            return FieldOfView("RECTANGULAR", coneAngles_deg, clockAngles_deg,_id)
+            return FieldOfView("RECTANGULAR", coneAngles_deg, clockAngles_deg,along_track_fov_deg, cross_track_fov_deg, _id)
 
         @staticmethod
         def from_dict(d):
@@ -434,10 +432,8 @@ class FieldOfView(Entity):
             """ Function to get the rectangular fov specifications (along-track, cross-track fovs in degrees), from the sensor initialized
                 clock, cone angles.           
       
-                .. todo:: Make sure selected clock angle is from first quadrant.
-                
-                """
-
+                .. todo:: Make sure selected clock angle is from first quadrant. 
+            """
             # Check if the instance does correspond to an rectangular fov.
             # Length of cone angle vector and clock angle vector must be 4.
             if(len(self._coneAngleVec_deg) != 4):
@@ -465,6 +461,13 @@ class FieldOfView(Entity):
             crTrFov_deg = 2*numpy.rad2deg(beta)
 
             return numpy.array([alTrFov_deg, crTrFov_deg]) 
+
+        def get_ATCT_fov(self):
+            """ Get the along-track and cross-track FOVs. Valid only for CONICAL and 
+                RECTANGULAR FOV geometry.
+            """
+            return [self._AT_fov_deg, self._CT_fov_deg]
+
 
                 
 class MathUtilityFunctions:
@@ -913,7 +916,7 @@ class MathUtilityFunctions:
         
         TR = lowtran.transmittance(c1)
         TR = TR.where(TR['wavelength_nm']!=0, drop=True) # LowTran sometimes returns a entry with '0' wavelength (when the bandwidth is not "compatible" with the step-size)
-        return TR  
+        return TR 
 
 class FileUtilityFunctions:
 

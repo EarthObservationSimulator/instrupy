@@ -43,6 +43,9 @@ class SyntheticApertureRadar(Entity):
         :ivar fieldOfView: Field of view specification of instrument. In case of SAR, this is calculated from the user supplied antenna dimensions.
         :vartype fieldOfView: :class:`instrupy.util.FieldOfView` 
      
+        :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the SAR. A scene is made of multiple concatenated strips.
+        :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView` 
+
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
 
@@ -116,7 +119,7 @@ class SyntheticApertureRadar(Entity):
     
 
     def __init__(self, name=None, acronym=None, mass=None,volume=None, power=None,  orientation=None, fieldOfView = None,
-            dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
+            sceneFieldOfView = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
             radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNEZ0threshold = None, _id=None):
@@ -130,6 +133,7 @@ class SyntheticApertureRadar(Entity):
         self.power = float(power) if power is not None else None
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
+        self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None          
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.pulseWidth = float(pulseWidth) if pulseWidth is not None else None
@@ -169,6 +173,17 @@ class SyntheticApertureRadar(Entity):
         along_track_fov_deg = numpy.rad2deg(opWavelength/ D_az_m)
         cross_track_fov_deg = numpy.rad2deg(opWavelength/ D_elv_m)
         fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(along_track_fov_deg)+ ',"crossTrackFieldOfView":' + str(cross_track_fov_deg) + '}' 
+        
+        # initialize "Scene FOV" if required        
+        sceneLength2ALtRatio = d.get("sceneLength2AltRatio", None)
+        if(sceneLength2ALtRatio):
+            sc_AT_fov_deg = numpy.rad2deg(numpy.arctan(sceneLength2ALtRatio)) # approximate along_track_fov_deg
+            sc_CT_fov_deg = cross_track_fov_deg
+            sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
+            scene_fov = FieldOfView.from_json(sc_fov_json_str)
+        else:
+            scene_fov = None
+ 
         return SyntheticApertureRadar(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
@@ -177,6 +192,7 @@ class SyntheticApertureRadar(Entity):
                         power = d.get("power", None),
                         orientation = Orientation.from_json(d.get("orientation", None)),
                         fieldOfView = FieldOfView.from_json(fov_json_str),
+                        sceneFieldOfView = scene_fov,
                         dataRate = d.get("dataRate", None),
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         pulseWidth = d.get("pulseWidth", None),
@@ -220,7 +236,7 @@ class SyntheticApertureRadar(Entity):
                                Dictionary keys are: 
                                 
                                * :code:`Access From [JDUT1]` (:class:`float`) Start absolute time of Access in Julian Day UT1.
-                               * :code:`Duration [s]` (:class:`float`): Access duration in [s].
+                               * :code:`Duration [s]` (:class:`float`): Access duration in [s]. Ignored.
                                * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
             :paramtype AccessInfo: dict
 

@@ -49,7 +49,10 @@ class PassiveOpticalScanner(Entity):
        :vartype orientation: :class:`instrupy.util.Orientation`
                                 
        :ivar fieldOfView: Field of view specification of instrument. 
-       :vartype fieldOfView: :class:`instrupy.util.FieldOfView`   
+       :vartype fieldOfView: :class:`instrupy.util.FieldOfView` 
+
+       :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the SAR. A scene is made of multiple concatenated strips.
+       :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView`   
        
        :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
        :vartype dataRate: float  
@@ -115,7 +118,7 @@ class PassiveOpticalScanner(Entity):
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, dataRate=None, scanTechnique = None,
+            fieldOfView=None, sceneFieldOfView = None, dataRate=None, scanTechnique = None,
             numberOfDetectorsRowsAlongTrack=None, numberOfDetectorsColsCrossTrack=None, apertureDia = None,
             Fnum = None, focalLength = None, 
             operatingWavelength = None, bandwidth = None, quantumEff = None, 
@@ -133,6 +136,7 @@ class PassiveOpticalScanner(Entity):
         self.power = float(power) if power is not None else power
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
+        self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None    
         self.scanTechnique = ScanTech.get(scanTechnique)
         self.numberOfDetectorsRowsAlongTrack = int(numberOfDetectorsRowsAlongTrack) if numberOfDetectorsRowsAlongTrack is not None else None
@@ -189,11 +193,11 @@ class PassiveOpticalScanner(Entity):
         # Only whiskbroom, pushbroom and step-and-stare scan techniques supported.
         if(_scan == "WHISKBROOM") or (_scan == "PUSHBROOM") or (_scan == "MATRIX_IMAGER"):
 
-            # Only side-looking orientation fo instrument suported for the pushbroom and whiskbroom scanning techniques
+            # Only side-looking orientation of instrument suported
             orien_json_str = d.get("orientation", None)
             orien_conv = OrientationConvention.get(FileUtilityFunctions.from_json(orien_json_str).get("convention",None))
             if(orien_conv!= "SIDE_LOOK"):
-                raise Exception("Only side-looking orientation fo instrument supported for the whiskbroom, pushbroom and step-and-stare scanning techniques")
+                raise Exception("Only side-looking orientation of instrument supported for the whiskbroom, pushbroom and step-and-stare scanning techniques")
             
             # Only rectangular FOV specs supported
             fov_json_str = d.get("fieldOfView", None)
@@ -208,6 +212,16 @@ class PassiveOpticalScanner(Entity):
                     if(d.get("numberOfDetectorsColsCrossTrack", None) != 1):
                         raise Exception("For whiskbroom scanning only one detector-column in cross-track direction is allowed.")  
 
+                # initialize "Scene FOV" if required        
+                sceneLength2ALtRatio = d.get("sceneLength2AltRatio", None)
+                if(sceneLength2ALtRatio):                
+                    sc_AT_fov_deg = numpy.rad2deg(numpy.arctan(sceneLength2ALtRatio)) # approximate
+                    sc_CT_fov_deg = float(fov_json_str["crossTrackFieldOfView"]) 
+                    sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
+                    scene_fov = FieldOfView.from_json(sc_fov_json_str)
+                else:
+                    scene_fov = None
+
                 return PassiveOpticalScanner(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
@@ -216,6 +230,7 @@ class PassiveOpticalScanner(Entity):
                         power = d.get("power", None),
                         orientation = Orientation.from_json(d.get("orientation", None)),
                         fieldOfView = FieldOfView.from_json(d.get("fieldOfView", None)),
+                        sceneFieldOfView = scene_fov,
                         dataRate = d.get("dataRate", None),
                         operatingWavelength = d.get("operatingWavelength", None),
                         bandwidth = d.get("bandwidth", None),
@@ -252,15 +267,13 @@ class PassiveOpticalScanner(Entity):
                                * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1.
                                * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
                                * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
-            :paramtype SpacecraftOrbitState: dict
-
-            
+            :paramtype SpacecraftOrbitState: dict           
             :param AccessInfo: Access information.
 
                                Dictionary keys are: 
                                 
                                * :code:`Access From [JDUT1]` (:class:`float`) Start absolute time of Access in Julian Day UT1.
-                               * :code:`Duration [s]` (:class:`float`): Access duration in [s].
+                               * :code:`Duration [s]` (:class:`float`): Access duration in [s]. Ignored and an analytically calculted access duration is used.
                                * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
             :paramtype AccessInfo: dict
             :returns: Typical calculated observation data metrics. It is assumed that the satellite takes *one* observation data sample per access event. Below metrics are 

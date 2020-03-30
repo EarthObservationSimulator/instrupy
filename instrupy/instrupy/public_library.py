@@ -449,7 +449,11 @@ class Instrument(Entity):
     
 
     def get_coverage_specs(self):
+        """ 
+            TODO: The following code does NOT take into account possible non-zero yaw rotation 
+            (i.e. rotation about the imaging/pointing axis). 
         
+        """
         orientation_specs = {"eulerAngle1": self._sensor.orientation.x_rot_deg,
                              "eulerAngle2": self._sensor.orientation.y_rot_deg, 
                              "eulerAngle3": self._sensor.orientation.z_rot_deg,
@@ -458,31 +462,25 @@ class Instrument(Entity):
                              "eulerSeq3": 3
                              }
 
-        fov_specs = { "geometry": self._sensor.fieldOfView._geometry,
-                      "coneAnglesVector" : self._sensor.fieldOfView._coneAngleVec_deg,
-                      "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg
-                    }
-                    
-        """ Add the along-track fov and cross-track fov. 
-            
-            TODO: The following code assumes only conical or rectangular as the geometry of the input fov.
-
-            TODO: The following code does NOT take into account possible non-zero yaw rotation 
-            (i.e. rotation about the imaging/pointing axis). 
-        
-        """
-        if(self._sensor.fieldOfView._geometry == "CONICAL"):
-            fov_specs['AlongTrackFov'] = self._sensor.fieldOfView._coneAngleVec_deg[0]*2
-            fov_specs['CrossTrackFov'] = self._sensor.fieldOfView._coneAngleVec_deg[0]*2
-        elif(self._sensor.fieldOfView._geometry == "RECTANGULAR"):
-            fov_specs['AlongTrackFov'] = self._sensor.fieldOfView.get_rectangular_fov_specs()[0]
-            fov_specs['CrossTrackFov'] = self._sensor.fieldOfView.get_rectangular_fov_specs()[1]
-        else:
-            raise Exception("Do not know along-track, cross-track fovs for the given sensor fov geometry")
-
-
+        if(hasattr(self._sensor, 'sceneFieldOfView')):
+            if(self._sensor.sceneFieldOfView):
+                # if there exists a scene FOV, pass the corresponding fov specifications for coverage caclulations
+                fov_specs = {"geometry": self._sensor.sceneFieldOfView._geometry,
+                            "coneAnglesVector" : self._sensor.sceneFieldOfView._coneAngleVec_deg,
+                            "clockAnglesVector": self._sensor.sceneFieldOfView._clockAngleVec_deg,
+                            "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
+                            "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
+                            }
+                result = {"Orientation": orientation_specs, "fieldOfView": fov_specs}
+                return json.dumps(result)   
+               
+        fov_specs = {"geometry": self._sensor.fieldOfView._geometry,
+                     "coneAnglesVector" : self._sensor.fieldOfView._coneAngleVec_deg,
+                     "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg,
+                     "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
+                     "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
+                     }
         result = {"Orientation": orientation_specs, "fieldOfView": fov_specs}
-
         return json.dumps(result)
 
 
