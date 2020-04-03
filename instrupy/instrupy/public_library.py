@@ -59,7 +59,6 @@ class Instrument(Entity):
         """ Parses a instrument from a normalized JSON dictionary. """
         return Instrument(d)
 
-
     def calc_typ_data_metrics_over_one_access_interval(self, epoch_JDUT1, SpacecraftOrbitState, AccessInfo):    
         return self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) 
 
@@ -454,6 +453,16 @@ class Instrument(Entity):
             (i.e. rotation about the imaging/pointing axis). 
         
         """
+        # determine if instrument takes observations at a purely side looking geometry
+        purely_side_look = False
+        instru_type = type(self._sensor).__name__
+        if(instru_type == 'SyntheticApertureRadar'):
+            purely_side_look = True
+        elif(instru_type == 'PassiveOpticalSensor'):
+            if(self._sensor.scanTechnique == 'PUSHBROOM' or self._sensor.scanTechnique == 'WHISKBROOM'):
+                purely_side_look = True
+
+        
         orientation_specs = {"eulerAngle1": self._sensor.orientation.x_rot_deg,
                              "eulerAngle2": self._sensor.orientation.y_rot_deg, 
                              "eulerAngle3": self._sensor.orientation.z_rot_deg,
@@ -471,7 +480,7 @@ class Instrument(Entity):
                             "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
                             "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
                             }
-                result = {"Orientation": orientation_specs, "fieldOfView": fov_specs}
+                result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look}
                 return json.dumps(result)   
                
         fov_specs = {"geometry": self._sensor.fieldOfView._geometry,
@@ -480,7 +489,7 @@ class Instrument(Entity):
                      "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
                      "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
                      }
-        result = {"Orientation": orientation_specs, "fieldOfView": fov_specs}
+        result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look}
         return json.dumps(result)
 
 
