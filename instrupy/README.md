@@ -30,7 +30,7 @@ A html version can be generated locally by following the below steps:
 ## Quick run example
 
 ```shell
-python bin/instrument_module.py example/arch-1
+python bin/instrument_module.py examples/arch-1
 ```
 where `example/arch-1` is the path to the architecture directory from where the inputs/ outputs are read/ written. 
 

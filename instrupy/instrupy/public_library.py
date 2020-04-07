@@ -63,9 +63,10 @@ class Instrument(Entity):
         return self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) 
 
 
-    def dshield_generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
+    def dshield_generate_level0_data_metrics(self, POI_filepath, SatelliteState_filepath, AccessInfo_filepath, Result_filepath):
  
-        ''' Generate typical data metrics per access event, per grid-point. 
+        ''' Generate typical data metrics iterating over all access times. The time column of the satellite-state data file and the
+            access data file must be referenced to the same epoch and produced at the same time-step size.
             This function iteratively calls :code:`calc_typ_data_metrics_over_one_access_interval` of the specified instrument type over all access events 
             available in the input file.
             CSV formatted files are supported to supply the required input data.
@@ -123,47 +124,61 @@ class Instrument(Entity):
         epoch_JDUT1 = float(epoch_JDUT1[0][0].split()[2])
                 
         poi_info_df = pandas.read_csv(POI_filepath)
+        poi_info_df = poi_info_df.set_index('gpi')
 
-        # Read the local access.csv file
+        # Read the access file
         access_info_df = pandas.read_csv(AccessInfo_filepath,skiprows = [0,1,2,3]) # read the access times (corresponding to the DSM in which the instrument was used)
-        eventIdxArray = access_info_df['eventNum']
+        access_info_df = access_info_df.set_index('Time[s]')
+
+        # Read the satellite state file
+        sat_state_df = pandas.read_csv(SatelliteState_filepath,skiprows = [0,1,2,3]) 
+        sat_state_df = sat_state_df.set_index('Time[s]')
+        sat_state_df = sat_state_df.loc[access_info_df.index] # retain states at only those times in which there are accesses
+
+        # copy second and third row from the original access file
+        with open(AccessInfo_filepath, 'r') as f:
+            next(f)
+            head = [next(f) for x in [1,2]] 
 
         # erase any old file and create new one
         with open(Result_filepath,'w') as f:
-            w = csv.writer(f)
+            for r in head:
+                f.write(str(r))         
 
         with open(Result_filepath,'a+', newline='') as f:
             w = csv.writer(f)
 
-            # Iterate over all logged access events
+            # Iterate over all valid logged access events
+            acc_indx = list(access_info_df[access_info_df.notnull()].stack().index) # list of valid access [time, POI]
+
             idx = 0
-            for eventIdx in eventIdxArray:   
-                AccessInfo = dict()
-                AccessInfo["Access From [JDUT1]"] = epoch_JDUT1 + access_info_df.loc[idx]["accessFrom[Days]"] 
-                AccessInfo["Access Duration [s]"] = access_info_df.loc[idx]["duration[s]"] 
-                
-                poi_indx = access_info_df.loc[idx]["gpi"] 
-                AccessInfo["Lat [deg]"] = poi_info_df["lat[deg]"][list(poi_info_df["gpi"]).index(poi_indx)]
-                AccessInfo["Lon [deg]"] = poi_info_df["lon[deg]"][list(poi_info_df["gpi"]).index(poi_indx)]
+            for indx in acc_indx:
+
+                time = float(indx[0])
+                poi_indx = int(indx[1][2:])
+
+                AccessInfo = dict()                
+                AccessInfo["Lat [deg]"] = poi_info_df.loc[poi_indx]["lat[deg]"]
+                AccessInfo["Lon [deg]"] = poi_info_df.loc[poi_indx]["lon[deg]"]
 
                 SpacecraftOrbitState = dict()
-                SpacecraftOrbitState["Time[JDUT1]"] = epoch_JDUT1 + access_info_df.loc[idx]["time[Days]"] 
-                SpacecraftOrbitState["x[km]"] = access_info_df.loc[idx]["x[km]"] 
-                SpacecraftOrbitState["y[km]"] = access_info_df.loc[idx]["y[km]"] 
-                SpacecraftOrbitState["z[km]"] = access_info_df.loc[idx]["z[km]"] 
-                SpacecraftOrbitState["vx[km/s]"] = access_info_df.loc[idx]["vx[km/s]"] 
-                SpacecraftOrbitState["vy[km/s]"] = access_info_df.loc[idx]["vy[km/s]"] 
-                SpacecraftOrbitState["vz[km/s]"] = access_info_df.loc[idx]["vz[km/s]"] 
+                SpacecraftOrbitState["Time[JDUT1]"] = epoch_JDUT1 + time*1.0/86400.0 
+                SpacecraftOrbitState["x[km]"] = sat_state_df.loc[time]["X[km]"] 
+                SpacecraftOrbitState["y[km]"] = sat_state_df.loc[time]["Y[km]"] 
+                SpacecraftOrbitState["z[km]"] = sat_state_df.loc[time]["Z[km]"] 
+                SpacecraftOrbitState["vx[km/s]"] = sat_state_df.loc[time]["VX[km/s]"] 
+                SpacecraftOrbitState["vy[km/s]"] = sat_state_df.loc[time]["VY[km/s]"] 
+                SpacecraftOrbitState["vz[km/s]"] = sat_state_df.loc[time]["VZ[km/s]"] 
 
                 obsv_metrics = self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) # calculate the data metrics specific to the instrument type
-                _v = dict({'accessFrom[JDUT1]':AccessInfo["Access From [JDUT1]"], 'accessDuration[s]':AccessInfo["Access Duration [s]"], 'gpi': access_info_df['gpi'][idx]}, **obsv_metrics)
-                
+                _v = dict({'access time[s]':time, 'gpi': poi_indx}, **obsv_metrics)
                 if idx==0: #1st iteration
                     w.writerow(_v.keys())    
-
                 w.writerow(_v.values())
-
                 idx = idx + 1
+                #print(obsv_metrics)
+
+            
     
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
  

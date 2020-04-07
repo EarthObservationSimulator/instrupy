@@ -284,8 +284,6 @@ class SyntheticApertureRadar(Entity):
         look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
         incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)       
 
-
-      
         # Copying values into variables of more code-friendly variables
         Re = Constants.radiusOfEarthInKM * 1e3        
         c = Constants.speedOfLight
