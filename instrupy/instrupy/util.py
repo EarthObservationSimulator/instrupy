@@ -380,11 +380,7 @@ class FieldOfView(Entity):
                 raise Exception("Please specify the along-track and cross-track fovs for the rectangular fov instrument.")
             
             if(along_track_fov_deg < 0 or along_track_fov_deg > 180 or cross_track_fov_deg < 0 or cross_track_fov_deg > 180):
-                raise Exception("Specified along-track and cross-track fovs of RECTANGULAR sensor must be within the range 0 deg to 180 deg")
-         
-            if(along_track_fov_deg > cross_track_fov_deg):
-                raise Exception("Specified along-track fov of RECTANGULAR sensor must be less than cross-track fov")
-         
+                raise Exception("Specified along-track and cross-track fovs of RECTANGULAR sensor must be within the range 0 deg to 180 deg")       
             
             alongTrackFieldOfView = numpy.deg2rad(along_track_fov_deg)
             crossTrackFieldOfView = numpy.deg2rad(cross_track_fov_deg)
