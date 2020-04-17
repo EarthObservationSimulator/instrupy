@@ -18,8 +18,8 @@ Input JSON format specifications description
    mass, float, kilograms,Total mass of this entity.
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
-   orientation, :ref:`orientation_json_string`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
-   fieldOfView, :ref:`fieldOfView_json_string`, ,Field of view specification of instrument. Only field of view of :code:`"sensorGeometry": "RECTANGULAR"` is accepted.
+   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
+   fieldOfView, :ref:`fieldOfView_json_obj`, ,Field of view specification of instrument. Only field of view of :code:`"sensorGeometry": "RECTANGULAR"` is accepted.
    dataRate, float, Mega-bits per s,Rate of data recorded during nominal operations.
    scanTechnique, string, ,Accepted values are ":code:`PUSHBROOM`" or ":code:`WHISKBROOM`" or ":code:`MATRIX_IMAGER`".
    numberOfDetectorsRowsAlongTrack, integer, ,Number of detector rows in along-track direction.
@@ -37,6 +37,7 @@ Input JSON format specifications description
    maxDetectorExposureTime, float, seconds, maximum exposure time on the detector elements.
    snrThreshold, float,, Threshold value of SNR for observation to be classified as 'Valid'
    considerAtmosLoss, bool,, True/False flag to specify if atmospheric losses should be taken into account using LOWTRAN 3rd party package. Defult is `False`.
+   maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
 
 .. figure:: passive_scanner_aperture_figure.png
    :scale: 75 %
@@ -72,40 +73,6 @@ Input JSON format specifications description
              to the imaged pixels on the ground. Very often the number of detectors in the cross-track direction will be less than the number of ground-pixels in the cross-track direction because 
              of the scanning technique applied.
 
-.. _passive_optical_scanner_csv_output: 
-
-Passive Optical Scanner Level-0 CSV output file description
-============================================================
-
-Description of the header elements:
-
-.. csv-table:: Level-0 output data-metrics description
-    :widths: 8,4,4,20
-    :header: Metric/Aux data,Data Type,Units,Description 
-                                                                                                                                                                                                  
-    :code:`Access From [JDUT1]`                      , float   , Julian Date UT1, Access from time
-    :code:`Access Duration [s]`                      , float   , seconds , Duration of access
-    :code:`POI index`                                , integer ,         , Index of point of interest
-    :code:`Coverage [T/F]`                           , string  ,         , Indicates if observation was  possible during the access event  (True/ False).                                                                        
-    :code:`Noise-Equivalent delta T [K]`             , float   , Kelvin  , Noise Equivalent delta temperature. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
-    :code:`DR`                                       , float   ,         , Dynamic Range. Is the quotient of the signal and read-out noise electrons the  sensor sees between dark and bright scenes.                            
-    :code:`SNR`                                      , float   ,         , Signal-to-Noise ratio                                                                                                                                 
-    :code:`Ground Pixel Along-Track  Resolution [m]` , float   , meters  , Along-track pixel resolution                                                                                                                          
-    :code:`Ground Pixel Cross-Track Resolution [m]`  , float   , meters  , Cross-track pixel resolution  
-
-Example 
--------
-
-.. csv-table:: Passive Optical scanner typical data metrics example CSV output file
-   :header: Access From [JDUT1],Access Duration [s],POI index,Ground Pixel Along-Track Resolution [m],Ground Pixel Cross-Track Resolution [m],SNR,DR,Noise-Equivalent Delta T [K],Coverage [T/F]
-   :widths: 10,10,10,10,10,10,10,10,10
-    
-    2458636.086061733,2.09377259016,0,30.128571433837443,96.25890887372317,185.1214878201367,1395.3585803814917,0.1416954112535711,True
-    2458636.154780928,2.08375453949,0,30.128571428748472,96.25890887741039,184.67026907763758,1388.6822234042054,0.142035616819128,True
-    2458636.2235001232,2.08375453949,0,30.12857142920639,96.2589088770197,184.67026907847682,1388.6822234166073,0.14203561681849308,True
-    2458636.2922191815,2.09377259016,0,30.128571431369767,96.25890887533566,185.1214878158101,1395.358580317396,0.1416954112568242,True
-
-
 .. _passive_optical_scanner_data_metrics_calc:
 
 Typical observation metrics calculation
@@ -113,44 +80,28 @@ Typical observation metrics calculation
 
  .. note:: See :ref:`synthetic_aperture_radar_glossary` for names of the variables used in any discussion below.
 
+.. csv-table:: Observation data metrics table
+    :widths: 8,4,4,20
+    :header: Metric/Aux data,Data Type,Units,Description 
+                                                                                                                                                                                                  
+    Access From [JDUT1], float, Julian Date UT1, Access from time
+    Access Duration [s], float, seconds , Duration of access
+    POI index, integer ,, Index of point of interest
+    Coverage [T/F], string,, Indicates if observation was  possible during the access event  (True/ False).                                                                        
+    Noise-Equivalent delta T [K], float, Kelvin  , Noise Equivalent delta temperature. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
+    DR, float,, Dynamic Range. Is the quotient of the signal and read-out noise electrons the  sensor sees between dark and bright scenes.                            
+    SNR, float,, Signal-to-Noise ratio                                                                                                                                 
+    Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                          
+    Ground Pixel Cross-Track Resolution [m] , float, meters, Cross-track pixel resolution 
+
+Viewing geometry
+-----------------
+
 See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewing sensorGeometry parameters.
-
-
-In general the ground-pixel which is imaged by the passive-optical-scanner can be done from number of a possible
-viewing geometries (even for a fixed orbit-path). 
-
-.. figure:: ground_pixel_imaging_many_geometries.png
-   :scale: 100 %
-   :align: center
-
-   Each ground-pixel shall have different along-track, cross-track resolutions, and also other observation metrics depending upon the satellite position when the 
-   scene is being built. The cross-track pixel resolution is determined by the flight-path, hence the orbit of the satellite. The along-track pixel resolution is dependent
-   on position from where the satellite starts building the scene. This is purely a operational decision. 
-
-In order to have a fair-comparison of the analysis of observation metrics of the different ground-pixels, we shall impose 
-a constraint on the viewing-geometry at which the observation metrics are calculated.  The constraint is that the observation 
-metrics of the ground-pixel are calculated when the satellite velocity vector is exactly orthogonal to the line drawn from 
-the ground-point (center of the ground-pixel) to the satellite.
-
-.. figure:: position_of_satellite_whiskandmatrix_imagers.png
-   :scale: 100 %
-   :align: center
-
-   In InstruPy, when calculating the observation metrics for a ground-pixel, the satellite is said to be capturing the scene with the ground-pixel (either :math:`gp_1, \hspace{1mm} gp_2` or :math:`gp_3`)
-   present at purely side-looking angle (no squint). :math:`S_{P1}, \hspace{1mm} S_{P2}` and :math:`S_{P3}` are the satellite positions corresponding to the no-squint case.
-
-.. note:: In case of pushbroom scanners and stripmap synthetic-aperture-radars the above issue does not arise, because only one row
-          of (thin) ground-pixels (in the cross-track direction) are being imaged. 
-
-
-Calculation of the "derived" Satellite position and time 
----------------------------------------------------------
-
-See :ref:`derived_satellite_coords` for the calculation of the derived satellite position and time.
 
 Ground-pixel resolution calculations
 --------------------------------------
-Accurate only when ground-pixel is being imaged at Nadir or exactly perpendicular to the ground track (See :ref:`derived_satellite_coords`).
+Accurate only when ground-pixel is being imaged at Nadir or exactly perpendicular to the ground track.
 
 :math:`\xi = \dfrac{d}{f}`
 

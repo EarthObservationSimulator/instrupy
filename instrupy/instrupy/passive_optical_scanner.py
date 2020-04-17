@@ -51,8 +51,11 @@ class PassiveOpticalScanner(Entity):
        :ivar fieldOfView: Field of view specification of instrument. 
        :vartype fieldOfView: :class:`instrupy.util.FieldOfView` 
 
-       :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the SAR. A scene is made of multiple concatenated strips.
-       :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView`   
+       :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the instrument. A scene is made of multiple concatenated strips.
+       :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView`  
+
+       :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload. If no manueverability is specified, FOR = FOV. The :code:`sceneFieldOfView` is used as the basis if available. 
+       :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
        
        :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
        :vartype dataRate: float  
@@ -118,7 +121,7 @@ class PassiveOpticalScanner(Entity):
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, sceneFieldOfView = None, dataRate=None, scanTechnique = None,
+            fieldOfView=None, sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, scanTechnique = None,
             numberOfDetectorsRowsAlongTrack=None, numberOfDetectorsColsCrossTrack=None, apertureDia = None,
             Fnum = None, focalLength = None, 
             operatingWavelength = None, bandwidth = None, quantumEff = None, 
@@ -128,7 +131,6 @@ class PassiveOpticalScanner(Entity):
         """Initialize a PassiveOpticalScanner object.
 
         """
-
         self.name = str(name) if name is not None else None
         self.acronym = str(acronym) if acronym is not None else self.name
         self.mass = float(mass) if mass is not None else None
@@ -137,6 +139,7 @@ class PassiveOpticalScanner(Entity):
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
+        self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None    
         self.scanTechnique = ScanTech.get(scanTechnique)
         self.numberOfDetectorsRowsAlongTrack = int(numberOfDetectorsRowsAlongTrack) if numberOfDetectorsRowsAlongTrack is not None else None
@@ -160,7 +163,7 @@ class PassiveOpticalScanner(Entity):
 
     @staticmethod
     def from_dict(d):
-        """Parses an instrument from a normalized JSON dictionary.
+        """ Parses an instrument from a normalized JSON dictionary.
         
             .. warning:: Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
                          The present version of the instrupy package does **not** check for the consistency of the values.
@@ -220,7 +223,14 @@ class PassiveOpticalScanner(Entity):
                     sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
                     scene_fov = FieldOfView.from_json(sc_fov_json_str)
                 else:
+                    sc_fov_json_str = None
                     scene_fov = None
+
+                # initialize field-of-regard
+                if(sc_fov_json_str):
+                    fldofreg_str = {**sc_fov_json_str,  **{"maneuverability": d.get("maneuverability", None)}}
+                else:
+                    fldofreg_str = {**fov_json_str, **{"maneuverability": d.get("maneuverability", None)}}
 
                 return PassiveOpticalScanner(
                         name = d.get("name", None),
@@ -230,6 +240,7 @@ class PassiveOpticalScanner(Entity):
                         power = d.get("power", None),
                         orientation = Orientation.from_json(d.get("orientation", None)),
                         fieldOfView = FieldOfView.from_json(d.get("fieldOfView", None)),
+                        fieldOfRegard= FieldOfView.from_json(fldofreg_str),
                         sceneFieldOfView = scene_fov,
                         dataRate = d.get("dataRate", None),
                         operatingWavelength = d.get("operatingWavelength", None),
@@ -257,28 +268,28 @@ class PassiveOpticalScanner(Entity):
         else:
             raise Exception("Error message: Please specify scanning technique as one of WHISKBROOM/ PUSHBROOM/ MATRIX_IMAGER scanning.")
 
-    def calc_typ_data_metrics_over_one_access_interval(self, SpacecraftOrbitState, AccessInfo):
-        ''' Calculate typical observation data metrics during the given access period.
+    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
+        ''' Calculate typical observation data metrics.
 
-            :param SpacecraftOrbitState: Spacecraft position at the middle (or as close as possible to the middle) of the access interval.
+            :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
 
                                Dictionary keys are: 
                                
-                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1.
-                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
-                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
-            :paramtype SpacecraftOrbitState: dict           
-            :param AccessInfo: Access information.
+                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane at the time of observation.
+                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane at the time of observation.
+            :paramtype SpacecraftOrbitState: dict
+            
+            :param TargetCoords: Location of the observation.
 
                                Dictionary keys are: 
                                 
-                               * :code:`Access From [JDUT1]` (:class:`float`) Start absolute time of Access in Julian Day UT1.
-                               * :code:`Duration [s]` (:class:`float`): Access duration in [s]. Ignored and an analytically calculted access duration is used.
                                * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
-            :paramtype AccessInfo: dict
-            :returns: Typical calculated observation data metrics. It is assumed that the satellite takes *one* observation data sample per access event. Below metrics are 
-                      calculated using satellite position data at or near the middle of the access event.
-                      Dictionary keys are: 
+            :paramtype TargetCoords: dict
+
+            :returns: Typical calculated observation data metrics.
+            
+                      Dictionary keys are:  
                     
                       * :code:`Coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event.
                       * :code:`Noise-Equivalent Delta T [K]` (:class:`float`) Noise-equivalent delta temperature
@@ -288,9 +299,7 @@ class PassiveOpticalScanner(Entity):
                       * :code:`Ground Pixel Cross-Track Resolution [m]` (:class:`float`) Resolution of a hypothetical ground-pixel centered about observation point
 
             :rtype: dict
-
-            .. note:: It is assumed that the instrument captures **one** *observation/ image* over the entire access interval. 
-                      
+                     
             .. note:: We differentiate between **access** and **coverage**. **Access** is when the target location
                       falls under the sensor FOV. **Coverage** is when the target location falls under sensor FOV *and* 
                       can be observed.
@@ -300,7 +309,7 @@ class PassiveOpticalScanner(Entity):
         tObs_JDUT1 = SpacecraftOrbitState["Time[JDUT1]"]
 
         # Target position in ECI frame
-        TargetPosition_km = MathUtilityFunctions.geo2eci([AccessInfo["Lat [deg]"], AccessInfo["Lon [deg]"], 0.0], tObs_JDUT1)
+        TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
 
         # Spacecraft position, velocity in ECI frame
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
@@ -312,12 +321,9 @@ class PassiveOpticalScanner(Entity):
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
         look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
         incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
-
         
         range_vec_norm_km = numpy.linalg.norm(range_vector_km)
 
-
-        ## Spatial resolutions calculation based on "Derived"satellite position, time ##
         # Calculate FOV of a single detector, i.e. the IFOV
         iFOV_deg = numpy.rad2deg(self.detectorWidth / self.focalLength)
         # Calculate the cross track spatial resolution of the ground-pixel, taking into account spherical Earth surface
@@ -326,7 +332,7 @@ class PassiveOpticalScanner(Entity):
         pixelSpatialRes_AT_m = numpy.deg2rad(iFOV_deg)*range_vec_norm_km*1.0e3
         pixelArea_m2 = pixelSpatialRes_AT_m * pixelSpatialRes_CT_m                    
         
-        #accessDuration_s = AccessInfo["Access Duration [s]"]
+        # Analytical calculation of the access duration from the satellite altitude.
         accessDuration_s = numpy.deg2rad(self.fieldOfView.get_ATCT_fov()[0])*alt_km/ (MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km,SpacecraftVelocity_kmps) *1e-3) # analytical calculation of the access duration
         Ti_s = PassiveOpticalScanner.calculate_integration_time(self.scanTechnique, self.numberOfDetectorsRowsAlongTrack, self.numberOfDetectorsColsCrossTrack, accessDuration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.get_rectangular_fov_specs()[1])
         Ne = PassiveOpticalScanner.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp, 

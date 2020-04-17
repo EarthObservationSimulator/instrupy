@@ -368,15 +368,14 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         # The InstruPy computed value must be greater than truth value since SMAD does not cosdier the energy reflected off Sun, and the date corresponds to satellite over target at day-time.
         self.assertGreater(PassiveOpticalScanner.calculate_number_of_signal_electrons(opWav_m, bw_m, bbT_K, apDia_m, opTrns, QE, tObs_JDUT1, obs_pos_km, tar_pos_km, pixelArea_m2, Ti_s, considerAtmosLoss = True), 8286.104444633884)        
 
-    def test_calc_typ_data_metrics_over_one_access_interval(self):
+    def test_calc_typ_data_metrics(self):
         
         # Test: Truth data from SMAD 3rd edition, Table 9-15. Note that the  inputs are made so that they are consistent with the example.
         # Further note that SMAD does not consider the energy from Sun reflected off Sun in their calculations.
         epoch_JDUT1 = 2451623.999630
-        access_time_s = numpy.deg2rad(0.628)*700/6.7622
-        SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1 + access_time_s/(2*86400), 'x[km]': 7078.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.5, 'vz[km/s]': 0} # equatorial orbit, altitude about 700 km
-        AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': access_time_s, 'Lat [deg]': 0, 'Lon [deg]': 0} # lat = 0, lon = 0 corresponds to [6378, 0, 0] km in ECI for observer position, check using Matlab function: eci2lla([6378, 0, 0] ,[2000 3 20 11 59 28.000])
-        obsv_metrics = self.firesat.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
+        SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 7078.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.5, 'vz[km/s]': 0} # equatorial orbit, altitude about 700 km
+        TargetCoords = {'Lat [deg]': 0, 'Lon [deg]': 0} # lat = 0, lon = 0 corresponds to [6378, 0, 0] km in ECI for observer position, check using Matlab function: eci2lla([6378, 0, 0] ,[2000 3 20 11 59 28.000])
+        obsv_metrics = self.firesat.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertAlmostEqual(obsv_metrics["Ground Pixel Along-Track Resolution [m]"], 30, delta = 3)
         self.assertAlmostEqual(obsv_metrics["Ground Pixel Cross-Track Resolution [m]"], 30, delta = 3)
         # A (positive) deviation is expected since SMAD does not consider the energy from Sun reflected off Sun

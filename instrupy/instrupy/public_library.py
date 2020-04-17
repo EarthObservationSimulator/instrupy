@@ -1,11 +1,8 @@
 """ 
 .. module:: public_library
 
-:synopsis: *Contains interface class (of instrupy to external script) for managing space system instruments.*
+:synopsis: *Provides easy interface to the package main functionalities, independent of the instrument type.*
 
-.. note:: For users who plan to use the InstruPy package without custom modification of the codebase, 
-          only this module :mod:`public_library` of the InstruPy package is sufficient to interface 
-          external script.
 """
 from .util import Entity, MathUtilityFunctions
 from .basic_sensor import BasicSensor
@@ -59,17 +56,43 @@ class Instrument(Entity):
         """ Parses a instrument from a normalized JSON dictionary. """
         return Instrument(d)
 
-    def calc_typ_data_metrics_over_one_access_interval(self, epoch_JDUT1, SpacecraftOrbitState, AccessInfo):    
-        return self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) 
+    def calc_typ_data_metrics(self, epoch_JDUT1, SpacecraftOrbitState, TargetCoords):   
+        """ Calculate the typical observation data-metrics.
+        
+        :param epoch_JDUT1: Epoch of the alongside data in Julian Day UT1.
+        :paramtype epoch_JDUT1: float
+
+        :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
+
+        Dictionary keys are: 
+        
+        * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+        * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane at the time of observation.
+        * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane at the time of observation.
+        
+        :paramtype SpacecraftOrbitState: dict
+
+        
+        :param TargetCoords: Location of the observation.
+
+                            Dictionary keys are: 
+                            
+                            * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+
+        :paramtype TargetCoords: dict
+
+        :returns: Typical calculated observation data metrics specific to the instrument type.
+        :rtype: dict
+
+        """ 
+        return self._sensor.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords) 
 
 
-    def dshield_generate_level0_data_metrics(self, POI_filepath, SatelliteState_filepath, AccessInfo_filepath, Result_filepath):
- 
+    def dshield_generate_level0_data_metrics(self, POI_filepath, SatelliteState_filepath, AccessInfo_filepath, Result_filepath): 
         ''' Generate typical data metrics iterating over all access times. The time column of the satellite-state data file and the
             access data file must be referenced to the same epoch and produced at the same time-step size.
-            This function iteratively calls :code:`calc_typ_data_metrics_over_one_access_interval` of the specified instrument type over all access events 
+            This function iteratively calls :code:`calc_typ_data_metrics` of the specified instrument type over all access events 
             available in the input file.
-            CSV formatted files are supported to supply the required input data.
 
             :param POI_filepath: Filepath to CSV file containing lat/lon co-ordinates of points of interest along with index.
 
@@ -81,43 +104,43 @@ class Instrument(Entity):
                                  * :code:`lat[deg]`, :code:`lon[deg]`, latitude, longitude of the point-of-interest.  
 
                                  .. note:: Make sure the header titles are as specified above, and the delimiters are commas.
+
             :paramtype POI_filepath: str
 
              
+            :param SatelliteState_filepath: Filepath to CSV file containing data satellite states at fixed time-step.
+                    First four rows convey general information. The second row conveys the Epoch in Julian Days UT1.
+                    The fifth row  contains the following header elements, and the following rows contain the data corresponding to these headers.
+
+                    Description of the header elements:
+                    
+                    * :code:`Time[s]`,  Time referenced to epoch.
+                    * :code:`X[km]`, :code:`Y[km]` :code:`Z[km]`, cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
+                    * :code:`VX[km/s]`, :code:`VY[km/s]`, :code:`VZ[km/s]`, velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
+
+            :paramtype SatelliteState_filepath: str
+
             :param AccessInfo_filepath: Filepath to CSV file containing data of access events and their time-intervals.
-                               First three rows convey general information. The fourth row conveys the Epoch in Julian Days UT1.
+                               First three rows convey general information. The second row conveys the Epoch in Julian Days UT1.
                                The fifth row  contains the following header elements, and the following rows contain the data corresponding to these headers.
 
                                Description of the header elements:
                                 
-                               * :code:`accessFrom[Days]`,  The time at which access starts in [days], referenced to epoch in row-4.
-                               * :code:`duration[s]`, Duration of access in [s].
-                               * :code:`gpi` indicating index of ground-point.
-                               * :code:`eventNum` indicating index of event.
-                               * :code:`time[Days]`, Time in [Days] at which the alongside satellite-state is recorded. Referenced to the epoch specified in row-4.
-                               * :code:`x[km]`, :code:`y[km]` :code:`z[km]`, cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
-                               * :code:`vx[km/s]`, :code:`vy[km/s]`, :code:`vz[km/s]`, velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
-
+                               * :code:`Time[s]`,  The time at which access starts in seconds, referenced to epoch.
+                               * :code:`GP0, GP1, GP2, ....` Columns specific to each ground-point.
 
             :paramtype AccessInfo_filepath: str
 
-            :param Result_filepath: Filepath to CSV file in which the results are written
-                                Description of the header elements:
+            :param Result_filepath: Filepath to CSV file in which the results are written. First row contains the epoch in Julian Day UT1.
+                                The third row contains the column header elements. Description of the header elements:
                                 
+                               * :code:`observationTime[s]`,  The time at which the observation is made in seconds referenced to the epoch.
                                * :code:`gpi` indicating index of ground-point.
-                               * :code:`accessFrom[JDUT1]`,  The time at which access starts in [JDUT1]
-                               * :code:`duration[s]`, Duration of access in [s].
-                               * + other header elements specific to the instrument type
+                               * + other header elements containing data-metrics specific to the instrument type
 
                                .. note:: this is an **output** file of the function
             
             :paramtype Result_filepath: str
-
-            .. seealso::
-                * :ref:`poi_file_description`
-                * :ref:`access_info_CSV_file_description`
-                * :ref:`basic_sensor_csv_output`
-                * :ref:`passive_optical_scanner_csv_output`
 
         '''
         epoch_JDUT1 = pandas.read_csv(AccessInfo_filepath, skiprows = [0], nrows=1, header=None).astype(str) # 2nd row contains the epoch
@@ -157,9 +180,9 @@ class Instrument(Entity):
                 time = float(indx[0])
                 poi_indx = int(indx[1][2:])
 
-                AccessInfo = dict()                
-                AccessInfo["Lat [deg]"] = poi_info_df.loc[poi_indx]["lat[deg]"]
-                AccessInfo["Lon [deg]"] = poi_info_df.loc[poi_indx]["lon[deg]"]
+                TargetCoords = dict()                
+                TargetCoords["Lat [deg]"] = poi_info_df.loc[poi_indx]["lat[deg]"]
+                TargetCoords["Lon [deg]"] = poi_info_df.loc[poi_indx]["lon[deg]"]
 
                 SpacecraftOrbitState = dict()
                 SpacecraftOrbitState["Time[JDUT1]"] = epoch_JDUT1 + time*1.0/86400.0 
@@ -170,20 +193,83 @@ class Instrument(Entity):
                 SpacecraftOrbitState["vy[km/s]"] = sat_state_df.loc[time]["VY[km/s]"] 
                 SpacecraftOrbitState["vz[km/s]"] = sat_state_df.loc[time]["VZ[km/s]"] 
 
-                obsv_metrics = self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) # calculate the data metrics specific to the instrument type
-                _v = dict({'access time[s]':time, 'gpi': poi_indx}, **obsv_metrics)
+                obsv_metrics = self._sensor.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords) # calculate the data metrics specific to the instrument type
+                _v = dict({'observationTime[s]':time, 'gpi': poi_indx}, **obsv_metrics)
                 if idx==0: #1st iteration
                     w.writerow(_v.keys())    
                 w.writerow(_v.values())
                 idx = idx + 1
                 #print(obsv_metrics)
-
-            
     
+
+    def get_coverage_specs(self):
+        """ Get field-of-view (or scene-field-of-view) and the field-of-regard specifications for the instrument. Also returns
+            the orientation (common for both FOV, FOR) and if the instrument is constrained to take observations at a strictly 
+            side-looking (no squint) target geometry. The :code:`yaw180_flag` indicates if the instrument coverage includes
+            orientation of the instrument rotated by 180 deg about the yaw axis from the nominal orientation. This is significant
+            for the case of FOR specifications and purely side-looking instruments.
+            
+            .. todo:: update unit test
+
+            :returns: JSON string with the coverage specifications                     
+
+            :rtype: dict
+        
+        """
+        # determine if instrument takes observations at a purely side looking geometry
+        purely_side_look = False
+        instru_type = type(self._sensor).__name__
+        if(instru_type == 'SyntheticApertureRadar'):
+            purely_side_look = True
+        
+        orientation_specs = {"eulerAngle1": self._sensor.orientation.x_rot_deg,
+                             "eulerAngle2": self._sensor.orientation.y_rot_deg, 
+                             "eulerAngle3": self._sensor.orientation.z_rot_deg,
+                             "eulerSeq1": 1,
+                             "eulerSeq2": 2,
+                             "eulerSeq3": 3
+                             }
+        
+        for_specs = {"geometry": self._sensor.fieldOfRegard._geometry,
+                     "coneAnglesVector" : self._sensor.fieldOfRegard._coneAngleVec_deg,
+                     "clockAnglesVector": self._sensor.fieldOfRegard._clockAngleVec_deg,
+                     "AlongTrackFov": self._sensor.fieldOfRegard._AT_fov_deg,
+                     "CrossTrackFov": self._sensor.fieldOfRegard._CT_fov_deg,
+                     "yaw180_flag": self._sensor.fieldOfRegard._yaw180_flag
+                    }
+
+        if(hasattr(self._sensor, 'sceneFieldOfView')):
+            if(self._sensor.sceneFieldOfView):
+                # if there exists a scene FOV, pass the corresponding fov specifications for coverage caclulations
+                fov_specs = {"geometry": self._sensor.sceneFieldOfView._geometry,
+                            "coneAnglesVector" : self._sensor.sceneFieldOfView._coneAngleVec_deg,
+                            "clockAnglesVector": self._sensor.sceneFieldOfView._clockAngleVec_deg,
+                            "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
+                            "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
+                            "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag
+                            }
+                result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look}
+                return json.dumps(result)   
+               
+        fov_specs = {"geometry": self._sensor.fieldOfView._geometry,
+                     "coneAnglesVector" : self._sensor.fieldOfView._coneAngleVec_deg,
+                     "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg,
+                     "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
+                     "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
+                     "yaw180_flag": self._sensor.fieldOfView._yaw180_flag
+                     }
+
+
+        result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
+        return json.dumps(result)
+
+################################################### Legacy functions #################################################################    
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
  
-        ''' Generate typical data metrics per access event, per grid-point. 
-            This function iteratively calls :code:`calc_typ_data_metrics_over_one_access_interval` of the specified instrument type over all access events 
+        ''' ########################## Legacy function, discontinued ########################## 
+        
+            Generate typical data metrics per access event, per grid-point. 
+            This function iteratively calls :code:`calc_typ_data_metrics` of the specified instrument type over all access events 
             available in the input file.
             CSV formatted files are supported to supply the required input data.
 
@@ -229,12 +315,6 @@ class Instrument(Entity):
             
             :paramtype Result_filepath: str
 
-            .. seealso::
-                * :ref:`poi_file_description`
-                * :ref:`access_info_CSV_file_description`
-                * :ref:`basic_sensor_csv_output`
-                * :ref:`passive_optical_scanner_csv_output`
-
         '''
         epoch_JDUT1 = pandas.read_csv(AccessInfo_filepath, skiprows = [0], nrows=1, header=None) # 2nd row contains the epoch
         epoch_JDUT1 = float(epoch_JDUT1[0][0].split()[2])
@@ -272,7 +352,7 @@ class Instrument(Entity):
                 SpacecraftOrbitState["vy[km/s]"] = access_info_df.loc[idx]["VY[km/s]"] 
                 SpacecraftOrbitState["vz[km/s]"] = access_info_df.loc[idx]["VZ[km/s]"] 
 
-                obsv_metrics = self._sensor.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo) # calculate the data metrics specific to the instrument type
+                obsv_metrics = self._sensor.calc_typ_data_metrics(SpacecraftOrbitState, AccessInfo) # calculate the data metrics specific to the instrument type
                 _v = dict({'Access From [JDUT1]':AccessInfo["Access From [JDUT1]"], 'Access Duration [s]':AccessInfo["Access Duration [s]"], 'POI index': access_info_df['POI'][idx]}, **obsv_metrics)
                 
                 if idx==0: #1st iteration
@@ -280,9 +360,10 @@ class Instrument(Entity):
 
                 w.writerow(_v.values())
 
-                idx = idx + 1
-    
+                idx = idx + 1  
+
     def generate_level1_data_metrics(self, inFilePath, outFilePath):
+        """ ########################## Legacy function, discontinued ########################## """
         
         # Concatenate all the level-0 metrics into a single data-frame
         level0_df = None
@@ -326,6 +407,7 @@ class Instrument(Entity):
         level1_metrics.to_csv(outFilePath, index=True, header = True, na_rep='nan')
 
     def generate_level2_data_metrics(self, inFilePath, outFilePath):
+        """ ########################## Legacy function, discontinued ########################## """
 
         level1_df = pandas.read_csv(inFilePath)       
 
@@ -352,6 +434,7 @@ class Instrument(Entity):
 
 
     def generate_level1_coverage_metrics(self, missionDuration_days, inFilePath, outFilePath):
+        """ ########################## Legacy function, discontinued ########################## """
         # Concatenate all the level-0 metrics into a single data-frame
         level0_df = None
 
@@ -437,6 +520,7 @@ class Instrument(Entity):
         level1_cov_df.to_csv(outFilePath, index=True, header = True, na_rep='nan')
 
     def generate_level2_coverage_metrics(self, inFilePath, outFilePath):
+        """ ########################## Legacy function, discontinued ########################## """
 
         level1_df = pandas.read_csv(inFilePath)       
 
@@ -460,53 +544,6 @@ class Instrument(Entity):
 
         level2_metrics = pandas.concat([level2_df_mean, level2_df_sd], axis=1)
         level2_metrics.to_csv(outFilePath,index=False, na_rep='nan')
-    
-
-    def get_coverage_specs(self):
-        """ 
-            TODO: The following code does NOT take into account possible non-zero yaw rotation 
-            (i.e. rotation about the imaging/pointing axis). 
-        
-        """
-        # determine if instrument takes observations at a purely side looking geometry
-        purely_side_look = False
-        instru_type = type(self._sensor).__name__
-        if(instru_type == 'SyntheticApertureRadar'):
-            purely_side_look = True
-        elif(instru_type == 'PassiveOpticalSensor'):
-            if(self._sensor.scanTechnique == 'PUSHBROOM' or self._sensor.scanTechnique == 'WHISKBROOM'):
-                purely_side_look = True
-
-        
-        orientation_specs = {"eulerAngle1": self._sensor.orientation.x_rot_deg,
-                             "eulerAngle2": self._sensor.orientation.y_rot_deg, 
-                             "eulerAngle3": self._sensor.orientation.z_rot_deg,
-                             "eulerSeq1": 1,
-                             "eulerSeq2": 2,
-                             "eulerSeq3": 3
-                             }
-
-        if(hasattr(self._sensor, 'sceneFieldOfView')):
-            if(self._sensor.sceneFieldOfView):
-                # if there exists a scene FOV, pass the corresponding fov specifications for coverage caclulations
-                fov_specs = {"geometry": self._sensor.sceneFieldOfView._geometry,
-                            "coneAnglesVector" : self._sensor.sceneFieldOfView._coneAngleVec_deg,
-                            "clockAnglesVector": self._sensor.sceneFieldOfView._clockAngleVec_deg,
-                            "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
-                            "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
-                            }
-                result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look}
-                return json.dumps(result)   
-               
-        fov_specs = {"geometry": self._sensor.fieldOfView._geometry,
-                     "coneAnglesVector" : self._sensor.fieldOfView._coneAngleVec_deg,
-                     "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg,
-                     "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
-                     "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
-                     }
-        result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look}
-        return json.dumps(result)
-
 
 
 

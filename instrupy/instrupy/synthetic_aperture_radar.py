@@ -46,6 +46,9 @@ class SyntheticApertureRadar(Entity):
         :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the SAR. A scene is made of multiple concatenated strips.
         :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView` 
 
+        :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload. If no manueverability is specified, FOR = FOV. The :code:`sceneFieldOfView` is used as the basis if available.
+        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView` 
+
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
 
@@ -119,7 +122,7 @@ class SyntheticApertureRadar(Entity):
     
 
     def __init__(self, name=None, acronym=None, mass=None,volume=None, power=None,  orientation=None, fieldOfView = None,
-            sceneFieldOfView = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
+            sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
             radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNEZ0threshold = None, _id=None):
@@ -134,6 +137,7 @@ class SyntheticApertureRadar(Entity):
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
+        self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None          
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.pulseWidth = float(pulseWidth) if pulseWidth is not None else None
@@ -153,6 +157,8 @@ class SyntheticApertureRadar(Entity):
         
     @staticmethod
     def from_dict(d):
+        """ Parses an instrument from a normalized JSON dictionary.
+        """
 
         # Only side-looking orientation fo instrument suported for synthetic aperture radar stripmap imaging
         orien_json_str = d.get("orientation", None)
@@ -182,7 +188,14 @@ class SyntheticApertureRadar(Entity):
             sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
             scene_fov = FieldOfView.from_json(sc_fov_json_str)
         else:
+            sc_fov_json_str = None
             scene_fov = None
+
+        # initialize field-of-regard
+        if(sc_fov_json_str):
+            fldofreg_str = {**json.loads(sc_fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
+        else:
+            fldofreg_str = {**json.loads(fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
  
         return SyntheticApertureRadar(
                         name = d.get("name", None),
@@ -193,6 +206,7 @@ class SyntheticApertureRadar(Entity):
                         orientation = Orientation.from_json(d.get("orientation", None)),
                         fieldOfView = FieldOfView.from_json(fov_json_str),
                         sceneFieldOfView = scene_fov,
+                        fieldOfRegard= FieldOfView.from_json(fldofreg_str),
                         dataRate = d.get("dataRate", None),
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         pulseWidth = d.get("pulseWidth", None),
@@ -213,35 +227,46 @@ class SyntheticApertureRadar(Entity):
     @staticmethod
     def get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az):
         """ Calculate azimuthal resolution taking into consideration difference in platform, footprint velocities.
-        See eqn (5.3.6.3) in [2]
+        See eqn (5.3.6.3) in [2].
+
+        :param v_sc_kmps: Spacecraft speed in kilometers per second.
+        :paramtype v_sc_kmps: float
+
+        :param v_g_kmps: Spacecraft ground speed in kilometers per second.
+        :paramtype v_g_kmps: float
+
+        :param D_az: Length of antenna in meters along the azimuthal direction.
+        :paramtype D_az: float
+
+        :returns: Azimuthal resolution in meters.
+        :rtype: float
+
         """
         return (D_az/2.0)*(v_g_kmps/ v_sc_kmps)
 
 
-    def calc_typ_data_metrics_over_one_access_interval(self, SpacecraftOrbitState, AccessInfo):
-        ''' Calculate typical observation data metrics during the given access period.
+    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
+        ''' Calculate typical observation data metrics.
 
-            :param SpacecraftOrbitState: Spacecraft position at the middle (or as close as possible to the middle) of the access interval.
+            :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
 
                                Dictionary keys are: 
                                
-                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1.
-                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
-                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
+                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane at the time of observation.
+                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane at the time of observation.
             :paramtype SpacecraftOrbitState: dict
 
             
-            :param AccessInfo: Access information.
+            :param TargetCoords: Location of the observation.
 
                                Dictionary keys are: 
                                 
-                               * :code:`Access From [JDUT1]` (:class:`float`) Start absolute time of Access in Julian Day UT1.
-                               * :code:`Duration [s]` (:class:`float`): Access duration in [s]. Ignored.
                                * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
-            :paramtype AccessInfo: dict
+            :paramtype TargetCoords: dict
 
-            :returns: Typical calculated observation data metrics. It is assumed that the satellite takes *one* observation data sample per access event. Below metrics are 
-                      calculated using satellite position data at or near the middle of the access event.
+            :returns: Typical calculated observation data metrics.
+
                       Dictionary keys are: 
                     
                       * :code:`Coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event.
@@ -253,10 +278,6 @@ class SyntheticApertureRadar(Entity):
                       * :code:`Incidence Angle [deg]` (:class:`float`) Observation incidence angle at the ground-pixel.
 
             :rtype: dict
-
-            .. note:: It is assumed that the instrument captures **one** *observation/ image* over the entire access interval. 
-                      While this is true for stripmap radar imagers, push-broom imagers and whisk-broom imagers, it is not true for all
-                      different types of instruments.
 
             .. note:: We differentiate between **access** and **coverage**. **Access** is when the target location
                       falls under the sensor FOV. **Coverage** is when the target location falls under sensor FOV *and* 
@@ -270,7 +291,7 @@ class SyntheticApertureRadar(Entity):
         tObs_JDUT1 = SpacecraftOrbitState["Time[JDUT1]"]
 
         # Calculate Target position in ECI frame
-        TargetPosition_km = MathUtilityFunctions.geo2eci([AccessInfo["Lat [deg]"], AccessInfo["Lon [deg]"], 0.0], tObs_JDUT1)
+        TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
 
         # Spacecraft position in Cartesian coordinates
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  

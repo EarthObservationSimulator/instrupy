@@ -54,15 +54,15 @@ class TestBasicSensor(unittest.TestCase):
             BasicSensor.from_json('{"name": "Atom","mass":10,"volume":12.45, "fieldOfView": {"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 10 }}')
 
 
-    def test_calc_typ_data_metrics_over_one_access_interval(self):
+    def test_calc_typ_data_metrics(self):
 
         o = BasicSensor.from_json('{"name": "Atom","orientation":{"convention": "SIDE_LOOK", "sideLookAngle":22.5}, "fieldOfView": {"sensorGeometry": "CONICAL", "fullConeAngle": 60 }}')
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         
         # Test: Check a simple intuitive scenario when satellite is 500 km above POI at (lat = 0,lon = 0)
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.613, 'vz[km/s]': 0} # equatorial orbit, altitude about 500 km
-        AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': 10, 'Lat [deg]': 0, 'Lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
+        TargetCoords = {'Lat [deg]': 0, 'Lon [deg]': 0}
+        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["Coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["Observation Range [km]"], 500, delta = 1)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], 0, delta = 0.1)
@@ -73,8 +73,8 @@ class TestBasicSensor(unittest.TestCase):
         nadir_angle_deg = abs(numpy.rad2deg(6378.137*numpy.deg2rad(poi_lon_deg)/ 500))
         range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.613, 'vz[km/s]': 0} # equatorial orbit, altitude about 500 km
-        AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': 10, 'Lat [deg]': 0, 'Lon [deg]': 0.1}
-        obsv_metrics = o.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
+        TargetCoords = {'Lat [deg]': 0, 'Lon [deg]': 0.1}
+        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["Coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["Observation Range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], nadir_angle_deg, delta = 0.1)
@@ -85,8 +85,8 @@ class TestBasicSensor(unittest.TestCase):
         nadir_angle_deg = abs(numpy.rad2deg(6378.137*numpy.deg2rad(poi_lon_deg)/ 500))
         range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.613, 'vz[km/s]': 0} # equatorial orbit, altitude about 500 km
-        AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': 10, 'Lat [deg]': 0, 'Lon [deg]': -1.2}
-        obsv_metrics = o.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
+        TargetCoords = {'Lat [deg]': 0, 'Lon [deg]': -1.2}
+        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["Coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["Observation Range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], nadir_angle_deg, delta = 1) # larger deltas since truth data is approximate calculation (assumes flat-Earth)
@@ -97,8 +97,8 @@ class TestBasicSensor(unittest.TestCase):
         nadir_angle_deg = abs(numpy.rad2deg(6378.137*numpy.deg2rad(poi_lat_deg)/ 500))
         range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.613, 'vz[km/s]': 0} # equatorial orbit, altitude about 500 km
-        AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': 10, 'Lat [deg]': -0.1, 'Lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
+        TargetCoords = {'Lat [deg]': -0.1, 'Lon [deg]': 0}
+        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["Coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["Observation Range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
@@ -109,8 +109,8 @@ class TestBasicSensor(unittest.TestCase):
         nadir_angle_deg = abs(numpy.rad2deg(6378.137*numpy.deg2rad(poi_lat_deg)/ 500))
         range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.613, 'vz[km/s]': 0} # equatorial orbit, altitude about 500 km
-        AccessInfo = {'Access From [JDUT1]': epoch_JDUT1, 'Access Duration [s]': 10, 'Lat [deg]': 1.2, 'Lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics_over_one_access_interval(SpacecraftOrbitState, AccessInfo)
+        TargetCoords = {'Lat [deg]': 1.2, 'Lon [deg]': 0}
+        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["Coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["Observation Range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], nadir_angle_deg, delta = 1)

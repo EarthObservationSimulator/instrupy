@@ -34,6 +34,9 @@ class BasicSensor(Entity):
 
         :ivar fieldOfView: Field of view specification of instrument. 
         :vartype fieldOfView: :class:`instrupy.util.FieldOfView`   
+
+        :ivar fieldOfRegard: Field of view calculated taking into account manueverability of the payload. If no manueverability is specified, FOR = FOV.
+        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
        
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
@@ -45,7 +48,7 @@ class BasicSensor(Entity):
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, dataRate=None, bitsPerPixel = None, _id=None):
+            fieldOfView=None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, _id=None):
         """Initialize a Basic Sensor object.
 
         """
@@ -56,6 +59,7 @@ class BasicSensor(Entity):
         self.power = float(power) if power is not None else None
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
+        self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None            
         super(BasicSensor,self).__init__(_id, "Basic Sensor")
@@ -71,35 +75,33 @@ class BasicSensor(Entity):
                 power = d.get("power", None),
                 orientation = Orientation.from_json(d.get("orientation", None)),
                 fieldOfView = FieldOfView.from_json(d.get("fieldOfView", None)),
+                fieldOfRegard= FieldOfView.from_json({**d.get("fieldOfView", None) , **{"maneuverability": d.get("maneuverability", None)}}),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
                 _id = d.get("@id", None)
             )
 
-    def calc_typ_data_metrics_over_one_access_interval(self, SpacecraftOrbitState, AccessInfo):
-        ''' Calculate typical observation data metrics during the given access period.
+    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
+        ''' Calculate typical observation data metrics.
 
-            :param SpacecraftOrbitState: Spacecraft position at the middle (or as close as possible to the middle) of the access interval.
+            :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
 
                                Dictionary keys are: 
                                
-                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1.
-                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
-                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
+                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane at the time of observation.
+                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane at the time of observation.
             :paramtype SpacecraftOrbitState: dict
 
             
-            :param AccessInfo: Access information.
+            :param TargetCoords: Location of the observation.
 
                                Dictionary keys are: 
                                 
-                               * :code:`Access From [JDUT1]` (:class:`float`) Start absolute time of Access in Julian Day UT1.
-                               * :code:`Duration [s]` (:class:`float`): Access duration in [s].
                                * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
-            :paramtype AccessInfo: dict
+            :paramtype TargetCoords: dict
 
-            :returns: Typical calculated observation data metrics. It is assumed that the satellite takes *one* observation data sample per access event. Below metrics are 
-                      calculated using satellite position data at or near the middle of the access event.
+            :returns: Typical calculated observation data metrics.
                       
                       Dictionary keys are: 
                     
@@ -109,23 +111,13 @@ class BasicSensor(Entity):
                       * :code:`Observation Range [km]` (:class:`float`) Distance from satellite to ground-point during the observation acquisition.
                       * :code:`Solar Zenith [deg]` (:class:`float`) Solar Zenith during observation
 
-                      .. note:: Metrics are calculated at the instant corresponding to the supplied Satellite orbit state in the parameter :code:`SpacecraftOrbitState`.
-            :rtype: dict
-
-
-            .. note:: It is assumed that the instrument captures **one** *observation/ image* over the entire access interval. 
-                      While this is true for stripmap radar imagers, push-broom imagers and whisk-broom imagers, it is not true for all
-                      different types of instruments/ imaging modes.
-
-            .. note:: We differentiate between **access** and **coverage**. **Access** is when the target location
-                      falls under the sensor field-of-view. **Coverage** is when the target location falls under sensor field-of-view *and* can be observed.
-                        
+            :rtype: dict                      
         '''
         # Observation time in Julian Day UT1
         tObs_JDUT1 = SpacecraftOrbitState["Time[JDUT1]"]
 
         # Calculate Target position in ECI frame
-        TargetPosition_km = MathUtilityFunctions.geo2eci([AccessInfo["Lat [deg]"], AccessInfo["Lon [deg]"], 0.0], tObs_JDUT1)
+        TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
 
         # Spacecraft position in Cartesian coordinates
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  

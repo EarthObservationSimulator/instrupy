@@ -154,6 +154,14 @@ class Constants(object):
     SunBlackBodyTemperature = 6000.0 # Sun black body temperature in Kelvin
     SolarRadius = 6.95700e8 # Solar radius
 
+
+class ManueverType(EnumEntity):
+    """Enumeration of recognized manuvever types"""
+    FIXED = "FIXED"
+    CONE = "CONE",
+    ROLLONLY = "ROLLONLY",
+    YAW180 = "YAW180"
+    YAW180ROLL = "YAW180ROLL" 
 class OrientationConvention(EnumEntity):
     """Enumeration of recognized instrument orientation conventions."""
     XYZ = "XYZ"
@@ -263,11 +271,14 @@ class FieldOfView(Entity):
         :ivar _CT_fov_deg: Cross track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
         :vartype _CT_fov_deg: float
 
+        :ivar yaw180_flag: Flag applies in case of field-of-regard. If true, it signifies that the field-of-regard includes the field-of-view of payload rotated about the yaw axis by 180 deg. 
+        :vartype yaw180_flag: bool
+
         .. note:: :code:`coneAnglesVec_deg[0]` ties to :code:`clockAnglesVec_deg[0]`, and so on. Except for the case of *CONICAL* FOV, in which we 
                   have just one :code:`clockAnglesVec_deg[0] = 1/2 full_cone_angle_deg` and no corresponding clock angle. 
         """
         def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, 
-                     AT_fov_deg = None, CT_fov_deg = None, _id = None):
+                     AT_fov_deg = None, CT_fov_deg = None, yaw180_flag = None, _id = None):
                        
 
             if(coneAnglesVec_deg):
@@ -291,11 +302,12 @@ class FieldOfView(Entity):
             self._geometry = geometry
             self._AT_fov_deg = AT_fov_deg
             self._CT_fov_deg = CT_fov_deg
+            self._yaw180_flag = bool(yaw180_flag) 
 
             super(FieldOfView, self).__init__(_id, "FieldOfView")
 
         @classmethod
-        def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, _id = None):
+        def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, yaw180_flag = False, _id = None):
             """  Return corresponding :class:`instrupy.util.FieldOfView` object.
 
                 .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
@@ -325,7 +337,7 @@ class FieldOfView(Entity):
             return FieldOfView("CUSTOM", coneAnglesVec_deg, clockAnglesVec_deg, _id)
 
         @classmethod
-        def from_conicalFOV(cls, full_cone_angle_deg = None, _id = None):
+        def from_conicalFOV(cls, full_cone_angle_deg = None, yaw180_flag = False, _id = None):
             ''' Convert user-given conical sensor specifications to cone, clock angles and return corresponding :class:`instrupy.util.FieldOfView` object.
             
             :param full_cone_angle_deg: Full conical angle of the Cone Sensor in degrees.
@@ -347,7 +359,7 @@ class FieldOfView(Entity):
             return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, full_cone_angle_deg, full_cone_angle_deg, _id)
 
         @classmethod
-        def from_rectangularFOV(cls, along_track_fov_deg = None, cross_track_fov_deg = None, _id = None):
+        def from_rectangularFOV(cls, along_track_fov_deg = None, cross_track_fov_deg = None, yaw180_flag = False, _id = None):
             ''' Convert the along-track (full) fov and cross-track (full) fov specs to clock, cone angles and return corresponding :class:`instrupy.util.FieldOfView` object.
                 Along-track fov **must** be less than cross-track fov.
 
@@ -403,21 +415,99 @@ class FieldOfView(Entity):
 
         @staticmethod
         def from_dict(d):
-            """Parses field-of-view specifications from a normalized JSON dictionary.
+            """Parses field-of-view specifications from a normalized JSON dictionary. If manueverability is included, the 
+               parsed object corresponds to the field-of-regard. 
     
+               :param d: Dictionary with the instrument field-of-view and maneverability (optional) specifications.
+               :paramtype d: dict
+
                :return: Parsed python object 
                :rtype: :class:`instrupy.util.FieldOfView`
 
-            """
+            """          
+            # calulate the field-of-view
             _geo = SensorGeometry.get(d.get("sensorGeometry", None))
             if(_geo == "CONICAL"):
-                return FieldOfView.from_conicalFOV(d.get("fullConeAngle", None), d.get("_id", None))
+                fldofview = FieldOfView.from_conicalFOV(d.get("fullConeAngle", None), False, d.get("_id", None))
             elif(_geo == "RECTANGULAR"):
-                return FieldOfView.from_rectangularFOV(d.get("alongTrackFieldOfView", None), d.get("crossTrackFieldOfView", None), d.get("_id", None))
+                fldofview = FieldOfView.from_rectangularFOV(d.get("alongTrackFieldOfView", None), d.get("crossTrackFieldOfView", None), False, d.get("_id", None))
             elif(_geo == "CUSTOM"):
-                return  FieldOfView.from_customFOV(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None), d.get("_id", None))  
+                fldofview = FieldOfView.from_customFOV(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None), False, d.get("_id", None))  
             else:
                 raise Exception("Invalid Sensor FOV specified")
+
+            if(d.get("maneuverability", None)):
+                # Calculate the field-of-regard
+                manuv = d.get("maneuverability")
+                try:
+                    mv_type = ManueverType.get(manuv["@type"])
+                    if(mv_type is None):
+                        raise Exception('No manuever type specified. Specify either "CONE" or "ROLLONLY".')
+                    if(mv_type == 'FIXED' or mv_type == 'YAW180'):
+                        pass
+                    elif(mv_type == 'CONE'):
+                        mv_cone = 0.5 * float(manuv["fullConeAngle"])
+                    elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
+                        mv_ct_range = float(manuv["rollMax"]) - float(manuv["rollMin"])
+                    else:
+                        raise Exception('Invalid manuver type.')                
+                except:
+                    raise Exception("Error in obtaining manuever specifications.")                    
+
+                if(mv_type == 'FIXED'):
+                    fr_geom = fldofview._geometry
+                    fr_at = fldofview._AT_fov_deg
+                    fr_ct = fldofview._CT_fov_deg
+                
+                elif(mv_type == 'YAW180'):
+                    fr_geom = fldofview._geometry
+                    fr_at = fldofview._AT_fov_deg
+                    fr_ct = fldofview._CT_fov_deg
+
+                elif(mv_type == 'CONE'):
+                    if(fldofview._geometry == 'CONICAL'):
+                        fr_geom = 'CONICAL'
+                        fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
+                        fr_ct = fr_at
+
+                    elif(fldofview._geometry == 'RECTANGULAR'):
+                        fr_geom = 'CONICAL'
+                        diag_half_angle = numpy.rad2deg(numpy.arccos(numpy.cos(numpy.deg2rad(0.5*fldofview._AT_fov_deg))*numpy.cos(numpy.deg2rad(0.5*fldofview._CT_fov_deg))))
+                        fr_at = 2*(mv_cone +  diag_half_angle)
+                        fr_ct = fr_at
+
+                    else:
+                        raise Exception('Invalid FOV geometry')    
+
+                elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
+                    if(fldofview._geometry == 'CONICAL'):
+                        print("Approximating FOR as rectangular shape")
+                        fr_geom = 'RECTANGULAR'
+                        fr_at = 2*(fldofview._coneAngleVec_deg[0])
+                        fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
+
+                    elif(fldofview._geometry == 'RECTANGULAR'):
+                        fr_geom = 'RECTANGULAR'
+                        fr_at = fldofview._AT_fov_deg
+                        fr_ct = mv_ct_range + fldofview._CT_fov_deg
+                    else:
+                        raise Exception('Invalid FOV geometry')
+
+                if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
+                    fr_yaw180_flag = True
+                else:
+                    fr_yaw180_flag = False
+
+                if(fr_geom == 'CONICAL'):
+                    fldofreg = FieldOfView.from_conicalFOV(fr_at, fr_yaw180_flag, d.get("_id", None))
+                elif(fr_geom == 'RECTANGULAR'):
+                    # Get the cone and clock angles from the rectangular FOV specifications.
+                    fldofreg = FieldOfView.from_rectangularFOV(fr_at, fr_ct, fr_yaw180_flag, d.get("_id", None))
+                
+                return fldofreg
+            else:
+                # no manueverability specified, return just the calculated field-of-view
+                return fldofview
         
         def get_cone_clock_fov_specs(self):
             """ Function to the get the cone and clock angle vectors from the resepective FieldOfView object.
@@ -597,10 +687,7 @@ class MathUtilityFunctions:
               -3902.9606       5044.5548       0.0000000
         
         (The above is the ECI coordinates of the intersection of the equator and
-        Greenwich's meridian on 2002/03/09 21:21:21.021)
-
-        .. todo:: Verify if geodetic lat/lon is to be used instead of the current geocentric.
-             
+        Greenwich's meridian on 2002/03/09 21:21:21.021)             
         
         """
         lat = numpy.deg2rad(gcoord[0])
@@ -771,11 +858,8 @@ class MathUtilityFunctions:
              :rtype: bool
 
              .. note: The frame of reference for describing the object positions must be centered at spherical obstacle.
-
-             .. todo:: May need to add support for ellipsoidal shape of Earth.
         
-        """
-        
+        """        
         obstacle1_unitVec = MathUtilityFunctions.normalize(object1_pos)
         obstacle2_unitVec = MathUtilityFunctions.normalize(object2_pos)  
 

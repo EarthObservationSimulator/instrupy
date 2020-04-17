@@ -206,10 +206,6 @@ class TestFieldOfView(unittest.TestCase):
         with self.assertRaises(Exception):
             FieldOfView.from_json('{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 60 }')
 
-        # Test case with along-track fov greater than cross-track fov
-        with self.assertRaises(Exception):
-            FieldOfView.from_json('{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 60 , "crossTrackFieldOfView": 30}')
-
         # Test for out-of-range specification
         with self.assertRaises(Exception):
             FieldOfView.from_json('{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 30 , "crossTrackFieldOfView": 210}')

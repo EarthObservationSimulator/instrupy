@@ -25,13 +25,9 @@ For a more detailed conceptual overview refer: S. Nag, V. Ravindra, J.J. LeMoign
    :caption: Contents:
 
    instruments_description
-   input_satellite_states_access_desc
-   outputs_description
+   common_json_objects
    api_reference
    appendix
-
-.. note:: Auxillary script :mod:`check_code_style` is included to help developers make code adhering
-          to the default standards of :mod:`pycodestyle`.
 
 Indices and tables
 ==================

@@ -15,7 +15,6 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('../example_use_case'))
 
 # -- Project information -----------------------------------------------------
 
@@ -101,6 +100,12 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+# to fix long table-wdith problem
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # override wide tables in RTD theme
+        ],
+     }
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -184,11 +189,3 @@ intersphinx_mapping = {
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True 
-
-html_static_path = ['_static']
-
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }

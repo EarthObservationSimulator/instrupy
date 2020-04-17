@@ -21,7 +21,7 @@ Input JSON format specifications description
    mass, float, kilograms,Total mass of this entity.
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
-   orientation, :ref:`orientation_json_string`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
+   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
    dataRate, float, Megabits per s,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
    pulseWidth, float, seconds, Actual pulse width.
@@ -37,45 +37,23 @@ Input JSON format specifications description
    systemNoiseFigure, float, decibels, System noise figure for the receiver. 
    radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere.
    sigmaNEZ0threshold, float, decibels, The :math:`\sigma_{NEZ0}` threshold for classification as a valid observation.
-
-.. _synthetic_aperture_radar_csv_output:
-
-Synthetic Aperture Radar Level-0 CSV output file description
-=============================================================
-
-Description of the header elements:
-
-.. csv-table:: Level-0 output data-metrics description
-    :widths: 8,4,4,20
-    :header: Metric/Aux data,Data Type,Units,Description
-                                                                                                                                                                                                                         
-    :code:`Access From [JDUT1]`                      , float   , Julian Date UT1, Access from time
-    :code:`Access Duration [s]`                      , float   , seconds , Duration of access
-    :code:`POI index`                                , integer ,         , Index of ground-point.                                                                                                                                   
-    :code:`Coverage [T/F]`                           , string    ,         , Indicates if observation was  possible during the access event  (True/ False).                                                                           
-    :code:`Incidence Angle [deg]`                    , float   , degrees , Incidence angle at target point calculated assuming spherical Earth.                                                                                                                       
-    :code:`Swath-Width [m]`                          , float   , meters  , Swath-width of the strip of which  the imaged pixel is part off.                                                                                         
-    :code:`Sigma NEZ Nought [dB]`                    , float   , decibels, The backscatter coefficient of a  target for which the signal power level in final image is equal to the noise power level.  **Lesser is better.**       
-    :code:`Ground Pixel Along-Track  Resolution [m]` , float   , meters  , Along-track pixel resolution                                                                                                                             
-    :code:`Ground Pixel Cross-Track Resolution [m]`  , float   , meters  , Cross-track pixel resolution                                                                                                                             
-
-
-Example 
--------
-
-.. csv-table:: Basic Sensor typical data metrics example CSV output file
-   :header: Access From [JDUT1],Access Duration [s],POI index,Ground Pixel Along-Track Resolution [m],Ground Pixel Cross-Track Resolution [m],Sigma NEZ Nought [dB],Incidence angle [deg],Swath-width [km],Coverage [T/F]
-   :widths: 10,10,10,10,10,10,10,10,10
-
-    2458636.099819839,0.430776178837,0,2.2119895193094723,5191.424108924452,-62.1930195781922,0.006617391394361553,44.160809452464996,True
-    2458636.168546318,0.430776178837,0,2.2119895204877777,5324.762373152094,-62.30315683467477,0.006451684190133409,44.16080932581713,True
-    2458636.237272797,0.430776178837,0,2.2119895216361742,5465.130457250957,-62.41615989259542,0.006285977157196085,44.16080920238835,True
-    2458636.305999276,0.430776178837,0,2.2119895227546684,5613.099672872992,-62.53218213714776,0.006120269942440346,44.16080908217726,True
+   maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)                                                                                                                       
 
 .. _synthetic_aperture_radar_calc:
 
 Typical observation metrics calculation
 =========================================
+
+.. csv-table:: Observation data metrics table
+    :widths: 8,4,4,20
+    :header: Metric/Aux data,Data Type,Units,Description
+                                                                                                                                                                                                                                                                                                                                                          
+    Coverage [T/F], string,, Indicates if observation was  possible during the access event  (True/ False).                                                                           
+    Incidence Angle [deg], float, degrees, Incidence angle at target point calculated assuming spherical Earth.                                                                                                                       
+    Swath-Width [m], float, meters, Swath-width of the strip of which  the imaged pixel is part off.                                                                                         
+    Sigma NEZ Nought [dB], float, decibels, The backscatter coefficient of a  target for which the signal power level in final image is equal to the noise power level.  **Lesser is better.**       
+    Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                             
+    Ground Pixel Cross-Track Resolution [m], float, meters, Cross-track pixel resolution    
 
 Viewing geometry
 -----------------
@@ -85,7 +63,7 @@ See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewi
 Swath-width
 ------------
 .. warning:: While calculating swath width the instrument nominal look angle (not look angle to the target ground-pixel) 
-             must be used!!!!          
+             must be used.     
 
 *See [2] Pg 23 and 24 (Fig. 5.1.3.1)*
 
