@@ -266,56 +266,56 @@ class Instrument(Entity):
 ################################################### Legacy functions #################################################################    
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
  
-        ''' ########################## Legacy function, discontinued ########################## 
+        #  '''########################## Legacy function, discontinued ########################## 
         
-            Generate typical data metrics per access event, per grid-point. 
-            This function iteratively calls :code:`calc_typ_data_metrics` of the specified instrument type over all access events 
-            available in the input file.
-            CSV formatted files are supported to supply the required input data.
+        #     Generate typical data metrics per access event, per grid-point. 
+        #     This function iteratively calls :code:`calc_typ_data_metrics` of the specified instrument type over all access events 
+        #     available in the input file.
+        #     CSV formatted files are supported to supply the required input data.
 
-            :param POI_filepath: Filepath to CSV file containing lat/lon co-ordinates of points of interest along with index.
+        #     :param POI_filepath: Filepath to CSV file containing lat/lon co-ordinates of points of interest along with index.
 
-                                 First row contains the following header elements, and the following rows contain the data corresponding to these headers.
+        #                          First row contains the following header elements, and the following rows contain the data corresponding to these headers.
                                  
-                                 Description of the header elements:
+        #                          Description of the header elements:
                             
-                                 * :code:`POI`, Index of the point-of-interest.
-                                 * :code:`Lat [deg]`, :code:`Lon [deg]`, latitude, longitude of the point-of-interest.  
+        #                          * :code:`POI`, Index of the point-of-interest.
+        #                          * :code:`Lat [deg]`, :code:`Lon [deg]`, latitude, longitude of the point-of-interest.  
 
-                                 .. note:: Make sure the header titles are as specified above, and the delimiters are commas.
-            :paramtype POI_filepath: str
+        #                          .. note:: Make sure the header titles are as specified above, and the delimiters are commas.
+        #     :paramtype POI_filepath: str
 
              
-            :param AccessInfo_filepath: Filepath to CSV file containing data of access events and their time-intervals.
-                               First three rows convey general information. The fourth row conveys the Epoch in Julian Days UT1.
-                               The fifth row  contains the following header elements, and the following rows contain the data corresponding to these headers.
+        #     :param AccessInfo_filepath: Filepath to CSV file containing data of access events and their time-intervals.
+        #                        First three rows convey general information. The fourth row conveys the Epoch in Julian Days UT1.
+        #                        The fifth row  contains the following header elements, and the following rows contain the data corresponding to these headers.
 
-                               Description of the header elements:
+        #                        Description of the header elements:
                                 
-                               * :code:`AccessFrom[Days]`,  The time at which access starts in [days], referenced to epoch in row-4.
-                               * :code:`Duration[s]`, Duration of access in [s].
-                               * :code:`POI` indicating index of ground-point.
-                               * :code:`EventNum` indicating index of event.
-                               * :code:`Time[Days]`, Time in [Days] at which the alongside satellite-state is recorded. Referenced to the epoch specified in row-4.
-                               * :code:`X[km]`, :code:`Y[km]` :code:`Z[km]`, cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
-                               * :code:`VX[km/s]`, :code:`VY[km/s]`, :code:`VZ[km/s]`, velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
+        #                        * :code:`AccessFrom[Days]`,  The time at which access starts in [days], referenced to epoch in row-4.
+        #                        * :code:`Duration[s]`, Duration of access in [s].
+        #                        * :code:`POI` indicating index of ground-point.
+        #                        * :code:`EventNum` indicating index of event.
+        #                        * :code:`Time[Days]`, Time in [Days] at which the alongside satellite-state is recorded. Referenced to the epoch specified in row-4.
+        #                        * :code:`X[km]`, :code:`Y[km]` :code:`Z[km]`, cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane.
+        #                        * :code:`VX[km/s]`, :code:`VY[km/s]`, :code:`VZ[km/s]`, velocity of spacecraft in Earth Centered Inertial frame with equatorial plane.
 
 
-            :paramtype AccessInfo_filepath: str
+        #     :paramtype AccessInfo_filepath: str
 
-            :param Result_filepath: Filepath to CSV file in which the results are written
-                                Description of the header elements:
+        #     :param Result_filepath: Filepath to CSV file in which the results are written
+        #                         Description of the header elements:
                                 
-                               * :code:`POI` indicating index of ground-point.
-                               * :code:`Access From [JDUT1]`,  The time at which access starts in [JDUT1]
-                               * :code:`Duration [s]`, Duration of access in [s].
-                               * + other header elements specific to the instrument type
+        #                        * :code:`POI` indicating index of ground-point.
+        #                        * :code:`Access From [JDUT1]`,  The time at which access starts in [JDUT1]
+        #                        * :code:`Duration [s]`, Duration of access in [s].
+        #                        * + other header elements specific to the instrument type
 
-                               .. note:: this is an **output** file of the function
+        #                        .. note:: this is an **output** file of the function
             
-            :paramtype Result_filepath: str
+        #  ''':paramtype Result_filepath: str
 
-        '''
+        
         epoch_JDUT1 = pandas.read_csv(AccessInfo_filepath, skiprows = [0], nrows=1, header=None) # 2nd row contains the epoch
         epoch_JDUT1 = float(epoch_JDUT1[0][0].split()[2])
                 
@@ -363,7 +363,7 @@ class Instrument(Entity):
                 idx = idx + 1  
 
     def generate_level1_data_metrics(self, inFilePath, outFilePath):
-        """ ########################## Legacy function, discontinued ########################## """
+        ########################## Legacy function, discontinued ##########################
         
         # Concatenate all the level-0 metrics into a single data-frame
         level0_df = None
@@ -407,7 +407,7 @@ class Instrument(Entity):
         level1_metrics.to_csv(outFilePath, index=True, header = True, na_rep='nan')
 
     def generate_level2_data_metrics(self, inFilePath, outFilePath):
-        """ ########################## Legacy function, discontinued ########################## """
+        ########################## Legacy function, discontinued ##########################
 
         level1_df = pandas.read_csv(inFilePath)       
 
@@ -434,7 +434,7 @@ class Instrument(Entity):
 
 
     def generate_level1_coverage_metrics(self, missionDuration_days, inFilePath, outFilePath):
-        """ ########################## Legacy function, discontinued ########################## """
+        ########################## Legacy function, discontinued ##########################
         # Concatenate all the level-0 metrics into a single data-frame
         level0_df = None
 
@@ -520,7 +520,7 @@ class Instrument(Entity):
         level1_cov_df.to_csv(outFilePath, index=True, header = True, na_rep='nan')
 
     def generate_level2_coverage_metrics(self, inFilePath, outFilePath):
-        """ ########################## Legacy function, discontinued ########################## """
+        ########################## Legacy function, discontinued ##########################
 
         level1_df = pandas.read_csv(inFilePath)       
 

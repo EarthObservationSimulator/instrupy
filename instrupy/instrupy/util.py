@@ -148,6 +148,7 @@ class Constants(object):
     """
     radiusOfEarthInKM = 6378.137 # Nominal equatorial radius of Earth
     speedOfLight = scipy.constants.speed_of_light
+    GMe = 3.986004418e14*1e-9 # product of Gravitaional constant and Mass of Earth [km^3 s^-2]
     Boltzmann = scipy.constants.physical_constants['Boltzmann constant'][0]
     angularSpeedofEarthInRADpS = 7292115e-11 # WGS-84 nominal mean angular velocity of Earth
     Planck = scipy.constants.physical_constants['Planck constant'][0]

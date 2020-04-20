@@ -27,7 +27,7 @@ For a more detailed conceptual overview refer: S. Nag, V. Ravindra, J.J. LeMoign
    instruments_description
    common_json_objects
    api_reference
-   appendix
+   miscellaneous
 
 Indices and tables
 ==================

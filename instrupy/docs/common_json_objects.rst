@@ -1,6 +1,8 @@
 Common JSON Objects
 ********************
 
+This page contains description of the user-configurable JSON objects shared by the different instruments. 
+
 .. _orientation_json_obj:
 
 :code:`orientation` JSON object format
@@ -13,7 +15,7 @@ The instrument orientation is specified with respect to the Nadir-frame, where t
 * :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})` => aligned to Velocity vector of Satellite for circular orbits
 * :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in Earth-Fixed frame)
 
-The first subfield of the :code:`orientation` JSON string is the :code:`convention` subfield.
+The first subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type,Description
@@ -153,12 +155,12 @@ Example:
 .. _maneuverability_json_object:
 
 :code:`maneuverability` JSON object
-========================================
+####################################
 Total maneuverability of payload pointing (combining satellite and payload maneuverability). Four types of 
 maneuverability are accepted: `Fixed`, `Cone`, `RollOnly`, `Yaw180Roll` and should be indicated in the 
 :code:`@type` name, value pair. Please refer to :ref:`manuv_desc` for a complete description of the options.
 
-1. :code:`@type:Fixed`
+1. :code:`"@type":"Fixed"`
 
 This option indicates that the payload shall be fixed at it's nominal orientation (specified inside the :code:`instrument`
 JSON object). There is no maneuverability.
@@ -171,7 +173,7 @@ Example:
         "@type":"Fixed"
    }
 
-2. :code:`@type:Cone`
+2. :code:`"@type":"Cone"`
 
 This option indicates that the payload pointing axis can be manuvered inside a conical region of full-cone angle as indicated
 by the :code:`fullConeAngle` name, value pair. The axis of the cone is aligned to the nominal orientation of the instrument specified
@@ -192,7 +194,7 @@ Example:
         "fullConeAngle": 25
    }
 
-3. :code:`@type:RollOnly`
+3. :code:`"@type":"RollOnly"`
 
 This option indicates that the payload can be manuevered only along the roll axis (about the satellite velocity vector in Inertial frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
@@ -216,4 +218,26 @@ Example:
         "rollMax": 5
    }
 
-4. :code:`@type:Yaw180Roll`
+4. :code:`"@type":"Yaw180Roll"`
+
+This option is similar to the :code:`RollOnly` option, but also includes 180 deg manuver option about the yaw axis. 
+Such an option is expected for instruments which require a pure-side-looking target geometry.
+At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
+The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   rollMin, float, degrees, minimum roll angle
+   rollMax, float, degrees, maximum roll angle
+
+Example:
+
+.. code-block:: javascript
+   
+   "maneuverability":{
+        "@type":"Yaw180Roll",
+        "rollMin": -5,
+        "rollMax": 5
+   }

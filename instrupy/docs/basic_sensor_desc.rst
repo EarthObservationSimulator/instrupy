@@ -21,7 +21,7 @@ Input JSON format specifications description
 
 .. _basic_sensor_data_metrics_calc:
 
-Typical observation data metrics calculation
+Output observation data metrics calculation
 =============================================
 
 .. csv-table:: Observation data metrics table

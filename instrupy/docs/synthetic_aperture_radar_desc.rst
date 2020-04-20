@@ -22,6 +22,7 @@ Input JSON format specifications description
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
+   sceneLength2AltRatio, float, , Ratio of the scene length (in along-track direction) to the altitude. See :ref:`ifov_fov_scenefov_for_desc`.
    dataRate, float, Megabits per s,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
    pulseWidth, float, seconds, Actual pulse width.
@@ -41,7 +42,7 @@ Input JSON format specifications description
 
 .. _synthetic_aperture_radar_calc:
 
-Typical observation metrics calculation
+Output observation metrics calculation
 =========================================
 
 .. csv-table:: Observation data metrics table

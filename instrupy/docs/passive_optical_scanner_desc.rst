@@ -20,6 +20,7 @@ Input JSON format specifications description
    power, float, Watts, Nominal operating power.
    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
    fieldOfView, :ref:`fieldOfView_json_obj`, ,Field of view specification of instrument. Only field of view of :code:`"sensorGeometry": "RECTANGULAR"` is accepted.
+   sceneLength2AltRatio, float, , Ratio of the scene length (in along-track direction) to the altitude. See :ref:`ifov_fov_scenefov_for_desc`.
    dataRate, float, Mega-bits per s,Rate of data recorded during nominal operations.
    scanTechnique, string, ,Accepted values are ":code:`PUSHBROOM`" or ":code:`WHISKBROOM`" or ":code:`MATRIX_IMAGER`".
    numberOfDetectorsRowsAlongTrack, integer, ,Number of detector rows in along-track direction.
@@ -75,7 +76,7 @@ Input JSON format specifications description
 
 .. _passive_optical_scanner_data_metrics_calc:
 
-Typical observation metrics calculation
+Output observation metrics calculation
 ========================================================
 
  .. note:: See :ref:`synthetic_aperture_radar_glossary` for names of the variables used in any discussion below.
