@@ -1,5 +1,5 @@
-Common JSON Objects
-********************
+Common Input JSON Objects
+**************************
 
 This page contains description of the user-configurable JSON objects shared by the different instruments. 
 
@@ -98,7 +98,7 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
 2. :code:`"sensorGeometry": "RECTANGULAR"`
 
     .. csv-table:: Input parameter description 
-        :header: Parameter, Type,Description
+        :header: Parameter, Type, Description
         :widths: 10,10,40
 
         alongTrackFieldOfView, number, (full) along-track fov in degrees. 

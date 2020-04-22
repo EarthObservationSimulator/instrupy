@@ -9,15 +9,76 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="238.845mm"
-   height="77.440277mm"
-   viewBox="0 0 238.845 77.440276"
+   width="178.26453mm"
+   height="62.110958mm"
+   viewBox="0 0 178.26453 62.110957"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="instrupy_block_diagram.svg">
   <defs
      id="defs2">
+    <marker
+       inkscape:isstock="true"
+       style="overflow:visible"
+       id="marker1462"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1460"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:isstock="true"
+       style="overflow:visible"
+       id="marker1374"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1372"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:isstock="true"
+       style="overflow:visible"
+       id="marker1292"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path1290"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend"
+       style="overflow:visible"
+       inkscape:isstock="true"
+       inkscape:collect="always">
+      <path
+         id="path957"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
     <marker
        inkscape:stockid="EmptyTriangleOutL"
        orient="auto"
@@ -160,9 +221,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.49497475"
-     inkscape:cx="339.53792"
-     inkscape:cy="-71.785775"
+     inkscape:zoom="0.9899495"
+     inkscape:cx="381.02706"
+     inkscape:cy="40.324898"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -191,104 +252,110 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(17.12439,-95.693639)">
+     transform="translate(-8.2000147,-105.14303)">
     <rect
-       style="fill:none;fill-opacity:1;stroke:#3d5d00;stroke-width:4;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers stroke fill"
+       style="fill:none;fill-opacity:1;stroke:#3d5d00;stroke-width:3.24811101;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers stroke fill"
        id="rect815"
-       width="71.815475"
-       height="48.002975"
-       x="66.901787"
-       y="123.13094" />
+       width="63.747475"
+       height="35.658661"
+       x="68.129456"
+       y="129.97127" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="80.180862"
-       y="150.98862"
+       x="76.439087"
+       y="151.79042"
        id="text819"><tspan
          sodipodi:role="line"
          id="tspan817"
-         x="80.180862"
-         y="150.98862"
+         x="76.439087"
+         y="151.79042"
          style="stroke-width:0.26458332">InstruPy</tspan></text>
     <path
-       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker1374)"
        d="M 25.25697,135.5692 H 63.209242"
        id="path821"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2Lend-3)"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker1292)"
        d="M 25.222927,163.38285 H 63.1752"
        id="path821-1"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2Lend-9)"
-       d="m 140.28246,145.74306 h 37.95227"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker1462)"
+       d="m 132.87408,146.8014 h 37.95227"
        id="path821-6"
        inkscape:connector-curvature="0" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:6.3499999px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="-17.459253"
+       x="7.8651514"
        y="152.18306"
        id="text819-3"><tspan
          sodipodi:role="line"
          id="tspan817-6"
-         x="-17.459253"
+         x="7.8651514"
          y="152.18306"
          style="stroke-width:0.26458332">Satellite states </tspan><tspan
          sodipodi:role="line"
-         x="-17.459253"
+         x="7.8651514"
          y="160.12056"
          style="stroke-width:0.26458332"
-         id="tspan1332">during access period</tspan></text>
+         id="tspan1332">during access</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:6.3499999px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="-14.988156"
-       y="131.31302"
+       x="9.958272"
+       y="130.93504"
        id="text819-3-4"><tspan
          sodipodi:role="line"
-         x="-14.988156"
-         y="131.31302"
+         x="9.958272"
+         y="130.93504"
          style="stroke-width:0.26458332"
-         id="tspan1332-1">Access Intervals</tspan></text>
+         id="tspan1332-1">Access Data</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:6.3499999px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="145.78416"
-       y="130.21985"
+       x="140.26581"
+       y="125.83533"
        id="text819-3-4-2"><tspan
          sodipodi:role="line"
-         x="145.78416"
-         y="130.21985"
+         x="140.26581"
+         y="125.83533"
          style="stroke-width:0.26458332"
-         id="tspan1332-1-3">Typical data metrics</tspan><tspan
+         id="tspan914">Typical data</tspan><tspan
          sodipodi:role="line"
-         x="145.78416"
-         y="138.15735"
+         x="140.26581"
+         y="133.77283"
          style="stroke-width:0.26458332"
-         id="tspan1375">over each access period</tspan></text>
+         id="tspan1375">metrics during </tspan><tspan
+         sodipodi:role="line"
+         x="140.26581"
+         y="141.71033"
+         style="stroke-width:0.26458332"
+         id="tspan922">the access</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:6.3499999px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="64.735779"
-       y="100.54916"
+       x="61.900959"
+       y="109.99854"
        id="text819-3-4-4"><tspan
          sodipodi:role="line"
-         x="64.735779"
-         y="100.54916"
+         x="61.900959"
+         y="109.99854"
          style="stroke-width:0.26458332"
          id="tspan1332-1-4">Instrument specifications</tspan></text>
     <path
-       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2Lend-6)"
-       d="m 101.99339,102.808 -0.0668,17.43933"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="m 101.8989,112.8244 0.0277,12.71463"
        id="path821-9"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:3, 0.5;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#EmptyTriangleOutL)"
-       d="m 57.711076,99.367527 c -43.030393,-0.26727 -43.030393,0 -43.030393,0 v 22.450643"
+       d="m 59.506463,107.49402 c -17.04453,0.0162 -28.525557,0.0472 -28.525557,0.0472 l -0.04725,17.6787"
        id="path879"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccc" />
   </g>
 </svg>

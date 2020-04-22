@@ -16,6 +16,8 @@ Input JSON format specifications description
    :header: Parameter, Data type,Units,Description
    :widths: 10,10,8,40
 
+   @type, string, ,Must be *Synthetic Aperture Radar*
+   @id, string, , Unique identifier for the instrument.
    name, string, ,Full name of the instrument 
    acronym, string, ,Acronym or initialism or abbreviation.
    mass, float, kilograms,Total mass of this entity.

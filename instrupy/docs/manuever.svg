@@ -534,9 +534,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="538.53322"
-     inkscape:cy="-257.62245"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="452.24806"
+     inkscape:cy="133.43939"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -1060,8 +1060,8 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="24.504709"
-       y="273.77191"
+       x="-5.125226"
+       y="274.22137"
        id="text1790-1-0-2-0-9-1-8-5-1-82-4"
        transform="rotate(0.86911264)"
        inkscape:transform-center-x="33.032843"
@@ -1069,10 +1069,10 @@
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96"><tspan
          sodipodi:role="line"
-         x="24.504709"
-         y="273.77191"
+         x="-5.125226"
+         y="274.22137"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
-         id="tspan1102-6">RollOnly, Conical FOV =&gt; FOR is ~Rectangular </tspan></text>
+         id="tspan1102-6">RollOnly manuever, Conical FOV =&gt; FOR is ~Rectangular </tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.50000003, 1.50000008;stroke-dashoffset:0;stroke-opacity:1"
        d="m 56.130354,295.24795 v 62.34061"
@@ -1361,8 +1361,8 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="163.05586"
-       y="273.86038"
+       x="159.89732"
+       y="274.96677"
        id="text1790-1-0-2-0-9-1-8-5-1-82-4-9"
        transform="rotate(0.86911264)"
        inkscape:transform-center-x="33.032843"
@@ -1370,10 +1370,10 @@
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96"><tspan
          sodipodi:role="line"
-         x="163.05586"
-         y="273.86038"
+         x="159.89732"
+         y="274.96677"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
-         id="tspan1102-6-2">RollOnly, rectangular FOV =&gt; FOR is Rectangular </tspan></text>
+         id="tspan1102-6-2">RollOnly manuever, rectangular FOV =&gt; FOR is Rectangular </tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.50000003, 1.5000001;stroke-dashoffset:0;stroke-opacity:1"
        d="M 194.66317,296.37968 V 358.7203"

@@ -59,6 +59,10 @@ IFOV, FOV, Scene-FOV, FOR description
   the instrument at any instant of time. This applies for the case of manueverable payloads where the instrument orientation 
   can be changed.
 
+  .. warning:: After computing the access over grid-points using the FOR, just because a grid point is accessed (at some time), it 
+               does not imply that the sensor can be pointed to that grid-point. The grid-point can occur outside the maneuver zone and 
+               within the FOR perimeter.
+
 Illustrations
 ^^^^^^^^^^^^^^^
 

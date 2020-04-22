@@ -15,7 +15,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="ifov_fov_scanfov_for.svg">
+   sodipodi:docname="ifov_fov_scanfov_for.svg"
+   inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\instruments\instrupy\docs\scenefov_access.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs2">
     <marker
@@ -670,9 +673,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.8101934"
-     inkscape:cx="2242.2502"
-     inkscape:cy="-68.4033"
+     inkscape:zoom="0.64"
+     inkscape:cx="1829.274"
+     inkscape:cy="-14.732711"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"

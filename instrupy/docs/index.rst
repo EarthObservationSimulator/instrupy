@@ -6,22 +6,33 @@
 Welcome to InstruPy's documentation!
 ************************************
 
+InstruPy is a python package to calculate observation data metrics for a given instrument and associated access events. 
+
 .. figure:: instrupy_block_diagram.png
     :scale: 75 %
     :align: center
 
     The high-level function of the InstruPy package is shown in the figure. The package ingests 
-    access interval information and satellite states (time, position, velocity) information, and instrument
+    access data and satellite states (time, position, velocity) information, and instrument
     specifications (for which the access data is generated), and outputs typical data metrics of observations
-    made during the access interval.
+    made during the access.
 
-.. note:: For each access interval, it is assumed one observation image is built over the entire interval. Thus we get one set of 
-          observation metrics corresponding to the observation data taken over the entire interval.
+For a detailed description see the following articles: 
 
-For a more detailed conceptual overview refer: S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
+1. V. Ravindra, S. Nag, *"Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations",* IEEE Aerospace Conference, Big Sky, Montana, March 2020. 
+2. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
+
+
+To build and install the package:
+
+1. Navigate to the :code:`instruments/instrupy/` directory and run :code:`make`. 
+2. Run tests using the :code:`make runtest` command and get the *OK* message.
+
+Specifications of example instruments (in the required JSON format) is present in the 
+:code:`instrupy/examples/example_instrument_specs/` directory.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Contents:
 
    instruments_description
