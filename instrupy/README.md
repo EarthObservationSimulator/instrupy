@@ -1,5 +1,3 @@
-# Welcome to InstruPy's documentation!
-
 InstruPy is a python package to calculate observation data metrics for a given instrument and associated access events. 
 
 For a detailed description see the following articles: 

@@ -1,2 +1,1 @@
-# instruments
-Testing
+Please see `instrupy/README.md`
