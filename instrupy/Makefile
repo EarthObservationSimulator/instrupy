@@ -8,6 +8,10 @@ PROJECT := InstruPy
 
 .DEFAULT_GOAL := all
 
+DOC = docs
+
+.PHONY: docs docs_clean
+
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  all        to perform clean-up and installation"
@@ -18,7 +22,15 @@ help:
 	@echo "  clean      to remove *.pyc files and __pycache__ directories"
 	@echo "  bare       to uninstall the package and remove *egg*"
 
-all: bare install
+all: bare install docs
+
+docs: docs_clean #Build the documentation
+	-X=`pwd`; \
+	do echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make html; done
+
+docs_clean: 
+	-X=`pwd`; \
+	do echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make clean; done
 
 install:
 	pip install -e .
@@ -32,7 +44,7 @@ testlog:
 fulltest:
 	@nosetests --nologcapture -v --exe
 
-clean:
+clean: docs_clean
 	@echo "Cleaning up..."
 	@find . -name "*.pyc" -delete
 	@find . -type d -name __pycache__ -print0 | xargs -0 rm -rf

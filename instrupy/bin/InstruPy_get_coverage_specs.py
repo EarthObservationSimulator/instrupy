@@ -9,6 +9,7 @@ from instrupy.public_library import Instrument
 
 def main(input_json):
     '''
+        ##### Deprecated #####
         This module allows command line execution of the python function to extract from json input instrument specifications, OC understandable
         coverage specifications (also a json string).
 

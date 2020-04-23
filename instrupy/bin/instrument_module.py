@@ -10,6 +10,7 @@ from instrupy.public_library import Instrument
 
 
 def main(arch_dir):
+    ##### Deprecated #####
 
     poi_filepath = os.path.join(arch_dir, 'poi.csv')
     _AccessInfo_files = glob.glob(arch_dir+"/*_accessInfo.csv")

@@ -23,13 +23,24 @@ For a detailed description see the following articles:
 2. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
 
 
-To build and install the package:
+Install
+========
+
+Requires: :code:`python 3.8`, :code:`gfortran`
 
 1. Navigate to the :code:`instruments/instrupy/` directory and run :code:`make`. 
 2. Run tests using the :code:`make runtest` command and get the *OK* message.
 
-Specifications of example instruments (in the required JSON format) is present in the 
-:code:`instrupy/examples/example_instrument_specs/` directory.
+Find the documentation in: :code:`instruments/instrupy/docs/_build/html/user_json_desc.html`
+
+Examples
+=========
+
+* Specifications of example instruments (in the required JSON format) is present in the 
+  :code:`instrupy/examples/example_instrument_specs/` directory.
+
+* The folder :code:`instrupy/examples/` contains few examples generated upon execution of :code:`instrupy/bin/instrument_module` which
+  has been deprecated.
 
 .. toctree::
    :maxdepth: 2

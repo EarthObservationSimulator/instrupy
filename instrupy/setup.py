@@ -11,9 +11,7 @@ setup(
     author='BAERI',
     author_email='vinay.ravindra@nasa.gov',
     packages=['instrupy'],
-    scripts=[ # TODO: remove this? Does not seem to serve any purpose. 
-        'bin/InstruPy_get_coverage_specs.py',
-        'bin/instrument_module.py'
+    scripts=[ 
     ],
-    install_requires=['numpy', 'pandas', 'scipy', 'lowtran'] # TODO: Specify lowtran as dependency?
+    install_requires=['numpy', 'pandas', 'scipy', 'lowtran', 'sphinx', 'sphinx_rtd_theme'] # TODO: Specify lowtran as dependency?
 )

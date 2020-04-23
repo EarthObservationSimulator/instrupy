@@ -148,7 +148,7 @@ class Instrument(Entity):
 ################################################### Legacy functions #################################################################    
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
  
-        #  '''########################## Legacy function, discontinued ########################## 
+        #  '''############################### Deprecated ############################### 
         
         #     Generate typical data metrics per access event, per grid-point. 
         #     This function iteratively calls :code:`calc_typ_data_metrics` of the specified instrument type over all access events 
@@ -245,7 +245,7 @@ class Instrument(Entity):
                 idx = idx + 1  
 
     def generate_level1_data_metrics(self, inFilePath, outFilePath):
-        ########################## Legacy function, discontinued ##########################
+        ############################### Deprecated ###############################
         
         # Concatenate all the level-0 metrics into a single data-frame
         level0_df = None
@@ -289,7 +289,7 @@ class Instrument(Entity):
         level1_metrics.to_csv(outFilePath, index=True, header = True, na_rep='nan')
 
     def generate_level2_data_metrics(self, inFilePath, outFilePath):
-        ########################## Legacy function, discontinued ##########################
+        ############################### Deprecated ###############################
 
         level1_df = pandas.read_csv(inFilePath)       
 
@@ -316,7 +316,7 @@ class Instrument(Entity):
 
 
     def generate_level1_coverage_metrics(self, missionDuration_days, inFilePath, outFilePath):
-        ########################## Legacy function, discontinued ##########################
+        ############################### Deprecated ###############################
         # Concatenate all the level-0 metrics into a single data-frame
         level0_df = None
 
@@ -402,7 +402,7 @@ class Instrument(Entity):
         level1_cov_df.to_csv(outFilePath, index=True, header = True, na_rep='nan')
 
     def generate_level2_coverage_metrics(self, inFilePath, outFilePath):
-        ########################## Legacy function, discontinued ##########################
+        ############################### Deprecated ###############################
 
         level1_df = pandas.read_csv(inFilePath)       
 
