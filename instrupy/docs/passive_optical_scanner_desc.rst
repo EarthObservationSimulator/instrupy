@@ -20,13 +20,13 @@ Input JSON format specifications description
    mass, float, kilograms,Total mass of this entity.
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
-   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
+   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame.
    fieldOfView, :ref:`fieldOfView_json_obj`, ,Field of view specification of instrument. Only field of view of :code:`"sensorGeometry": "RECTANGULAR"` is accepted.
-   sceneLength2AltRatio, float, , Ratio of the scene length (in along-track direction) to the altitude. See :ref:`ifov_fov_scenefov_for_desc`.
-   dataRate, float, Mega-bits per s,Rate of data recorded during nominal operations.
+   numStripsInScene, int, , Number of consequetive scanned strips in a scene See :ref:`ifov_fov_scenefov_for_desc`.
+   dataRate, float, Mega-bits per s, Rate of data recorded during nominal operations.
    scanTechnique, string, ,Accepted values are ":code:`PUSHBROOM`" or ":code:`WHISKBROOM`" or ":code:`MATRIX_IMAGER`".
-   numberOfDetectorsRowsAlongTrack, integer, ,Number of detector rows in along-track direction.
-   numberOfDetectorsColsCrossTrack, integer, ,Number of detector columns in cross-track direction.
+   numberDetectorRowsAT, integer, ,Number of detector rows in along-track direction.
+   numberDetectorColsCT, integer, ,Number of detector columns in cross-track direction.
    Fnum, float, ,F-number/ F# of lens.
    focalLength, float, meters, Focal length of lens.
    operatingWavelength, float, meters, Center operating wavelength.
@@ -37,16 +37,17 @@ Input JSON format specifications description
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
    detectorWidth, float, meters,Width of detector element.
    apertureDia, float, meters, Telescope aperture diameter.
-   maxDetectorExposureTime, float, seconds, maximum exposure time on the detector elements.
+   maxDetectorExposureTime, float, seconds, maximum exposure time on the detector elements (optional parameter).
    snrThreshold, float,, Threshold value of SNR for observation to be classified as 'Valid'
-   considerAtmosLoss, bool,, True/False flag to specify if atmospheric losses should be taken into account using LOWTRAN 3rd party package. Defult is `False`.
+   considerAtmosLoss, bool,, True/False flag to specify if atmospheric losses should be taken into account using LOWTRAN 3rd party package. Default is `False`.
+   minRequiredAccessTime, float, seconds, Minimum required access time over a ground-point for observation to be possible. Required for matrix imagers.
    maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
 
 .. figure:: passive_scanner_aperture_figure.png
    :scale: 75 %
    :align: center
 
-   Diagram of rectangular aperture illustrating the input parameters :code:`numberOfDetectorsRowsAlongTrack`, :code:`numberOfDetectorsColsCrossTrack` and :code:`detectorWidth`.
+   Diagram of rectangular aperture illustrating the input parameters :code:`numberDetectorRowsAT`, :code:`numberDetectorColsCT` and :code:`detectorWidth`.
 
 .. warning:: Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
              The present version of the instrupy package does **not** check for the consistency of the values.
@@ -73,26 +74,22 @@ Input JSON format specifications description
                 :math:`F\#` is the F-number and :math:`D` is the aperture diameter.
 
 .. warning:: Note there is difference between **"ground-pixel"** and **"detectors"**. Detectors refer to the actual physical discrete sensing elements on the scanner aperture. While ground-pixels refer 
-             to the imaged pixels on the ground. Very often the number of detectors in the cross-track direction will be less than the number of ground-pixels in the cross-track direction because 
-             of the scanning technique applied.
+             to the imaged pixels on the ground. The number of detectors in the cross-track direction will be less than the number of ground-pixels in the cross-track direction in case of Whiskbroom scanners.
 
 .. _passive_optical_scanner_data_metrics_calc:
 
 Output observation metrics calculation
 ========================================================
 
- .. note:: See :ref:`synthetic_aperture_radar_glossary` for names of the variables used in any discussion below.
+ .. note:: See :ref:`passive_optical_scanner_glossary` for names of the variables used in any discussion below.
 
 .. csv-table:: Observation data metrics table
     :widths: 8,4,4,20
     :header: Metric/Aux data,Data Type,Units,Description 
                                                                                                                                                                                                   
-    Access From [JDUT1], float, Julian Date UT1, Access from time
-    Access Duration [s], float, seconds , Duration of access
-    POI index, integer ,, Index of point of interest
     Coverage [T/F], string,, Indicates if observation was  possible during the access event  (True/ False).                                                                        
     Noise-Equivalent delta T [K], float, Kelvin  , Noise Equivalent delta temperature. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
-    DR, float,, Dynamic Range. Is the quotient of the signal and read-out noise electrons the  sensor sees between dark and bright scenes.                            
+    DR, float,, Dynamic Range. Is the quotient of the signal and read-out noise electrons the sensor sees between dark and bright scenes.                            
     SNR, float,, Signal-to-Noise ratio                                                                                                                                 
     Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                          
     Ground Pixel Cross-Track Resolution [m] , float, meters, Cross-track pixel resolution 
@@ -104,38 +101,46 @@ See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewi
 
 Ground-pixel resolution calculations
 --------------------------------------
-Accurate only when ground-pixel is being imaged at Nadir or exactly perpendicular to the ground track.
+Accurate only when ground-pixel is being imaged at Nadir or at strictly sidelooking geometry to the ground track.
 
 :math:`\xi = \dfrac{d}{f}`
 
-:math:`\rho_{CT} = \xi \dfrac{R^{drv}}{\cos\theta_i^{drv}}`
+:math:`\rho_{CT} = \xi \dfrac{R}{\cos\theta_i}`
 
-:math:`\rho_{AT} = \xi R_{drv}`
+:math:`\rho_{AT} = \xi R`
 
+.. todo:: Update for the general target geometry. 
 
 Integration time calculation
 ----------------------------- 
+
+Let :math:`t_{acc}` be the total access time of the instrument over a ground-point. It can be calculated analytically as:
+      
+:math:`t_{acc} = \theta_{AT} \hspace{2mm} h/ v_g`
+
+.. todo:: Update access time calculation for general target geometry. Above formulation is valid only for the Nadir case or for strictly 
+          sidelooking geometry.
 
 PUSHBROOM
 ^^^^^^^^^^^^^^^^^^
 
 .. note:: Only one detector array (in cross-track) supported.
 
-:math:`T_i =  T^A_{To} - T^A_{from}`
+:math:`T_i =  t_{acc}`
 
 WHISKBROOM
 ^^^^^^^^^^^^^^^^^^
 
 .. note:: Only one detector array (in along-track) supported
 
-:math:`T_i =  \dfrac{( T^A_{To} - T^A_{from})  N_{pix}^{AT}}{N_{pix}^{CT}}`
+:math:`T_i =  \dfrac{t_{acc}  N_{pix}^{AT}}{N_{pix}^{CT}}`
 
 MATRIX_IMAGER
 ^^^^^^^^^^^^^^^^^^
 
-:math:`T_i =  T^A_{To} - T^A_{from}`
+:math:`T_i =  t_{acc}`
 
-If the calculated integration time is greater than the user-defined maximum detector exposure time, it is set to the maximum detector exposure
+If the calculated integration time is greater than the user-defined maximum detector exposure time, it is set to the user-defined maximum detector exposure
 time.
 
 :math:`if \hspace{2mm} T_i > T^{exp}_{max}, T_i =  T^{exp}_{max}`
@@ -152,7 +157,7 @@ Radiance with Earth as blackbody radiator
 Assume Earth (target under observation) is a black-body and a Lambertian surface, i.e. the radiance
 is independent of the angle. 
 
-:math:`L_{E} = \int_{\lambda_1}^{\lambda_2} L_{\lambda} \tau_{\lambda}^{atm} \cos\theta_i^{drv}`
+:math:`L_{E} = \int_{\lambda_1}^{\lambda_2} L_{\lambda} \tau_{\lambda}^{atm} \cos\theta_i`
 
 where the spectral radiance is given from Planks blackbody radiation equation,
 
@@ -162,12 +167,9 @@ where the spectral radiance is given from Planks blackbody radiation equation,
 Radiance with Earth as reflector of Solar energy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Assume Earth (target under observation) is a black-body and a Lambertian surface, i.e. the radiance
-is independent of the angle. Also assumed is that the reflectivity of the Earths surface is unity over all wavelength.
+Assume Sun is a blackbody with temperature 6000K. Also assumed is that the reflectivity of the Earths surface is unity over all wavelength.
 
 :math:`L_S =  \int_{\lambda_1}^{\lambda_2} L_{\lambda} \tau_{\lambda}^{atm}`
-
-.. note:: :math:`6000 \hspace{1mm} K` is used as the blackbody temperature of the Sun.
 
 .. note:: :math:`\tau_{\lambda}^{atm}` here considers the two-way atmospheric losses, i.e. Sun to Ground and Ground to Satellite. 
           Strictly speaking the Ground to Satellite atmospheric loss appears later, but mathematically either way the result
@@ -184,7 +186,7 @@ is independent of the angle. Also assumed is that the reflectivity of the Earths
 
 :math:`R^{dw}_S|_{ph} = L^{dw}_S A_{gp} \dfrac{\pi r_{Solar}^2}{|{\bf V_{Sun2T}}|^2}`
         
-:math:`R^{uw}_S|_{ph} = R^{dw}_S|_{ph} \cos\theta_i^{drv}` 
+:math:`R^{uw}_S|_{ph} = R^{dw}_S|_{ph} \cos\theta_i` 
 
 :math:`L^{uw}_S = \dfrac{R^{uw}_S|_{ph}}{4 \pi A_{gp}}`
  
@@ -235,20 +237,13 @@ Calculate number of signal electrons for a 1K raise in the temperature of observ
 Glossary
 ==========
 
-* :math:`\mathbf{S}`: Position vector of the satellite in the Earth-Centered-Inertial frame (equatorial-plane)
-* :math:`\mathbf{T}`: Position vector of the Target ground-point in the Earth-Centered-Inertial frame (equatorial-plane)
+* :math:`\mathbf{S}`: Position vector of the satellite in the ECI frame (equatorial-plane)
+* :math:`\mathbf{T}`: Position vector of the Target ground-point in the ECI frame (equatorial-plane)
 * :math:`\mathbf{R}`: Range vector from satellite to target ground point
 * :math:`\gamma`:  Look-angle to target ground point from satellite
 * :math:`\theta_i`: Incidence angle at the target ground point
-* :math:`R_E`: Nominal radius of Earth
 * :math:`h`: altitude of satellite
-* :math:`{\bf v_{sc}}`: Velocity of satellite in Earth-Centered-Inertial frame (equatorial plane)
-* :math:`{\bf R_{drv}}`: "derived" range-vector
-* :math:`{\bf S_{drv}}`: "derived" satellite position
-* :math:`\theta_i^{drv}`: Look-angle to target ground point from satellite "derived" position
-* :math:`\gamma^{drv}`: Incidence angle at the target ground point from satellite "derived" position
-* :math:`T_{obs}`: Observation time
-* :math:`T_{obs}^{drv}`: "derived" observation time
+* :math:`v_g`: Ground speed of satellite
 * :math:`\xi`: The instantaneous field-of-view / field-of-view of detector
 * :math:`d`: Detector width/ length (only square detectors allowed)
 * :math:`f`: Focal-length of lens
@@ -256,11 +251,12 @@ Glossary
 * :math:`\rho_{AT}`: Along-track ground-pixel resolution
 * :math:`T_i`: Integration time of ground-pixel
 * :math:`T^{exp}_{max}`: Maximum exposure time on detector
-* :math:`T^A_{To}`: Access time start of the ground-point
-* :math:`T^A_{from}`: Access time end of the the ground-point
+* :math:`t_{acc}`: Access time over the ground-point
+* :math:`\theta_{AT}`: Along-track FOV
+* :math:`\theta_{CT}`: Cross-track FOV
 * :math:`N_{pix}^{AT}`: Number of ground-pixels in along-track direction
 * :math:`N_{pix}^{CT}`: Number of ground-pixels in cross-track direction
-* :math:`L_{\lambda}`: Plancks spectral blackbody radiance equation
+* :math:`L_{\lambda}`: Plancks spectral blackbody radiance
 * :math:`\tau_{\lambda}^{atm}`: Wavelength dependent atmospheric loss (Target to Space) as computed by the software `LowTran-7`
 * :math:`L_{E}`: Radiance from Earth in the direction of target ground-pixel.
 * :math:`\lambda_{op}`: Operating center wavelength
@@ -269,10 +265,10 @@ Glossary
 * :math:`\Upsilon`: Planks constant
 * :math:`T`: Target equivalent blackbody temperature
 * :math:`k_B`: Boltzmann constant
-* :math:`\lambda`: wavelengths
-* :math:`{\bf P_{Sun}}`: position vector of Sun
+* :math:`\lambda`: wavelength
+* :math:`{\bf P_{Sun}}`: Position vector of Sun in ECI frame (equatorial-plane)
 * :math:`L_S`: The radiance from the Sun
-* :math:`{\bf V_{Sun2T}}`: Vector from Sun to Target in ECI frame
+* :math:`{\bf V_{Sun2T}}`: Vector from Sun to Target in ECI frame (equatorial-plane)
 * :math:`\theta_i^{Solar}`: Solar incidence angle at ground-pixel
 * :math:`A_{gp}`: Observation ground pixel area
 * :math:`L^{dw}_S`: Downwelling radiance at target observation ground-pixel
@@ -290,7 +286,7 @@ Glossary
 * :math:`N_r`: Number of read out noise electrons 
 * :math:`N_{t}`: Total number of noise electrons
 * :math:`N_{e,new}`: Number of signal electrons for 1K raise in temperature of observation ground pixel 
-* :math:`\Delta N`: Number of charge carriers for 1K temperature change
-* :math:`NE\Delta T`: Noise equivalent delta Temperature difference
+* :math:`\Delta N`: Change in number of charge carriers for 1K temperature change
+* :math:`NE\Delta T`: Noise equivalent delta temperature difference
 * :math:`r_{Solar}`: Solar radius
 

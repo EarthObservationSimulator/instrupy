@@ -15,7 +15,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="instrupy_block_diagram.svg">
+   sodipodi:docname="instrupy_block_diagram.svg"
+   inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\instruments\instrupy\docs\instrupy_block_diagram.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs2">
     <marker
@@ -222,7 +225,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.9899495"
-     inkscape:cx="381.02706"
+     inkscape:cx="87.577748"
      inkscape:cy="40.324898"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"

@@ -7,7 +7,6 @@
 
         1. Performance Limits for Synthetic Aperture Radar - second edition SANDIA Report 2006. ----> Main reference.
         2. Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993. ----> Reference for PRF validity calculations, corrections for spaceborne radar.
-
         
 """
 
@@ -46,7 +45,7 @@ class SyntheticApertureRadar(Entity):
         :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the SAR. A scene is made of multiple concatenated strips.
         :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView` 
 
-        :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload. If no manueverability is specified, FOR = FOV. The :code:`sceneFieldOfView` is used as the basis if available.
+        :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload.
         :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView` 
 
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
@@ -111,8 +110,7 @@ class SyntheticApertureRadar(Entity):
         :vartype L_atmos_dB: float
 
         .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NEZ0}`
-       
-   
+          
     """
     L_r = float(1.2)
     L_a = float(1.2)  
@@ -158,9 +156,9 @@ class SyntheticApertureRadar(Entity):
     @staticmethod
     def from_dict(d):
         """ Parses an instrument from a normalized JSON dictionary.
-        """
 
-        # Only side-looking orientation fo instrument suported for synthetic aperture radar stripmap imaging
+        """
+        # Only side-looking orientation of instrument suported for synthetic aperture radar stripmap imaging
         orien_json_str = d.get("orientation", None)
         if(FileUtilityFunctions.from_json(orien_json_str).get("convention",None) != "SIDE_LOOK"):
             raise Exception("Only side-looking orientation of instrument supported for the synthetic aperture radar imaging.")
@@ -181,9 +179,9 @@ class SyntheticApertureRadar(Entity):
         fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(along_track_fov_deg)+ ',"crossTrackFieldOfView":' + str(cross_track_fov_deg) + '}' 
         
         # initialize "Scene FOV" if required        
-        sceneLength2ALtRatio = d.get("sceneLength2AltRatio", None)
-        if(sceneLength2ALtRatio):
-            sc_AT_fov_deg = numpy.rad2deg(numpy.arctan(sceneLength2ALtRatio)) # approximate along_track_fov_deg
+        numStripsInScene = d.get("numStripsInScene", None)
+        if(numStripsInScene):
+            sc_AT_fov_deg = numStripsInScene * along_track_fov_deg
             sc_CT_fov_deg = cross_track_fov_deg
             sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
             scene_fov = FieldOfView.from_json(sc_fov_json_str)
@@ -271,11 +269,11 @@ class SyntheticApertureRadar(Entity):
                     
                       * :code:`Coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event.
                       * :code:`Sigma NEZ Nought [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final
-                        image is equal to the noise power level. 
-                      * :code:`Ground Pixel Along-Track Resolution [m]` (:class:`float`) Resolution on an hypothetical ground-pixel centered about observation point
-                      * :code:`Ground Pixel Cross-Track Resolution [m]` (:class:`float`) Resolution on an hypothetical ground-pixel centered about observation point
-                      * :code:`Swath-Width [m]` (:class:`float`) Swath-width of the strip of which the imaged pixel is part off.
-                      * :code:`Incidence Angle [deg]` (:class:`float`) Observation incidence angle at the ground-pixel.
+                        image is equal to the noise power level (units: decibels). 
+                      * :code:`Ground Pixel Along-Track Resolution [m]` (:class:`float`) Along-track resolution (meters) on an hypothetical ground-pixel centered about observation point
+                      * :code:`Ground Pixel Cross-Track Resolution [m]` (:class:`float`) Cross-track resolution (meters) on an hypothetical ground-pixel centered about observation point
+                      * :code:`Swath-Width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off. Corresponding to the nominal instrument orientation.
+                      * :code:`Incidence Angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
 
             :rtype: dict
 
@@ -298,7 +296,7 @@ class SyntheticApertureRadar(Entity):
         SpacecraftVelocity_kmps = numpy.array([SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]]) 
         v_sc_kmps = numpy.linalg.norm(SpacecraftVelocity_kmps)
         
-         #  Calculate range vector between spacecraft and POI (Target)
+        # Calculate range vector between spacecraft and POI (Target)
         range_vector_km = TargetPosition_km - SpacecraftPosition_km
 
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
@@ -329,49 +327,27 @@ class SyntheticApertureRadar(Entity):
               
         v_g_kmps = 1e-3 * MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km*1e3, SpacecraftVelocity_kmps*1e3) # This is approximation, since the image footprint velocity is not necessarily equal to the
                                                 # satellite footprint speed. However it is reasonable approximation in case of low-altitudes and small look angles. TBD: Improve the model.
-
                                   
-        instru_look_angle_rad = numpy.abs(numpy.deg2rad(self.orientation.y_rot_deg))
+        instru_look_angle_rad = numpy.abs(numpy.deg2rad(self.orientation.euler_angle2)) # nominal instrument look angle
 
-        f_P = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)
+        # Note that the nominal look angle is cnsidered to evaluate the operable PRF.
+        [f_P, W_gr] = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)
       
         isCovered = False
         rho_a = None
         rho_y = None
         sigma_N_dB = None
-        W_gr = None
         theta_i = None
 
-        if (f_P is not None): # Observation is possible at PRF = f_P        
+        if (f_P is not None): # Observation is (perhaps (since determined at nominal instrument look-angle)) possible at PRF = f_P        
             
             range_km = numpy.linalg.norm(range_vector_km)
             R = range_km*1e3
 
-
-            h = alt_km * 1e3
-            Rs = Re + h
-
             lamb = c/fc
 
-
-            # full swath imaging _mode meaning all the swath. My own formulation, not in reference.
-            # dimension of antenna along range direction
-            # NOTE: While calculating swath width the instrument nominal look angle must be used!!!! Not the Target look angle.            
-            theta_elv = lamb/ D_elv # half-power beamwidth illuminating the swath
-            gamma_n = instru_look_angle_rad - 0.5*theta_elv
-            gamma_f = instru_look_angle_rad + 0.5*theta_elv
-            theta_in = numpy.arcsin(numpy.sin(gamma_n)*Rs/Re)
-            theta_if = numpy.arcsin(numpy.sin(gamma_f)*Rs/Re)
-            alpha_n = theta_in - gamma_n
-            alpha_f = theta_if - gamma_f
-            alpha_s = alpha_f - alpha_n
-            W_gr = Re*alpha_s   
-
-            # look angle to target ground pixel [2] equation 5.1.3.4
             # Note that this is not the same as incidence angle to middle of swath
-
             theta_i = incidence_angle_rad
-
                             
             psi_g = numpy.pi/2.0 - theta_i # grazing angle                    
             
@@ -404,7 +380,7 @@ class SyntheticApertureRadar(Entity):
         obsv_metrics["Ground Pixel Cross-Track Resolution [m]"] = rho_y
         obsv_metrics["Sigma NEZ Nought [dB]"] = sigma_N_dB
         obsv_metrics["Incidence angle [deg]"] = numpy.rad2deg(theta_i) if theta_i is not None else numpy.nan
-        obsv_metrics["Swath-width [km]"] = W_gr/1e3 if W_gr is not None else numpy.nan        
+        obsv_metrics["(Nominal) Swath-width [km]"] = W_gr/1e3 if W_gr is not None else numpy.nan        
         obsv_metrics["Coverage [T/F]"] = isCovered
 
         return obsv_metrics
@@ -424,10 +400,8 @@ class SyntheticApertureRadar(Entity):
         [2] is the primary reference for this formulation, although some errors have been found (and corrected for the current
         implementation) in the text.
 
-        Of all the available valid PRFs, the highest PRF is chosen since it improves the :math:`\sigma_{NEZ0}` observation data-metric. 
-
-        .. warning:: Be careful to use the instrument look angle and not the target pixel look angle while calculating the swath-width
-                     and incidence angle to middle of the swath.
+        Of all the available valid PRFs, the highest PRF is chosen since it improves the :math:`\sigma_{NEZ0}` observation data-metric.
+        The near-range and far-range calculations are based on the nominal instrument look-angle. 
 
         """
         h = alt_km * 1e3
@@ -437,9 +411,8 @@ class SyntheticApertureRadar(Entity):
 
         lamb = c/fc        
 
-        # full swath imaging _mode meaning all the swath. My own formulation, not in reference.
-        # dimension of antenna along range direction
-        # NOTE: While calculating full swath width the instrument look angle must be used!!!! Not the Target look angle.
+        # full swath imaging-mode at nominal look-angle.
+        # NOTE: While calculating full swath width the instrument look angle is used!!!! Not the Target look angle.
         theta_elv = lamb/ D_elv # 3-dB beamwidth (full-beamwidth) illuminating the swath
         gamma_n = instru_look_angle_rad - 0.5*theta_elv
         gamma_f = instru_look_angle_rad + 0.5*theta_elv
@@ -447,8 +420,9 @@ class SyntheticApertureRadar(Entity):
         theta_if = numpy.arcsin(numpy.sin(gamma_f)*Rs/Re)
         alpha_n = theta_in - gamma_n
         alpha_f = theta_if - gamma_f
+        alpha_s = alpha_f - alpha_n
+        W_gr = Re*alpha_s  
 
-    
         # Preprocessing to check if PRF allows for unambiguous echo detection from swath W_gr        
         Rn = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_n)) # [2] equation 5.1.3.9 slant-range to near edge of swath
         Rf = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_f)) # [2] equation 5.1.3.10 slant-range to far edge of swath
@@ -456,10 +430,8 @@ class SyntheticApertureRadar(Entity):
         tau_near = 2*Rn/c # [2] equation 5.1.3.11
         tau_far = 2*Rf/c # [2] equation 5.1.3.12
 
-
         PRFmax = 1.0/(2.0*tau_p + tau_far - tau_near) # max allowble PRF [2] equation 5.1.3.13
         PRFmin = v_sc_kmps*1e3/SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
-
 
         f_P = None    
         # Find the highest possible prf within the input prf range which allows for unambiguous echo detection. 
@@ -478,9 +450,9 @@ class SyntheticApertureRadar(Entity):
                 PRFOK = False 
                 continue # goto next iteration of _f_P
                         
-            # perform second check of PRF validity, check that target echo is not eclipsed by naidr echo 
+            # perform second check of PRF validity, check that target echo is not eclipsed by nadir echo 
             # from any of the succeeding pulses (from the transmit pulse under consideration to the pulse 
-            # just before the echo
+            # just before the echo)
             # refer my notes for the nadir interference condition
             # inequality [2] 5.1.5.2 seems wrong. 
             tau_nadir = 2.0*h/c
@@ -490,9 +462,9 @@ class SyntheticApertureRadar(Entity):
                     PRFOK = False # there is nadir echo overlap with desired echo for the mth pulse
                     continue # goto next iteration of _f_P 
 
-            # If control has reached here and if PRFOK is still True, then this is a good PRF
+            # If control has reached here and if PRFOK is still True, then this is a valid PRF
             if(PRFOK == True):
                 f_P = _f_P
                 break
 
-        return f_P        
+        return [f_P, W_gr]        

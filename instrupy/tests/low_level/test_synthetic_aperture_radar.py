@@ -55,9 +55,9 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         self.assertEqual(self.microxsar.bitsPerPixel, 16)
         self.assertIsInstance(self.microxsar.bitsPerPixel, int)
         self.assertIsInstance(self.microxsar.orientation, Orientation)
-        self.assertEqual(self.microxsar.orientation.x_rot_deg, 0)
-        self.assertEqual(self.microxsar.orientation.y_rot_deg, 30)
-        self.assertEqual(self.microxsar.orientation.z_rot_deg, 0)
+        self.assertEqual(self.microxsar.orientation.euler_angle1, 0)
+        self.assertEqual(self.microxsar.orientation.euler_angle2, 30)
+        self.assertEqual(self.microxsar.orientation.euler_angle3, 0)
         self.assertEqual(self.microxsar.pulseWidth, 1e-6)
         self.assertIsInstance(self.microxsar.pulseWidth, float)
         self.assertEqual(self.microxsar.antennaAlongTrackDim, 4.9)
@@ -85,8 +85,8 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         self.assertEqual(self.microxsar.sigmaNEZ0threshold, -10)
         self.assertIsInstance(self.microxsar.sigmaNEZ0threshold, float)
         # along-track fov and cross-track fov are calculated from antenna size and initialized in the object
-        self.assertAlmostEqual(self.microxsar.fieldOfView.get_rectangular_fov_specs()[0], 0.3635, places = 2)
-        self.assertAlmostEqual(self.microxsar.fieldOfView.get_rectangular_fov_specs()[1], 2.5446, places = 2)
+        self.assertAlmostEqual(self.microxsar.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[0], 0.3635, places = 2)
+        self.assertAlmostEqual(self.microxsar.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[1], 2.5446, places = 2)
 
 
         
@@ -166,7 +166,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         D_az = 6
         D_elv = 1.75
         fc = 9.65e9
-        self.assertIsNone(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc))
+        self.assertIsNone(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0])
 
         # PRF max is 9331 Hz
         f_Pmin = 9331
@@ -179,7 +179,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         D_az = 6
         D_elv = 1.75
         fc = 9.65e9
-        self.assertIsNone(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc))
+        self.assertIsNone(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0])
 
         f_Pmin = 2500
         f_Pmax = 3000
@@ -191,7 +191,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         D_az = 6
         D_elv = 1.75 
         fc = 9.65e9
-        self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc), 3000)
+        self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0], 3000)
 
         f_Pmin = 2500
         f_Pmax = 4000
@@ -203,7 +203,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         D_az = 6
         D_elv = 1.75 
         fc = 9.65e9
-        self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc), 3916)
+        self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0], 3916)
 
         f_Pmin = 2500
         f_Pmax = 4500
@@ -215,7 +215,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         D_az = 6
         D_elv = 1.75 
         fc = 9.65e9
-        self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc), 4184)
+        self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0], 4184)
         
     
 

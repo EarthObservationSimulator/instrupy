@@ -7,35 +7,53 @@ This page contains description of the user-configurable JSON objects shared by t
 
 :code:`orientation` JSON object format
 ========================================
-The instrument orientation is specified with respect to the Nadir-frame, where the definition of Nadir-frame is as follows:
+At zero rotation, the instrument is aligned to the satellite body-frame which in turn is aligned to the Nadir-frame nominally. 
+Thus the instrument orientation with respect to the satellite body-frame is the same as it's orientation with respect to the Nadir-frame 
+in the scenario that the satellite body-frame is aligned to the Nadir-frame. It is also assumed that the instrument imaging axis is
+along the instrument z-axis.
+
+
+The definition of Nadir-frame is as follows:
 
 *Nadir-frame*
 
-* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in Earth-Fixed frame) => aligned to orbit plane normal
-* :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})` => aligned to Velocity vector of Satellite for circular orbits
-* :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in Earth-Fixed frame)
+* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in ECI frame) => aligned to orbit plane normal
+* :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})` => shall be aligned to Velocity vector of Satellite in case of circular orbits
+* :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in ECI frame)
 
 The first subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
 
 .. csv-table:: Input parameter description 
-   :header: Parameter, Type,Description
-   :widths: 10,10,40
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
 
-   convention, string, Accepted numbers are "SIDE_LOOK" and "XYZ".
+   convention, string,, "Accepted values are *NADIR*, *SIDE_LOOK* or *XYZ*."
 
 According to the specified :code:`convention`, other subfields materialize as follows:
 
-1. :code:`"convention": "SIDE_LOOK"`
+1. :code:`"convention": "NADIR"`
+
+If the orientation is aligned to the Nadir-frame:
+
+Example:
+
+.. code-block:: python
+
+               "orientation": {
+                                "convention": "NADIR"
+                              }
+
+2. :code:`"convention": "SIDE_LOOK"`
 
 If the orientation is to be specified via a side-look-angle, the following subfields apply:
 
 .. csv-table:: Input parameter description 
-   :header: Parameter, Type,Description
-   :widths: 10,10,40
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
 
-   sideLookAngle, number, Also commonly called as Nadir angle in degrees. 
+   sideLookAngle, number, degrees, Commonly called as nadir/ off-nadir angle. 
 
-.. note:: A positive SIDE_LOOK corresponds to anti-clockwise rotation applied around the to the Satellite velocity vector.
+.. note:: A positive SIDE_LOOK corresponds to anti-clockwise rotation applied around the Nadir frame y-axis.
 
 Example:
 
@@ -47,19 +65,20 @@ Example:
                               }
 
  
-2. :code:`"convention": "XYZ"`
+3. :code:`"convention": "XYZ"`
 
-Here the orientation is to be specified via set of three rotation angles about the instrument primary axis. 
+Here the orientation is to be specified via set of three rotation angles about the instrument primary axis (which is first aligned to the
+Nadir-frame in nominal case). 
 The order of (intrinsic) rotations is: (1) rotation about instrument X-axis, (2) rotation about instrument Y-axis and last 
 (3) rotation about instrument Z-axis.
 
 .. csv-table:: Input parameter description 
-   :header: Parameter, Type,Description
-   :widths: 10,10,40
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
 
-   xRotation, number, rotation about instrument X-axis in degrees
-   yRotation, number, rotation about instrument Y-axis is degrees
-   zRotation, number, rotation about instrument Z-axis in degrees
+   xRotation, number, degrees, rotation about instrument X-axis
+   yRotation, number, degrees, rotation about instrument Y-axis
+   zRotation, number, degrees, rotation about instrument Z-axis
 
 Example:
 
@@ -82,9 +101,9 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
 
     .. csv-table:: Input parameter description 
         :header: Parameter, Type,Description
-        :widths: 10,10,40
+        :widths: 10,10,10,40
 
-        fullConeAngle, number, Full cone angle in degrees. 
+        fullConeAngle, number, degrees, Full cone angle of the instrument FOV. 
 
     Example:
 
@@ -98,13 +117,11 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
 2. :code:`"sensorGeometry": "RECTANGULAR"`
 
     .. csv-table:: Input parameter description 
-        :header: Parameter, Type, Description
-        :widths: 10,10,40
+        :header: Parameter, Type, Units, Description
+        :widths: 10,10,10,40
 
-        alongTrackFieldOfView, number, (full) along-track fov in degrees. 
-        crossTrackFieldOfView, number, (full) cross-track fov in degrees.
-
-    .. note:: Specified along-track fov **must** be less than cross-track fov.
+        alongTrackFieldOfView, number, degrees, (full) along-track fov. 
+        crossTrackFieldOfView, number, degrees, (full) cross-track fov.
 
     Example:
 
@@ -132,11 +149,11 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
     cone angle for the point is :math:`atan2(y,x)`
 
     .. csv-table:: Input parameter description 
-        :header: Parameter, Type, Description
-        :widths: 10,10,40
+        :header: Parameter, Type, Units, Description
+        :widths: 10,10,10,40
 
-        customConeAnglesVector, string, array of cone angle (angle from Nadir vector) values separated by commas
-        customClockAnglesVector, string, array of clock values separated by commas
+        customConeAnglesVector, string, degrees, array of cone angle (angle from Nadir vector) values separated by commas
+        customClockAnglesVector, string, degrees, array of clock values separated by commas
 
     .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
               values in :code:`customConeAnglesVector` should be just one and no values in :code:`customClockAnglesVector`.

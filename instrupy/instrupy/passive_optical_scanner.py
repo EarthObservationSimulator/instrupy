@@ -15,7 +15,6 @@ import pandas, csv
 import sys
 from .util import Entity, EnumEntity, OrientationConvention, Orientation, SensorGeometry, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions
 
-
 class ScanTech(EnumEntity):
     """Enumeration of recognized passive optical scanner scanning techniques."""
     PUSHBROOM = "PUSHBROOM",
@@ -45,7 +44,6 @@ class PassiveOpticalScanner(Entity):
        :vartype power: float
 
        :ivar orientation: Orientation of the instrument with respect to Nadir-frame. 
-                          Only a *SIDE_LOOK* orientation is supported for passive optical scanner.
        :vartype orientation: :class:`instrupy.util.Orientation`
                                 
        :ivar fieldOfView: Field of view specification of instrument. 
@@ -54,7 +52,7 @@ class PassiveOpticalScanner(Entity):
        :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the instrument. A scene is made of multiple concatenated strips.
        :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView`  
 
-       :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload. If no manueverability is specified, FOR = FOV. The :code:`sceneFieldOfView` is used as the basis if available. 
+       :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload.
        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
        
        :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
@@ -63,11 +61,11 @@ class PassiveOpticalScanner(Entity):
        :ivar scanTechnique: Accepted values are "PUSHBROOM" or "WHISKBROOM" or "MATRIX_IMAGER".
        :vartype scanTechnique: str
         
-       :ivar numberOfDetectorsRowsAlongTrack: Number of detector rows in along-track direction
-       :vartype numberOfDetectorsRowsAlongTrack: int
+       :ivar numberDetectorRowsAT: Number of detector rows in along-track direction
+       :vartype numberDetectorRowsAT: int
 
-       :ivar numberOfDetectorsColsCrossTrack: Number of detector columns in cross-track direction
-       :vartype numberOfDetectorsColsCrossTrack: int
+       :ivar numberDetectorColsCT: Number of detector columns in cross-track direction
+       :vartype numberDetectorColsCT: int
 
        :ivar Fnum: F-number/ F# of lens
        :vartype Fnum: float
@@ -81,7 +79,7 @@ class PassiveOpticalScanner(Entity):
        :ivar bandwidth: Bandwidth of operation (m)
 
                         .. note:: It is assumed that the detector element supports the entire bandwidth with same quantum efficiency for all wavelengths.
-                                  Assumption maybe reasonable for narrow-bandwidths only.
+                                  Assumption maybe reasonable for narrow-bandwidths.
        
        :vartype bandwidth: float
 
@@ -112,6 +110,9 @@ class PassiveOpticalScanner(Entity):
        :ivar snrThreshold: Threshold value of SNR for observation to be classified as 'Valid'
        :vartype snrThreshold: float
 
+       :ivar minRequiredAccessTime: Minimum required access time in seconds over a ground-point for observation to be possible. Required for matrix imagers.
+       :vartype minRequiredAccessTime: float
+       
        :ivar considerAtmosLoss: Flag to specify that atmos loss is to be consdered. 
        :vartype considerAtmosLoss: bool
 
@@ -120,13 +121,13 @@ class PassiveOpticalScanner(Entity):
     """
 
     def __init__(self, name=None, acronym=None, mass=None,
-            volume=None, power=None,  orientation=None,
+            volume=None, power=None,  orientation = None,
             fieldOfView=None, sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, scanTechnique = None,
-            numberOfDetectorsRowsAlongTrack=None, numberOfDetectorsColsCrossTrack=None, apertureDia = None,
+            numberDetectorRowsAT=None, numberDetectorColsCT=None, apertureDia = None,
             Fnum = None, focalLength = None, 
             operatingWavelength = None, bandwidth = None, quantumEff = None, 
             opticsSysEff = None, numOfReadOutE = None, targetBlackBodyTemp = None,
-            bitsPerPixel = None, detectorWidth = None, snrThreshold = None, maxDetectorExposureTime= None, 
+            bitsPerPixel = None, detectorWidth = None, maxDetectorExposureTime= None, snrThreshold = None, minRequiredAccessTime = None,
             considerAtmosLoss= None, _id=None):
         """Initialize a PassiveOpticalScanner object.
 
@@ -136,14 +137,14 @@ class PassiveOpticalScanner(Entity):
         self.mass = float(mass) if mass is not None else None
         self.volume = float(volume) if volume is not None else None
         self.power = float(power) if power is not None else power
-        self.orientation = copy.deepcopy(orientation) if orientation is not None else None
+        self.orientation = copy.deepcopy(orientation) if orientation is not None else Orientation(0,0,0,1,2,3)
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
         self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None    
-        self.scanTechnique = ScanTech.get(scanTechnique)
-        self.numberOfDetectorsRowsAlongTrack = int(numberOfDetectorsRowsAlongTrack) if numberOfDetectorsRowsAlongTrack is not None else None
-        self.numberOfDetectorsColsCrossTrack = int(numberOfDetectorsColsCrossTrack) if numberOfDetectorsColsCrossTrack is not None else None
+        self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None   
+        self.numberDetectorRowsAT = int(numberDetectorRowsAT) if numberDetectorRowsAT is not None else None
+        self.numberDetectorColsCT = int(numberDetectorColsCT) if numberDetectorColsCT is not None else None
         self.apertureDia = float(apertureDia) if apertureDia is not None else None
         self.Fnum = float(Fnum) if Fnum is not None else None
         self.focalLength = float(focalLength) if focalLength is not None else None 
@@ -155,8 +156,9 @@ class PassiveOpticalScanner(Entity):
         self.targetBlackBodyTemp = float(targetBlackBodyTemp) if targetBlackBodyTemp is not None else None 
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.detectorWidth = float(detectorWidth) if detectorWidth is not None else None
-        self.maxDetectorExposureTime = float(maxDetectorExposureTime) if maxDetectorExposureTime is not None else None
         self.snrThreshold = float(snrThreshold) if snrThreshold is not None else None
+        self.maxDetectorExposureTime = float(maxDetectorExposureTime) if maxDetectorExposureTime is not None else None    
+        self.minRequiredAccessTime = float(minRequiredAccessTime) if minRequiredAccessTime is not None else None       
         self.considerAtmosLoss = bool(considerAtmosLoss) if considerAtmosLoss is not None else False # Set to False by default
 
         super(PassiveOpticalScanner,self).__init__(_id, "Passive Optical Scanner")
@@ -196,29 +198,23 @@ class PassiveOpticalScanner(Entity):
         # Only whiskbroom, pushbroom and step-and-stare scan techniques supported.
         if(_scan == "WHISKBROOM") or (_scan == "PUSHBROOM") or (_scan == "MATRIX_IMAGER"):
 
-            # Only side-looking orientation of instrument suported
-            orien_json_str = d.get("orientation", None)
-            orien_conv = OrientationConvention.get(FileUtilityFunctions.from_json(orien_json_str).get("convention",None))
-            if(orien_conv!= "SIDE_LOOK"):
-                raise Exception("Only side-looking orientation of instrument supported for the whiskbroom, pushbroom and step-and-stare scanning techniques")
-            
             # Only rectangular FOV specs supported
             fov_json_str = d.get("fieldOfView", None)
             fov_geometry = SensorGeometry.get(FileUtilityFunctions.from_json(fov_json_str).get("sensorGeometry",None))
             if(fov_geometry == "RECTANGULAR"):
 
                 if(_scan == "PUSHBROOM"):
-                    if(d.get("numberOfDetectorsRowsAlongTrack", None) != 1):
+                    if(d.get("numberDetectorRowsAT", None) != 1):
                         raise Exception("For PUSHBROOM scanning, only 1 detector-row of along-track detectors allowed.")
 
                 if(_scan == "WHISKBROOM"):
-                    if(d.get("numberOfDetectorsColsCrossTrack", None) != 1):
+                    if(d.get("numberDetectorColsCT", None) != 1):
                         raise Exception("For whiskbroom scanning only one detector-column in cross-track direction is allowed.")  
 
                 # initialize "Scene FOV" if required        
-                sceneLength2ALtRatio = d.get("sceneLength2AltRatio", None)
-                if(sceneLength2ALtRatio):                
-                    sc_AT_fov_deg = numpy.rad2deg(numpy.arctan(sceneLength2ALtRatio)) # approximate
+                numStripsInScene = d.get("numStripsInScene", None)
+                if(numStripsInScene):                
+                    sc_AT_fov_deg = numStripsInScene * float(fov_json_str["alongTrackFieldOfView"]) 
                     sc_CT_fov_deg = float(fov_json_str["crossTrackFieldOfView"]) 
                     sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
                     scene_fov = FieldOfView.from_json(sc_fov_json_str)
@@ -228,7 +224,7 @@ class PassiveOpticalScanner(Entity):
 
                 # initialize field-of-regard
                 if(sc_fov_json_str):
-                    fldofreg_str = {**sc_fov_json_str,  **{"maneuverability": d.get("maneuverability", None)}}
+                    fldofreg_str = {**json.loads(sc_fov_json_str),  **{"maneuverability": d.get("maneuverability", None)}}
                 else:
                     fldofreg_str = {**fov_json_str, **{"maneuverability": d.get("maneuverability", None)}}
 
@@ -251,8 +247,8 @@ class PassiveOpticalScanner(Entity):
                         scanTechnique = _scan,
                         opticsSysEff = d.get("opticsSysEff", None),
                         numOfReadOutE = d.get("numOfReadOutE", None),
-                        numberOfDetectorsRowsAlongTrack = d.get("numberOfDetectorsRowsAlongTrack", None),
-                        numberOfDetectorsColsCrossTrack = d.get("numberOfDetectorsColsCrossTrack", None),
+                        numberDetectorRowsAT = d.get("numberDetectorRowsAT", None),
+                        numberDetectorColsCT = d.get("numberDetectorColsCT", None),
                         detectorWidth = d.get("detectorWidth", None),
                         focalLength = d.get("focalLength", None),
                         apertureDia = d.get("apertureDia", None),
@@ -260,6 +256,7 @@ class PassiveOpticalScanner(Entity):
                         maxDetectorExposureTime = d.get("maxDetectorExposureTime", None),
                         snrThreshold = d.get("snrThreshold", None),
                         considerAtmosLoss = d.get("considerAtmosLoss", None),
+                        minRequiredAccessTime = d.get("minRequiredAccessTime", None),
                         _id = d.get("@id", None)
                         )
 
@@ -292,17 +289,20 @@ class PassiveOpticalScanner(Entity):
                       Dictionary keys are:  
                     
                       * :code:`Coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event.
-                      * :code:`Noise-Equivalent Delta T [K]` (:class:`float`) Noise-equivalent delta temperature
+                      * :code:`Noise-Equivalent Delta T [K]` (:class:`float`) Noise-equivalent delta temperature in Kelvin
                       * :code:`DR` (:class:`float`) Dynamic Range
                       * :code:`SNR` (:class:`float`) Signal-to_noise Ratio
-                      * :code:`Ground Pixel Along-Track Resolution [m]` (:class:`float`) Resolution of a hypothetical ground-pixel centered about observation point
-                      * :code:`Ground Pixel Cross-Track Resolution [m]` (:class:`float`) Resolution of a hypothetical ground-pixel centered about observation point
+                      * :code:`Ground Pixel Along-Track Resolution [m]` (:class:`float`) Spatial resolution of a hypothetical ground-pixel centered about observation point in meters
+                      * :code:`Ground Pixel Cross-Track Resolution [m]` (:class:`float`) Spatial resolution of a hypothetical ground-pixel centered about observation point in meters
 
             :rtype: dict
                      
             .. note:: We differentiate between **access** and **coverage**. **Access** is when the target location
                       falls under the sensor FOV. **Coverage** is when the target location falls under sensor FOV *and* 
                       can be observed.
+            
+            .. todo:: revise pixel resolution calculations. Current formula works only when sensor has a pure-sidelooking geometry with the ground-point.
+                      revise the analytical calculation of the access duration
                         
         '''        
         # Observation time in Julian Day UT1
@@ -326,15 +326,18 @@ class PassiveOpticalScanner(Entity):
 
         # Calculate FOV of a single detector, i.e. the IFOV
         iFOV_deg = numpy.rad2deg(self.detectorWidth / self.focalLength)
-        # Calculate the cross track spatial resolution of the ground-pixel, taking into account spherical Earth surface
+        # Calculate the cross track spatial resolution of the ground-pixel
         pixelSpatialRes_CT_m = numpy.deg2rad(iFOV_deg)*range_vec_norm_km*1.0e3/numpy.cos(incidence_angle_rad)
         # Calculate along-track spatial resolution of the ground-pixel
         pixelSpatialRes_AT_m = numpy.deg2rad(iFOV_deg)*range_vec_norm_km*1.0e3
         pixelArea_m2 = pixelSpatialRes_AT_m * pixelSpatialRes_CT_m                    
         
-        # Analytical calculation of the access duration from the satellite altitude.
-        accessDuration_s = numpy.deg2rad(self.fieldOfView.get_ATCT_fov()[0])*alt_km/ (MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km,SpacecraftVelocity_kmps) *1e-3) # analytical calculation of the access duration
-        Ti_s = PassiveOpticalScanner.calculate_integration_time(self.scanTechnique, self.numberOfDetectorsRowsAlongTrack, self.numberOfDetectorsColsCrossTrack, accessDuration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.get_rectangular_fov_specs()[1])
+        # Analytical calculation of the access duration from the satellite altitude (accurate as long as the observation is considered to be made at zero-pitch, and yaw is zero).
+        nadir_accessDuration_s = numpy.deg2rad(self.fieldOfView.get_ATCT_fov()[0])*alt_km/ (MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km,SpacecraftVelocity_kmps) *1e-3) # analytical calculation of the access duration
+        
+        # The analytically caclulated access duration at the nadir is given as input to the integration time caclulations
+        Ti_s = PassiveOpticalScanner.calculate_integration_time(self.scanTechnique, self.numberDetectorRowsAT, self.numberDetectorColsCT, nadir_accessDuration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[1])
+        
         Ne = PassiveOpticalScanner.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp, 
                                                                        self.apertureDia, self.opticsSysEff, self.quantumEff,  
                                                                        tObs_JDUT1, SpacecraftPosition_km, TargetPosition_km, pixelArea_m2, Ti_s,
@@ -387,7 +390,6 @@ class PassiveOpticalScanner(Entity):
 
         return obsv_metrics
 
-
     @staticmethod
     def calculate_integration_time(scanTechnique,numDetRowsAT, numDetColsCT, accessDuration_s, iFOV_deg,  maxDetectorExposureTime = None, crossTrack_fov_deg = None):
         """ Calculate integration time based on scanning method. 
@@ -401,7 +403,7 @@ class PassiveOpticalScanner(Entity):
             :param numDetColsCT: number of detector columns in cross-track direction, laid on the sensor image-plane.
             :paramtype numDetColsCT: int
 
-            :param accessDuration_s: access duration during which the image is built
+            :param accessDuration_s: access duration in seconds during which the image is built
             :paramtype accessDuration_s: float
 
             :param iFOV_deg: instantaneous (or) the field-of-view per detector element in degrees.
@@ -423,7 +425,7 @@ class PassiveOpticalScanner(Entity):
                 raise Exception("For pushbroom scanning only one detector-row in along-track direction is allowed.")    
             # integration time for pushbroom is same as that of the time taken by the 
             # satellite to go over one groundpixel in the along-track direction 
-            # For our case of single-row array of detectors, this is same as the access time.            
+            # For the case of single-row array of detectors, this is same as the access time.            
             Ti_s = accessDuration_s
 
         elif(scanTechnique == "WHISKBROOM"):
@@ -431,13 +433,13 @@ class PassiveOpticalScanner(Entity):
                 raise Exception("For whiskbroom scanning only one detector-column in cross-track direction is allowed.")  
             # For whiskbroom scanning, a single detector is used to scan across many cross-track ground-pixels
             # hence the integration time is a fraction of the access time over a single ground-pixel.
-            # Note that the total access time of the pixel is longer as the along-track FOV is increased due to (potentially) multiple along-track detectors on the array.
+            # Note that the total access time by a row of detectors corresponds to the total along-track FOV of the instrument (not just the AT-FOV of the single row of detectors)
             N_pixel_CT = crossTrack_fov_deg/ iFOV_deg
             Ti_s = accessDuration_s/ N_pixel_CT 
 
         elif(scanTechnique == "MATRIX_IMAGER"):
             # For MATRIX_IMAGER scanning the integration time at each detector is the total access time over the entire 2D scene imaged.
-            # Note that the total access time of the pixel is longer as the along-track FOV is increased due to  (potentially) multiple along-track detectors on the array.
+            # Note that the total access time by a row of detectors corresponds to the total along-track FOV of the instrument (not just the AT-FOV of the single row of detectors)
             Ti_s = accessDuration_s  
 
         else:
@@ -541,10 +543,10 @@ class PassiveOpticalScanner(Entity):
             :param bbT_K: black-body temperature [K]
             :paramtype bbT_K: float
 
-            :param obsIncAng_rad: observation incidence angle
+            :param obsIncAng_rad: observation incidence angle in radians
             :paramtype obsIncAng_rad: float
 
-            :param considerAtmosLoss: Flag to specify that atmos loss is to be consdered. 
+            :param considerAtmosLoss: Flag to specify if atmospheric loss is to be considered. 
             :paramtype considerAtmosLoss: bool
     
             :return: radiance from Earth [photons/s/m2/sr]
@@ -561,12 +563,11 @@ class PassiveOpticalScanner(Entity):
             raise Exception("Observation incidence angle should be in range -90 deg to 90 deg.")
         
         Lint_ER = PassiveOpticalScanner.planck_photon_integral_with_wavlen_dependent_atmos_loss_1((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), bbT_K, obsIncAng_rad, considerAtmosLoss)
+        
         # Assume Lambertian surface obeying Lambert's cosine law.
         Lint_ER = Lint_ER * numpy.cos(obsIncAng_rad)  
 
         return Lint_ER 
-
-
 
     @staticmethod
     def radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss):
@@ -581,10 +582,10 @@ class PassiveOpticalScanner(Entity):
             :param tObs_JDUT1: observation time [Julian Day UT1]
             :paramtype tObs_JDUT1: float
 
-            :param obs_pos_km: observer (satellite) position vector [km]. Must be referenced to ECI frame.
+            :param obs_pos_km: observer (satellite) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
             :paramtype obs_pos_km: list, float
 
-            :param tar_pos_km: target (observed ground pixel) position vector [km]. Must be referenced to ECI frame.
+            :param tar_pos_km: target (observed ground pixel) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
             :paramtype tar_pos_km: list, float
 
             :param obs_area_m2: area of observed target (m2)
@@ -695,7 +696,7 @@ class PassiveOpticalScanner(Entity):
         Lint = 0 # integrated radiance
         if(considerAtmosLoss is True):
             TR_SunPath = MathUtilityFunctions.get_transmission_Obs2Space(wav_low_m, wav_high_m, sun_zen_rad)
-            TR_ObsPath = MathUtilityFunctions.get_transmission_Obs2Space(wav_low_m, wav_high_m, sun_zen_rad)
+            TR_ObsPath = MathUtilityFunctions.get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zen_rad)
             
             trEff_SunPath = TR_SunPath['transmission'][0].values[:,0]
             trEff_ObsPath = TR_ObsPath['transmission'][0].values[:,0]
@@ -722,7 +723,7 @@ class PassiveOpticalScanner(Entity):
 
             :returns: integrated radiance from supplied wavelength to zero-wavelegnth (photons/s/m2/sr)
                       
-                      .. warning:: note that it is **not** from supplied wavelegnth to infinity wavelength.
+                      .. warning:: note that it is **not** from supplied wavelength to infinity wavelength.
 
             :rtype: float
         

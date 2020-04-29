@@ -6,7 +6,11 @@ Miscellaneous
 Satellite to Target viewing geometry
 =============================================
 
-.. figure:: space_viewing_geometry_SandiaReport.png
+.. figure:: target_geom.png
+    :scale: 75 %
+    :align: center
+
+    Satellite-to-target geometry illustration
 
 *   :math:`\mathbf{R = T - S}`
 *   :math:`\gamma = \cos^{-1}(\mathbf{\dfrac{R}{|R|}} \cdot \mathbf{\dfrac{-S}{|S|}})`
@@ -16,11 +20,11 @@ Assuming spherical Earth of radius :math:`R_E`
 
 where,
 
-* :math:`\mathbf{S}`: Position vector of the satellite in the Earth-Centered-Inertial frame (equatorial-plane)
-* :math:`\mathbf{T}`: Position vector of the target ground-point in the Earth-Centered-Inertial frame (equatorial-plane)
+* :math:`\mathbf{S}`: Position-vector of the satellite in the Earth-Centered-Inertial frame (equatorial-plane)
+* :math:`\mathbf{T}`: Position-vector of the target ground-point in the Earth-Centered-Inertial frame (equatorial-plane)
 * :math:`\mathbf{R}`: Range vector from satellite to target ground point
 * :math:`\gamma`:  Look-angle to target ground point from satellite
-* :math:`\theta_i`: Incidence angle at the target ground point
+* :math:`\theta_i`: Incidence-angle at the target ground point
 * :math:`R_E`: Nominal equatorial radius of Earth
 * :math:`h`: altitude of satellite
 
@@ -38,18 +42,16 @@ IFOV, FOV, Scene-FOV, FOR description
 
 * **SceneFOV:** Instruments with narrow along-track FOV such as in the case of pushbroom scanners and SARs, build an observation 
   "scene" by scanning narrow strips along the direction of movement of the spacecraft. Hence a scene is built from multiple 
-  concatenated strips. By defining a parameter called as the :code:`sceneLen2AltRatio` we can approximate the FOV of such instruments
-  to be rectangular such that the along-track FOV = atan(:code:`sceneLen2AltRatio`). The cross-track FOV is the same as the original
-  instrument cross-track FOV. By defining the parameter :code:`sceneLen2AltRatio`, the along-track FOV is made independent of the 
-  altitude at which the spacecraft is flown, but the length of the scene shall vary according to the altitude. A key fallout of 
-  defining the SceneFOV is that, the SceneFOV corresponds to a finite length of time (scanning time). 
+  concatenated strips. By defining a parameter called as the :code:`numStripsInScene` we can approximate the sceneFOV of such instruments
+  to be rectangular such that the along-track FOV = instrument along-track FOV * :code:`numStripsInScene`. The cross-track FOV is the same as the original
+  instrument cross-track FOV.  A key fallout of defining the SceneFOV is that, the SceneFOV corresponds to a certain length of scanning time. 
   
   Eg: Landsat TIRS (pushbroom) has along-track FOV of 141 urad. Swath width (corresponding to cross-track FOV = 15 deg) is 185 km.
 
-  1.  Specifying (h . sceneLength2AltRatio = 100km) gives the along-track sceneFOV = 8.1689 deg.
+  1.  Specifying :code:`numStripsInScene = 1011` gives the along-track sceneFOV = 8.1689 deg,
       (Hence 185km x 100km scene size). Scan time is 14s.
   
-  2.  Specifying (h . sceneLength2AltRatio = 10km) gives the along-track sceneFOV = 0.8185 deg.
+  2.  Specifying :code:`numStripsInScene = 101` gives the along-track sceneFOV = 0.8185 deg.
       185km x 10km scene size.  Scan time is 1.4s. 
 
 .. note:: Even though the original FOV of the instrument maybe rectangular, the resulting SceneFOV is only approximately rectangular
@@ -84,26 +86,6 @@ Illustrations
 
     FOV/SceneFOV vs FOR illustration for the case of a possible -22.5 deg to 45 deg roll of satellite.
 
-Access calculations when SceneFOV concept is applied
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Access calculations for the instruments characterized by the SceneFOV shall result in longer access intervals. The access results need 
-to be *corrected*. For example, consider a SAR instrument pointing sideways as shown in the figure below. The along-track FOV is narrow
-corresponding to narrow strips, and a scene is built from concatenated strips. A SceneFOV is associated with the SAR and is used for access 
-calculation over the grid point shown in the figure. Say the propagation time-step is 1s as shown in the figure. An acccess interval between
-t=100s to t=105s is registered. However as shown the actual access takes place over a small interval of time at t=103.177s. 
-
-An approximation can be applied (i.e. correction is made) that the observaton time of the ground point is at the middle of the access
-interval rounded of to the nearest propgation time as calculated using the SceneFOV, i.e. :math:`t=((105-100)/2) % 1 = 103s`. The state 
-of the spacecraft at :math:`t=103s` is utilized for the data-metrics calculation.
-
-
-.. figure:: scenefov_access.png
-    :scale: 75 %
-    :align: center
-
-    Need for *correction* for access calculations done using sceneFOV 
-
 .. _purely_side_looking:
 
 Purely Side Looking Instruments
@@ -119,7 +101,6 @@ takes place by imaging of consequetive strips and building a scene, a *SceneFOV*
     :align: center
 
     SAR pure side looking geometry illustration.
-
 
 .. _manuv_desc:
 
@@ -148,7 +129,6 @@ a FOR is calculated as described below.
         * Retangular FOV sensor: FOR is conical with cone angle = manuver cone angle + half diagonal angle of the rectangular FOV
 
         where half diagonal angle of the rectangular FOV = acos( cos(along-track FOV/2) . cos(cross-track FOV/2) )
-
 
 4. :code:`"@type":"RollOnly"`
 
@@ -183,29 +163,7 @@ a FOR is calculated as described below.
     :align: center
 
     Illustration of RollOnly maneuver for conical and rectangular FOV instruments
-  
-Glossary of terms used in the package
-======================================
 
-Pixels vs Detectorsx
-
-Pixels: Refer to ground pixels imaged. Dimensions vary according to imaging geometry.
-
-Detectors: Refer to physical detector elements on the imaging aperture.
-
-Access vs Coverage
-
-satellite, spacecraft
-
-target
-
-observation incidence angle for the case of non-radars
-
-
-Coding Conventions
-===================
-
-* variables denoting physical quantities, unless otherwise indicated are always in S.I. units.
 
 
 

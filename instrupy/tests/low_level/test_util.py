@@ -62,37 +62,37 @@ class TestOrientation(unittest.TestCase):
         o = Orientation.from_json('{"convention": "SIDE_look","sideLookAngle":10}')
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
-        self.assertEqual(o.y_rot_deg, 10)
+        self.assertEqual(o.euler_angle2, 10)
         o = Orientation.from_json('{"convention": "XYz","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
-        self.assertEqual(o.y_rot_deg, 360-10.4)
+        self.assertEqual(o.euler_angle2, 360-10.4)
 
 
     def test_from_json_sideLookAngle_convention(self):
         # Test for positive angle less than 360 deg
         o = Orientation.from_json('{"convention": "SIDE_LOOK","sideLookAngle":10}')
-        self.assertEqual(o.x_rot_deg, 0)
-        self.assertEqual(o.y_rot_deg, 10)
-        self.assertEqual(o.z_rot_deg, 0)
+        self.assertEqual(o.euler_angle1, 0)
+        self.assertEqual(o.euler_angle2, 10)
+        self.assertEqual(o.euler_angle3, 0)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
 
         # Test for negative angle
         o = Orientation.from_json('{"convention": "SIDE_LOOK","sideLookAngle":-10}')
-        self.assertEqual(o.x_rot_deg, 0)
-        self.assertEqual(o.y_rot_deg, 350)
-        self.assertEqual(o.z_rot_deg, 0)
+        self.assertEqual(o.euler_angle1, 0)
+        self.assertEqual(o.euler_angle2, 350)
+        self.assertEqual(o.euler_angle3, 0)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
 
         # Test for positive angle greater than 360 deg
         o = Orientation.from_json('{"convention": "SIDE_LOOK","sideLookAngle":380}')
-        self.assertEqual(o.y_rot_deg, 20)
+        self.assertEqual(o.euler_angle2, 20)
 
         # Test for negative angle less than -360 deg
         o = Orientation.from_json('{"convention": "SIDE_LOOK","sideLookAngle":-380}')
-        self.assertEqual(o.y_rot_deg, 340)
+        self.assertEqual(o.euler_angle2, 340)
 
         # Test for no convention specification
         with self.assertRaises(Exception):
@@ -103,17 +103,17 @@ class TestOrientation(unittest.TestCase):
         
         # Test for positive, negative angles
         o = Orientation.from_json('{"convention": "XYZ","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
-        self.assertEqual(o.x_rot_deg, 10)
-        self.assertEqual(o.y_rot_deg, 349.6)
-        self.assertEqual(o.z_rot_deg, 20.78)
+        self.assertEqual(o.euler_angle1, 10)
+        self.assertEqual(o.euler_angle2, 349.6)
+        self.assertEqual(o.euler_angle3, 20.78)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
 
         # Test for positive angles greater than 360 deg, negative angles lesser than -360 deg
         o = Orientation.from_json('{"convention": "XYZ","xRotation":410,"yRotation":1045.8,"zRotation":-458}')
-        self.assertEqual(o.x_rot_deg, 50)
-        self.assertAlmostEqual(o.y_rot_deg, 325.8)
-        self.assertEqual(o.z_rot_deg, 262)
+        self.assertEqual(o.euler_angle1, 50)
+        self.assertAlmostEqual(o.euler_angle2, 325.8)
+        self.assertEqual(o.euler_angle3, 262)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
 
@@ -214,36 +214,36 @@ class TestFieldOfView(unittest.TestCase):
         with self.assertRaises(Exception):
             FieldOfView.from_json('{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": -1110 , "crossTrackFieldOfView": 50}')
 
-    def test_get_rectangular_fov_specs(self):
+    def test_get_rectangular_fov_specs_from_custom_fov_specs(self):
         
         # Test for typical cases
         o = FieldOfView.from_json('{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 15 , "crossTrackFieldOfView": 15}')
         self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs()[0], 15)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs()[1], 15)
+        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[0], 15)
+        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[1], 15)
         
 
         # Test edge case with small along-track fov
         o = FieldOfView.from_json('{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 0.1 , "crossTrackFieldOfView": 30}')
         self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs()[0], 0.1)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs()[1], 30)
+        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[0], 0.1)
+        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[1], 30)
 
         # Test with instance being initialized using the "CUSTOM" sensorGeometry specification.
         
         o = FieldOfView.from_json('{"sensorGeometry": "CUSTOM", "customConeAnglesVector": [30,30,30,30] , "customClockAnglesVector": [20,160,200,-20]}')
         self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs()[0], 19.693103879668154)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs()[1], 56.96247656267892)
+        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[0], 19.693103879668154)
+        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[1], 56.96247656267892)
         
 
         # Check for cases when the FIeldOFView instance does not correspond to a rectangular fov
         with self.assertRaises(Exception):
             o = FieldOfView.from_json('{"sensorGeometry": "CONICAL", "fullConeAngle": 20}')
-            o.get_rectangular_fov_specs()
+            o.get_rectangular_fov_specs_from_custom_fov_specs()
         with self.assertRaises(Exception):
             o = FieldOfView.from_json('{"sensorGeometry": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
-            o.get_rectangular_fov_specs()
+            o.get_rectangular_fov_specs_from_custom_fov_specs()
 
 
 class TestMathUtilityFunctions(unittest.TestCase):

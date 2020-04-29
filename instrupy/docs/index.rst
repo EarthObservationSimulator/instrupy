@@ -22,7 +22,6 @@ For a detailed description see the following articles:
 1. V. Ravindra, S. Nag, *"Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations",* IEEE Aerospace Conference, Big Sky, Montana, March 2020. 
 2. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
 
-
 Install
 ========
 
@@ -50,6 +49,33 @@ Examples
    common_json_objects
    api_reference
    miscellaneous
+
+Glossary of terms used in the package
+======================================
+
+* Instrument, payload and sensor are synonymous.
+
+* Grid-point, ground-point are target-point synonymous.
+
+* Pixels vs Detectors
+      
+      Pixels: Refer to ground pixels imaged. Dimensions vary according to imaging geometry.
+      Detectors: Refer to physical detector elements on the imaging aperture.
+
+* Access vs Coverage
+
+      While access refers to a target falling under a sensor FOV, coverage includes an additional condition that the satellite
+      should be able to be make an observation. 
+
+* Satellite, spacecraft are synonymous.
+
+* Observation incidence angle is synonymus with the elevation angle at the target. 
+
+
+Coding Conventions
+===================
+
+* Variables denoting physical quantities, unless otherwise indicated are always in S.I. units.
 
 Indices and tables
 ==================

@@ -13,5 +13,5 @@ setup(
     packages=['instrupy'],
     scripts=[ 
     ],
-    install_requires=['numpy', 'pandas', 'scipy', 'lowtran', 'sphinx', 'sphinx_rtd_theme'] # TODO: Specify lowtran as dependency?
+    install_requires=['numpy', 'pandas', 'scipy', 'lowtran', 'nose', 'sphinx', 'sphinx_rtd_theme'] 
 )

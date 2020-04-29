@@ -8,7 +8,6 @@ References:
 
  .. note:: See :ref:`synthetic_aperture_radar_glossary` for names of the variables used in any discussion below.
 
-
 Input JSON format specifications description
 ===============================================
 
@@ -24,7 +23,7 @@ Input JSON format specifications description
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
-   sceneLength2AltRatio, float, , Ratio of the scene length (in along-track direction) to the altitude. See :ref:`ifov_fov_scenefov_for_desc`.
+   numStripsInScene, int, , Number of consequetive scanned strips in a scene. See :ref:`ifov_fov_scenefov_for_desc`.
    dataRate, float, Megabits per s,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
    pulseWidth, float, seconds, Actual pulse width.
@@ -51,10 +50,10 @@ Output observation metrics calculation
     :widths: 8,4,4,20
     :header: Metric/Aux data,Data Type,Units,Description
                                                                                                                                                                                                                                                                                                                                                           
-    Coverage [T/F], string,, Indicates if observation was  possible during the access event  (True/ False).                                                                           
+    Coverage [T/F], string,, Indicates if observation was possible during the access event (True/ False).                                                                           
     Incidence Angle [deg], float, degrees, Incidence angle at target point calculated assuming spherical Earth.                                                                                                                       
-    Swath-Width [m], float, meters, Swath-width of the strip of which  the imaged pixel is part off.                                                                                         
-    Sigma NEZ Nought [dB], float, decibels, The backscatter coefficient of a  target for which the signal power level in final image is equal to the noise power level.  **Lesser is better.**       
+    (Nominal) Swath-Width [m], float, meters, Swath-width of the strip of which the imaged pixel is part-off. Corresponding to the nominal instrument orientation.                                                                                         
+    Sigma NEZ Nought [dB], float, decibels, The backscatter coefficient of a target for which the signal power level in final image is equal to the noise power level.**Lesser is better.**       
     Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                             
     Ground Pixel Cross-Track Resolution [m], float, meters, Cross-track pixel resolution    
 
@@ -63,16 +62,15 @@ Viewing geometry
 
 See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewing geometry parameters.
 
-Swath-width
-------------
-.. warning:: While calculating swath width the instrument nominal look angle (not look angle to the target ground-pixel) 
-             must be used.     
+(Nominal) Swath-width
+----------------------
+.. warning:: While calculating swath width the instrument look angle (not look angle to the target ground-pixel) 
+             must be used. Since the calculation below uses the *nominal* instrument look-angle, the result is 
+             labelled as (Nominal) Swath-width.     
 
 *See [2] Pg 23 and 24 (Fig. 5.1.3.1)*
 
-:math:`R_S = R_E + h`
-
-:math:`\gamma_I = \theta_{roll}`       
+:math:`R_S = R_E + h`   
 
 :math:`\gamma_n = \gamma_I - 0.5 \hspace{1mm} \theta_{elv}`
 
@@ -101,6 +99,9 @@ From *[2] equation (5.3.6.3)* we get the minimum possible azimuth resolution (fo
 
 :math:`\rho_a = \dfrac{D_{az}}{2} \dfrac{v_g}{v_s}`
 
+.. note:: It is assumed that the generated target geometry (from the satellite position and the target position) is such that the 
+          instrument sees the ground-pixel at a strictly side-look geometry. 
+
 :math:`\sigma_{NEZ0}` calculations
 -----------------------------------
 
@@ -128,14 +129,12 @@ Use *[1] equation 8*, find :math:`G_A`
 
 .. note:: :math:`v_s` is to be used here. See [2] for more explanation.
 
-.. todo:: Write documentation about calculation of image-footprint velocity
-
 Auxillary calculations
 =========================================
 
 Field-of-View calculations
 ---------------------------
-The antenna is assumed to be planar with dimensions :math:`D_{az} \hspace{1mm} \times \hspace{1mm} D_{elv}`. The along-track and cross-track 
+The antenna is assumed to be planar with dimensions :math:`D_{az} \hspace{1mm} D_{elv}`. The along-track and cross-track 
 beamwidth is calculated as: 
 
 :math:`\theta_{az} = \lambda / D_{az}`,     *[1] (eqn 41)*  
@@ -150,6 +149,10 @@ Checking validity of pulse repetition frequency (PRF)
 The user supplies a range of operable PRFs of the SAR instrument. Depending on the orbit conditions (the altitude of satellite
 in our case) a usable/ valid PRF has to be selected for target observation. [2] is the primary reference for this formulation, although some errors have been found (and corrected for the current
 implementation) in the text. 
+
+.. warning:: The nominal orientation of the instrument is considered while evaluating the near range and far range and hence the operable PRF. If
+             the actual instrument look-angle is different, the selected PRF may not be correct.  
+
 The below conditions need to be satisfied:
 
 1. The length of the echo from 3-dB antenna beam illuminated swath is less than inter-pulse period. See [2] Pg 22, 23 and 24.
@@ -158,11 +161,11 @@ The below conditions need to be satisfied:
 
     :math:`R_f = \sqrt(R_E^2 + R_S^2 - 2 R_E R_S \cos\alpha_f))` 
             
-    :math:`\tau_{near} = 2*Rn/c`
+    :math:`\tau_{near} = 2\hspace{1mm}Rn/c`
 
-    :math:`\tau_{far} = 2*Rf/c` 
+    :math:`\tau_{far} = 2\hspace{1mm}Rf/c` 
 
-    :math:`PRF_{MAX} = 1.0/(2.0*\tau_p + \tau_{far} - \tau_{near})` 
+    :math:`PRF_{MAX} = 1.0/(2.0\hspace{1mm}\tau_p + \tau_{far} - \tau_{near})` 
 
 2. The PRFs are high enough to allow for unambiguous detection of doppler shifts.
 
@@ -174,7 +177,7 @@ The below conditions need to be satisfied:
 
     :math:`\dfrac{N-1}{\tau_{near}-\tau_p} < f_P  < \dfrac{N}{\tau_{far} + \tau_p}` *[2] inequality 5.1.4.1*
 
-4. The echo from Nadir (or a previous transmit pulse) doesn't overlap with the desired echo. Nadir echo is very strong
+4. The echo from Nadir (or a previous transmit pulse) doesn't overlap with the desired echo. Nadir echo is strong
    (even though the antenna gain in the Nadir direction maybe small) since the range to Nadir is small.
 
     .. warning:: [2] inequality 5.1.5.2 which gives the Nadir interference condition seems wrong. 
@@ -182,7 +185,7 @@ The below conditions need to be satisfied:
 
     :math:`\tau_{nadir} = \dfrac{2 h}{c}`
 
-    :math:`M = int(f_P \dfrac{2 R_f}{c}) + 1`
+    :math:`M = \textrm{int}(f_P \dfrac{2 R_f}{c}) + 1`
 
     :math:`1 <= m <= M`
 
@@ -202,12 +205,9 @@ Glossary
 .. note:: The same variable names as in the references are followed as much as possible. However it becomes difficult when merging the formulation in
           case of multiple references. 
 
-* :math:`\mathbf{S}`: Position vector of the satellite in the Earth-Centered-Inertial frame (equatorial-plane)
-* :math:`\mathbf{T}`: Position vector of the Target ground-point in the Earth-Centered-Inertial  (equatorial-plane)
-* :math:`\mathbf{R}`: Range vector from satellite to target ground pixel
-* :math:`\gamma`:  Look-angle to target ground pixel from satellite
+* :math:`\mathbf{R_S}`: Distance to the satellite from origin in the ECI (equatorial-plane) frame 
 * :math:`\theta_i`: Incidence angle at the target ground pixel
-* :math:`R_E`: Nominal radius of Earth
+* :math:`R_E`: Nominal equatorial radius of Earth
 * :math:`c`: speed of light
 * :math:`h`: altitude of satellite
 * :math:`D_{az}`: Dimension of antenna in along-track direction
@@ -216,7 +216,8 @@ Glossary
 * :math:`\theta_{az}`: Beamwidth of antenna in along-track direction
 * :math:`\theta_{elv}`: Beamwidth of antenna in cross-track direction
 * :math:`\gamma_I`: Instrument look angle 
-* :math:`\theta_{roll}`: Roll angle of the instrument, assuming the instrument is aligned to spacecraft body frame, which in turn is aligned to the *nadir-frame*
+* :math:`R_n`: Slant-range to near edge of swath
+* :math:`R_f`: Slant-range to far edge of swath
 * :math:`\gamma_n`: Look angle to nearest part of swath
 * :math:`\gamma_f`: Look angle to farthest part of swath
 * :math:`\theta_{in}`: Incidence angle to nearest part of swath
@@ -224,8 +225,6 @@ Glossary
 * :math:`\alpha_n`: Core angle of nearest part of swath
 * :math:`\alpha_f`: Core angle of farthest part of swath
 * :math:`W_{gr}`: Swath-width 
-* :math:`\theta_{im}`: Incidence angle to middle of swath
-* :math:`\gamma_m`: Look angle to middle of swath
 * :math:`\rho_a`: Azimuth resolution
 * :math:`\rho_y`: Ground (projected) cross-range resolution
 * :math:`\psi_g`: Grazing angle to target ground pixel
@@ -239,8 +238,6 @@ Glossary
 * :math:`G_A`: Gain of antenna
 * :math:`v_s`: Velocity of satellite
 * :math:`v_g`: Ground velocity of satellite footprint
-* :math:`R_n`: Slant-range to near edge of swath
-* :math:`R_f`: Slant-range to far edge of swath
 * :math:`\tau_{near}`: Time of return of echo (from transmit time) from the near end of swath
 * :math:`\tau_{far}`:  Time of return of echo (from transmit time) from the far end of swath
 * :math:`PRF_{MAX}`: Maximum allowable PRF

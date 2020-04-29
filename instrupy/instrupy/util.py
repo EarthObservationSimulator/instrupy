@@ -1,12 +1,12 @@
 """ 
 .. module:: util
 
-:synopsis: *Object models and methods for base classes and other utilities.*
+:synopsis: *Utility classes and functions for the :class:`instrupy` package.*
 
 """
 from __future__ import division 
 import json
-import numpy
+import numpy as np
 import math
 from enum import Enum
 from numbers import Number
@@ -142,8 +142,7 @@ class EnumEntity(str, Enum):
             except: return None
 
 class Constants(object):
-
-    """ Enumeration of various constants used by package **Instrupy**. Unless indicated otherwise, the constants 
+    """ Enumeration of various constants. Unless indicated otherwise, the constants 
         are in S.I. units. 
     """
     radiusOfEarthInKM = 6378.137 # Nominal equatorial radius of Earth
@@ -166,40 +165,60 @@ class ManueverType(EnumEntity):
 class OrientationConvention(EnumEntity):
     """Enumeration of recognized instrument orientation conventions."""
     XYZ = "XYZ"
+    NADIR = "NADIR"
     SIDE_LOOK = "SIDE_LOOK"
 
 class Orientation(Entity):
     """ Class to handle instrument orientation.
         Orientation is maintained internally via three rotation angles in the following order, xRotation -> yRotation -> zRotation, (intrinsic) with respect to "**Nadir-frame**" (A GMAT defined term). 
 
+        At zero rotation, the instrument is aligned to the satellite body-frame which in turn is aligned to the Nadir-frame nominally. 
+        Thus the instrument orientation with respect to the satellite body-frame is the same as it’s orientation with respect to the 
+        Nadir-frame in the scenario that the satellite body-frame is aligned to the Nadir-frame. It is also assumed that the instrument
+        imaging axis is along the instrument z-axis.
+
         **Nadir-frame:**
-        * :math:`\\bf X_{nadir}` axis: :math:`-({\\bf Z_{nadir}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in Earth-Fixed frame) => aligned to orbit-plane normal
+        * :math:`\\bf X_{nadir}` axis: :math:`-({\\bf Z_{nadir}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in ECI-frame) => aligned to orbit-plane normal
         * :math:`\\bf Y_{nadir}` axis: :math:`({\\bf Z_{nadir}} \\times {\\bf X_{nadir}})` => aligned to Velocity vector of Satellite for circular orbits
-        * :math:`\\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to Center of Earth in Earth-Fixed frame)
+        * :math:`\\bf Z_{nadir}` axis: Aligned to Nadir vector (position vector of satellite in ECI frame)
 
         It is also assumed that the instrument imaging axis is along the instrument z-axis.
      
-        :ivar x_rot_deg: (deg) Rotation about X-axis
-        :vartype x_rot_deg: float
+        :ivar euler_angle1: (deg) Rotation about X-axis
+        :vartype euler_angle1: float
 
-        :ivar y_rot_deg: (deg) Rotation about Y-axis
-        :vartype y_rot_deg: float
+        :ivar euler_angle2: (deg) Rotation about Y-axis
+        :vartype euler_angle2: float
 
-        :ivar z_rot_deg: (deg) Rotation about Z-axis
-        :vartype z_rot_deg: float
+        :ivar euler_angle3: (deg) Rotation about Z-axis
+        :vartype euler_angle3: float
+
+        :ivar euler_seq1: Axis number to be rotated the first time.
+        :vartype euler_angle1: int
+
+        :ivar euler_seq2: Axis number to be rotated the second time.
+        :vartype euler_angle2: int
+
+        :ivar euler_seq3: Axis number to be rotated the third time.
+        :vartype euler_angle3: int
+
+        .. todo:: Add support to rotations specified by other Euler sequences (currently only 1,2,3 is supported.).
     
     """
-    def __init__(self, xRotation = None, yRotation = None, zRotation = None, _id = None):
-        self.x_rot_deg = float(xRotation)%360 if xRotation is not None else None 
-        self.y_rot_deg = float(yRotation)%360  if yRotation is not None else None 
-        self.z_rot_deg = float(zRotation)%360  if zRotation is not None else None 
+    def __init__(self, euler_angle1, euler_angle2, euler_angle3, euler_seq1 = int(1), euler_seq2 = int(2), euler_seq3 = int(3), _id = None):
+        self.euler_angle1 = float(euler_angle1)%360 
+        self.euler_angle2 = float(euler_angle2)%360 
+        self.euler_angle3 = float(euler_angle3)%360
+        self.euler_seq1 = euler_seq1
+        self.euler_seq2 = euler_seq2
+        self.euler_seq3 = euler_seq3
         super(Orientation, self).__init__(_id, "Orientation")
     
     @classmethod
-    def from_sideLookAngle(cls, side_look_angle_deg = None, _id = None):
+    def from_sideLookAngle(cls, side_look_angle_deg, _id = None):
         ''' Translate side-look-angle user input parameter to internal instrument orientation specs.
         
-        :param side_look_angle_deg: Side look angle, also commonly called as Nadir angle in degrees. A positive angle corresponds to anti-clockwise rotation applied around the satellite velocity vector.
+        :param side_look_angle_deg: Side look angle, also commonly called as nadir/ off-nadir angle in degrees. A positive angle corresponds to anti-clockwise rotation applied around the instrument y-axis.
         :paramtype side_look_angle_deg: float
 
         :param _id: Unique identifier
@@ -209,14 +228,14 @@ class Orientation(Entity):
         :rtype: :class:`instrupy.util.Orientation`
 
         '''
-        return Orientation(0.0, side_look_angle_deg, 0.0, _id)
+        return Orientation(0.0, side_look_angle_deg, 0.0, 1,2,3,_id)
     
     @classmethod
-    def from_XYZ_rotations(cls,  xRotation = None, yRotation = None, zRotation = None, _id = None):
+    def from_XYZ_rotations(cls,  xRotation, yRotation, zRotation, _id = None):
         ''' Translate XYZ user input parameter to internal instrument orientation specs. 
-            Orientation is specified via three rotation angles, xRotation -> yRotation -> zRotation, with respect to Nadir-frame.
+            Orientation is specified via three rotation angles, xRotation -> yRotation -> zRotation..
 
-        .. note:: This orientation specification convention input to this function is same as the internal class orientation convention specification.   
+        .. note:: This orientation specification convention input to this function is same as the GMAT-OC orientation convention specification.   
         
         :ivar x_rot_deg: (deg) Rotation about X-axis
         :vartype x_rot_deg: float
@@ -228,7 +247,7 @@ class Orientation(Entity):
         :vartype z_rot_deg: float`
 
         '''
-        return Orientation(xRotation, yRotation, zRotation, _id)       
+        return Orientation(xRotation, yRotation, zRotation, 1,2,3,_id)       
         
     @staticmethod
     def from_dict(d):
@@ -242,6 +261,8 @@ class Orientation(Entity):
             return Orientation.from_XYZ_rotations(xRotation = d.get("xRotation", None), yRotation = d.get("yRotation", None), zRotation = d.get("zRotation", None), _id = d.get("@id", None))
         elif(_orien == "SIDE_LOOK"):
             return Orientation.from_sideLookAngle(d.get("sideLookAngle", None), d.get("@id", None))
+        elif(_orien == "NADIR"):
+            return Orientation.from_sideLookAngle(0, d.get("@id", None))
         else:
             raise Exception("Invalid or no Orientation convention specification")
             
@@ -252,7 +273,7 @@ class SensorGeometry(EnumEntity):
     CUSTOM = "CUSTOM"
 
 class FieldOfView(Entity):
-        """ Class to handle instrument field-of-view specifications.
+        """ Class to handle instrument field-of-view, field-of-regard specifications.
         The Sensor FOV is maintained internally via vector of cone and clock angles. This is the same definition as that of :class:`CustomSensor` class definition in the GMAT-OC code.
        
         :ivar _geometry: Geometry of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
@@ -279,8 +300,7 @@ class FieldOfView(Entity):
                   have just one :code:`clockAnglesVec_deg[0] = 1/2 full_cone_angle_deg` and no corresponding clock angle. 
         """
         def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, 
-                     AT_fov_deg = None, CT_fov_deg = None, yaw180_flag = None, _id = None):
-                       
+                     AT_fov_deg = None, CT_fov_deg = None, yaw180_flag = None, _id = None):                       
 
             if(coneAnglesVec_deg):
                 if(isinstance(coneAnglesVec_deg, list)):
@@ -312,7 +332,8 @@ class FieldOfView(Entity):
             """  Return corresponding :class:`instrupy.util.FieldOfView` object.
 
                 .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
-                          values in :code:`customConeAnglesVector` should be just one and no values in :code:`customClockAnglesVector`.
+                          values in :code:`customConeAnglesVector` should be just one (corresponding to CONICAL Sensor) and no values in 
+                          :code:`customClockAnglesVector`.
             
             """
             if(coneAnglesVec_deg):
@@ -333,9 +354,9 @@ class FieldOfView(Entity):
                 
             if(not(len(coneAnglesVec_deg) == 1 and (clockAnglesVec_deg is None))):
                 if(len(coneAnglesVec_deg) != len(clockAnglesVec_deg)):
-                    raise Exception("With more than one cone angle specified, the length of cone angle vector should be the same as length fo the clock angle vector.")
+                    raise Exception("With more than one cone angle specified, the length of cone angle vector should be the same as length of the clock angle vector.")
                 
-            return FieldOfView("CUSTOM", coneAnglesVec_deg, clockAnglesVec_deg, _id)
+            return FieldOfView("CUSTOM", coneAnglesVec_deg, clockAnglesVec_deg, None, _id)
 
         @classmethod
         def from_conicalFOV(cls, full_cone_angle_deg = None, yaw180_flag = False, _id = None):
@@ -357,7 +378,7 @@ class FieldOfView(Entity):
             if(full_cone_angle_deg < 0 or full_cone_angle_deg > 180):
                 raise Exception("Specified full-cone angle of CONICAL sensor must be within the range 0 deg to 180 deg")
 
-            return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, full_cone_angle_deg, full_cone_angle_deg, _id)
+            return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, full_cone_angle_deg, full_cone_angle_deg, yaw180_flag, _id)
 
         @classmethod
         def from_rectangularFOV(cls, along_track_fov_deg = None, cross_track_fov_deg = None, yaw180_flag = False, _id = None):
@@ -376,17 +397,12 @@ class FieldOfView(Entity):
             :return: Corresponding `FieldOfView` object
             :rtype: :class:`instrupy.util.FieldOfView`
 
-            .. seealso::
-                    1. Sreeja Nag, Steven P. Hughes and Jacqueline J. LeMoigne, "Navigating the Deployment and Downlink Tradespace for Earth Imaging Constellations", 68th International Astronautical Congress (IAC), Adelaide, Australia, 25-29 September 2017. 
-                    2. The :class:`CustomSensor` class definition in GMAT-OC code. 
+            .. seealso:: The :class:`CustomSensor` class definition in GMAT-OC code. 
 
             .. warning:: The along-track FOV and cross-track FOV specs are assigned assuming the instrument is in nominal orientation, i.e. the instrument is
                          aligned to the satellite body frame, and further the satellite is aligned to nadir-frame.
                          If the instrument is rotated about the satellite body frame (by specifying the non-zero orientation angles in the instrument json specs file), the actual along-track
-                         and cross-track fovs simulated maybe different.
-            
-            -- warning:: Need to verify if this function works when along-track fov is greater than cross track fov
-                         
+                         and cross-track fovs maybe different.                         
 
             '''
             if(along_track_fov_deg is None or cross_track_fov_deg is None):
@@ -395,24 +411,24 @@ class FieldOfView(Entity):
             if(along_track_fov_deg < 0 or along_track_fov_deg > 180 or cross_track_fov_deg < 0 or cross_track_fov_deg > 180):
                 raise Exception("Specified along-track and cross-track fovs of RECTANGULAR sensor must be within the range 0 deg to 180 deg")       
             
-            alongTrackFieldOfView = numpy.deg2rad(along_track_fov_deg)
-            crossTrackFieldOfView = numpy.deg2rad(cross_track_fov_deg)
+            alongTrackFieldOfView = np.deg2rad(along_track_fov_deg)
+            crossTrackFieldOfView = np.deg2rad(cross_track_fov_deg)
 
-            cosCone = numpy.cos(alongTrackFieldOfView/2.0)*numpy.cos(crossTrackFieldOfView/2.0)
-            cone = numpy.arccos(cosCone)
+            cosCone = np.cos(alongTrackFieldOfView/2.0)*np.cos(crossTrackFieldOfView/2.0)
+            cone = np.arccos(cosCone)
 
-            sinClock =  numpy.sin(alongTrackFieldOfView/2.0) / numpy.sin(cone)
+            sinClock =  np.sin(alongTrackFieldOfView/2.0) / np.sin(cone)
 
-            clock = numpy.arcsin(sinClock)
+            clock = np.arcsin(sinClock)
 
-            cone_deg = numpy.rad2deg(cone)
-            clock_deg = numpy.rad2deg(clock)
+            cone_deg = np.rad2deg(cone)
+            clock_deg = np.rad2deg(clock)
 
             coneAngles_deg = [cone_deg, cone_deg, cone_deg, cone_deg]
 
             clockAngles_deg = [clock_deg, 180.0 - clock_deg, 180.0 + clock_deg, -clock_deg]
 
-            return FieldOfView("RECTANGULAR", coneAngles_deg, clockAngles_deg,along_track_fov_deg, cross_track_fov_deg, _id)
+            return FieldOfView("RECTANGULAR", coneAngles_deg, clockAngles_deg,along_track_fov_deg, cross_track_fov_deg, yaw180_flag, _id)
 
         @staticmethod
         def from_dict(d):
@@ -422,7 +438,7 @@ class FieldOfView(Entity):
                :param d: Dictionary with the instrument field-of-view and maneverability (optional) specifications.
                :paramtype d: dict
 
-               :return: Parsed python object 
+               :return: Field-of-view/ Field-of-regard object 
                :rtype: :class:`instrupy.util.FieldOfView`
 
             """          
@@ -440,20 +456,17 @@ class FieldOfView(Entity):
             if(d.get("maneuverability", None)):
                 # Calculate the field-of-regard
                 manuv = d.get("maneuverability")
-                try:
-                    mv_type = ManueverType.get(manuv["@type"])
-                    if(mv_type is None):
-                        raise Exception('No manuever type specified. Specify either "CONE" or "ROLLONLY".')
-                    if(mv_type == 'FIXED' or mv_type == 'YAW180'):
-                        pass
-                    elif(mv_type == 'CONE'):
-                        mv_cone = 0.5 * float(manuv["fullConeAngle"])
-                    elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
-                        mv_ct_range = float(manuv["rollMax"]) - float(manuv["rollMin"])
-                    else:
-                        raise Exception('Invalid manuver type.')                
-                except:
-                    raise Exception("Error in obtaining manuever specifications.")                    
+                mv_type = ManueverType.get(manuv["@type"])
+                if(mv_type is None):
+                    raise Exception('No manuever type specified. Specify either "CONE" or "ROLLONLY".')
+                if(mv_type == 'FIXED' or mv_type == 'YAW180'):
+                    pass
+                elif(mv_type == 'CONE'):
+                    mv_cone = 0.5 * float(manuv["fullConeAngle"])
+                elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
+                    mv_ct_range = float(manuv["rollMax"]) - float(manuv["rollMin"])
+                else:
+                    raise Exception('Invalid manuver type.')                                 
 
                 if(mv_type == 'FIXED'):
                     fr_geom = fldofview._geometry
@@ -473,7 +486,7 @@ class FieldOfView(Entity):
 
                     elif(fldofview._geometry == 'RECTANGULAR'):
                         fr_geom = 'CONICAL'
-                        diag_half_angle = numpy.rad2deg(numpy.arccos(numpy.cos(numpy.deg2rad(0.5*fldofview._AT_fov_deg))*numpy.cos(numpy.deg2rad(0.5*fldofview._CT_fov_deg))))
+                        diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
                         fr_at = 2*(mv_cone +  diag_half_angle)
                         fr_ct = fr_at
 
@@ -512,12 +525,19 @@ class FieldOfView(Entity):
         
         def get_cone_clock_fov_specs(self):
             """ Function to the get the cone and clock angle vectors from the resepective FieldOfView object.
+
+                :return: Cone, Clock angles in degrees
+                :rtype: list, float
+
             """
             return [self._coneAngleVec_deg, self._clockAngleVec_deg]
 
-        def get_rectangular_fov_specs(self):
+        def get_rectangular_fov_specs_from_custom_fov_specs(self):
             """ Function to get the rectangular fov specifications (along-track, cross-track fovs in degrees), from the sensor initialized
                 clock, cone angles.           
+
+                :return: Along-track and cross-track fovs in degrees
+                :rtype: :class:`numpy.array`, float
       
                 .. todo:: Make sure selected clock angle is from first quadrant. 
             """
@@ -530,28 +550,31 @@ class FieldOfView(Entity):
             if(len(set(self._coneAngleVec_deg))!= 1):
                 raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
 
-            # The elements of the clock angle vector fold the following relationship: [theta, 180-theta, 180+theta, -theta]
+            # The elements of the clock angle vector fold the following relationship: [theta, 180-theta, 180+theta, 360-theta]
             # Check for this relationship
             if(self._clockAngleVec_deg is not None):
-                if(not math.isclose(self._clockAngleVec_deg[3],360-self._clockAngleVec_deg[0]) or not math.isclose(self._clockAngleVec_deg[1], 180 - self._clockAngleVec_deg[0]) or not math.isclose(self._clockAngleVec_deg[2],180 + self._clockAngleVec_deg[0])):
+                if(not math.isclose(self._clockAngleVec_deg[3],(360-self._clockAngleVec_deg[0])) or not math.isclose(self._clockAngleVec_deg[1], (180 - self._clockAngleVec_deg[0])) or not math.isclose(self._clockAngleVec_deg[2], (180 + self._clockAngleVec_deg[0]))):
                     raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
             else:
                 raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
             
-            theta = numpy.deg2rad(self._coneAngleVec_deg[0])
-            omega = numpy.deg2rad(self._clockAngleVec_deg[0])
+            theta = np.deg2rad(self._coneAngleVec_deg[0])
+            omega = np.deg2rad(self._clockAngleVec_deg[0])
 
-            alpha = numpy.arcsin(numpy.sin(theta)*numpy.sin(omega))
-            beta = numpy.arccos(numpy.cos(theta)/numpy.cos(alpha))
+            alpha = np.arcsin(np.sin(theta)*np.sin(omega))
+            beta = np.arccos(np.cos(theta)/np.cos(alpha))
 
-            alTrFov_deg = 2*numpy.rad2deg(alpha)
-            crTrFov_deg = 2*numpy.rad2deg(beta)
+            alTrFov_deg = 2*np.rad2deg(alpha)
+            crTrFov_deg = 2*np.rad2deg(beta)
 
-            return numpy.array([alTrFov_deg, crTrFov_deg]) 
+            return np.array([alTrFov_deg, crTrFov_deg]) 
 
         def get_ATCT_fov(self):
             """ Get the along-track and cross-track FOVs. Valid only for CONICAL and 
                 RECTANGULAR FOV geometry.
+
+                :return: Along-track and cross-track fovs in degrees
+                :rtype: list, float
             """
             return [self._AT_fov_deg, self._CT_fov_deg]
 
@@ -562,7 +585,7 @@ class MathUtilityFunctions:
 
     @staticmethod
     def compute_satellite_footprint_speed(r,v):
-        """ *Compute satellite footprint (at Nadir on ground-plane) linear speed*
+        """ *Compute satellite footprint (**at Nadir** on ground-plane) linear speed*
 
             :param r: [distance] postion vector of satellite in ECI equatorial frame
             :paramtype r: list, float
@@ -575,23 +598,23 @@ class MathUtilityFunctions:
 
         """        
         # Calculate angular velocity of satellite
-        r = numpy.array(r)
-        v = numpy.array(v)
+        r = np.array(r)
+        v = np.array(v)
 
-        omega = numpy.cross(r,v)/ (numpy.linalg.norm(r)**2) # angular velocity vector in radians per second
+        omega = np.cross(r,v)/ (np.linalg.norm(r)**2) # angular velocity vector in radians per second
         
         # compensate for Earths rotation
-        omega = omega - numpy.array([0,0,Constants.angularSpeedofEarthInRADpS])
+        omega = omega - np.array([0,0,Constants.angularSpeedofEarthInRADpS])
 
         # Find linear speed of satellite footprint on ground [m/s].   
-        return numpy.linalg.norm(omega)*Constants.radiusOfEarthInKM*1e3
+        return np.linalg.norm(omega)*Constants.radiusOfEarthInKM*1e3
 
     @staticmethod
     def latlonalt_To_Cartesian(lat_deg, lon_deg, alt_km):
         """ *LLA to ECEF vector considering Earth as sphere with a radius equal to the equatorial radius.*
 
             :param lat_deg: [deg] geocentric latitude 
-            :paramtype: float
+            :paramtype lat_deg: float
 
             :param lon_deg: [deg] geocentric longitude
             :paramtype lon_deg: float
@@ -603,14 +626,14 @@ class MathUtilityFunctions:
             :rtype: float, list
         
         """
-        lat = numpy.deg2rad(lat_deg)
+        lat = np.deg2rad(lat_deg)
         if lon_deg<0:
             lon_deg = 360 + lon_deg
-        lon = numpy.deg2rad(lon_deg)
+        lon = np.deg2rad(lon_deg)
         R = Constants.radiusOfEarthInKM + alt_km
-        position_vector_km = numpy.array( [(numpy.cos(lon) * numpy.cos(lat)) * R,
-                                (numpy.sin(lon) * numpy.cos(lat)) * R,
-                                    numpy.sin(lat) * R] )     
+        position_vector_km = np.array( [(np.cos(lon) * np.cos(lat)) * R,
+                                (np.sin(lon) * np.cos(lat)) * R,
+                                    np.sin(lat) * R] )     
 
         return position_vector_km
 
@@ -638,10 +661,10 @@ class MathUtilityFunctions:
         f = (a - b) / a
         e_sq = f * (2-f)
 
-        lamb = numpy.deg2rad(lat_deg)
+        lamb = np.deg2rad(lat_deg)
         if lon_deg<0:
             lon_deg = 360 + lon_deg
-        phi = numpy.deg2rad(lon_deg)
+        phi = np.deg2rad(lon_deg)
         h = alt_km*1e3
 
         s = math.sin(lamb)
@@ -656,7 +679,7 @@ class MathUtilityFunctions:
         y = (h + N) * cos_lambda * sin_phi
         z = (h + (1 - e_sq) * N) * sin_lambda
 
-        position_vector_km = numpy.array( [x*1e-3, y*1e-3, z*1e-3] )     
+        position_vector_km = np.array( [x*1e-3, y*1e-3, z*1e-3] )     
 
         return position_vector_km
 
@@ -665,14 +688,14 @@ class MathUtilityFunctions:
     def geo2eci(gcoord, JDtime):
         """ *Convert geographic spherical coordinates to Earth-centered inertial coords.*    
              
-        :param gcoord: geographic coordinates of point [latitude [deg] ,longitude [deg], altitude]. Geographic coordinates assume the Earth is a perfect sphere, with radius 
+        :param gcoord: geographic coordinates of point [latitude [deg] ,longitude [deg], altitude [km]]. Geographic coordinates assume the Earth is a perfect sphere, with radius 
                      equal to its equatorial radius.
         :paramtype  gcoord: list, float
 
         :param JDtime: Julian Day time.
         :paramtype JDtime: float
 
-        :return: A 3-element array of ECI [X,Y,Z] coordinates in same units as that of the supplied altitude. The TOD epoch is the supplied JDtime.                           
+        :return: A 3-element array of ECI [X,Y,Z] coordinates in kilometers. The TOD epoch is the supplied JDtime.                           
         :rtype: float
 
         .. seealso:: 
@@ -691,19 +714,19 @@ class MathUtilityFunctions:
         Greenwich's meridian on 2002/03/09 21:21:21.021)             
         
         """
-        lat = numpy.deg2rad(gcoord[0])
-        lon = numpy.deg2rad(gcoord[1])
+        lat = np.deg2rad(gcoord[0])
+        lon = np.deg2rad(gcoord[1])
         alt = gcoord[2]
                
         gst = MathUtilityFunctions.JD2GMST(JDtime)
         
-        angle_sid=gst*2.0*numpy.pi/24.0 # sidereal angle
+        angle_sid=gst*2.0*np.pi/24.0 # sidereal angle
 
         theta = lon + angle_sid # azimuth
-        r = ( alt + Constants.radiusOfEarthInKM ) * numpy.cos(lat)
-        X = r*numpy.cos(theta)
-        Y = r*numpy.sin(theta)
-        Z = ( alt + Constants.radiusOfEarthInKM )*numpy.sin(lat)
+        r = ( alt + Constants.radiusOfEarthInKM ) * np.cos(lat)
+        X = r*np.cos(theta)
+        Y = r*np.sin(theta)
+        Z = ( alt + Constants.radiusOfEarthInKM )*np.sin(lat)
                 
         return [X,Y,Z]
         
@@ -716,11 +739,11 @@ class MathUtilityFunctions:
             :paramtype v: list, float
 
             :return: Normalized vector
-            :rtype: :obj:`numpy.array`, float
+            :rtype: :obj:`np.array`, float
         
         """
-        v = numpy.array(v)
-        norm = numpy.linalg.norm(v)
+        v = np.array(v)
+        norm = np.linalg.norm(v)
         if(norm == 0):
             raise Exception("Encountered division by zero in vector normalization function.")
         return v / norm
@@ -744,7 +767,7 @@ class MathUtilityFunctions:
         """
         unit_vec1 = MathUtilityFunctions.normalize(vector1)
         unit_vec2 = MathUtilityFunctions.normalize(vector2)
-        return numpy.arccos(numpy.dot(unit_vec1, unit_vec2))
+        return np.arccos(np.dot(unit_vec1, unit_vec2))
 
 
     @staticmethod
@@ -792,8 +815,8 @@ class MathUtilityFunctions:
             :rtype: list, float
 
         """
-        array = numpy.asarray(array)
-        idx = (numpy.abs(array - value)).argmin()
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
         return [array[idx], idx]
     
     @staticmethod
@@ -816,23 +839,23 @@ class MathUtilityFunctions:
         lambda_M_deg = (280.460 + 36000.77*T_UT1)
         lambda_M_deg = lambda_M_deg % 360
         
-        M = numpy.deg2rad((357.5277233 + 35999.05034*T_TDB))%(2*numpy.pi)
+        M = np.deg2rad((357.5277233 + 35999.05034*T_TDB))%(2*np.pi)
 
         if M <0:
-            M = 2*numpy.pi + M
+            M = 2*np.pi + M
 
-        lambda_ecliptic_deg = (lambda_M_deg + 1.914666471* numpy.sin(M) + 0.019994643*numpy.sin(2*M))
-        lambda_ecliptic = numpy.deg2rad(lambda_ecliptic_deg % 360)
+        lambda_ecliptic_deg = (lambda_M_deg + 1.914666471* np.sin(M) + 0.019994643*np.sin(2*M))
+        lambda_ecliptic = np.deg2rad(lambda_ecliptic_deg % 360)
 
-        eps = numpy.deg2rad(23.439291 - 0.0130042*T_TDB)
+        eps = np.deg2rad(23.439291 - 0.0130042*T_TDB)
 
         
         # find the unit Sun vector in ECI frame
-        unitSv_ECI = [numpy.cos(lambda_ecliptic), numpy.cos(eps)*numpy.sin(lambda_ecliptic), numpy.sin(eps)*numpy.sin(lambda_ecliptic)]
+        unitSv_ECI = [np.cos(lambda_ecliptic), np.cos(eps)*np.sin(lambda_ecliptic), np.sin(eps)*np.sin(lambda_ecliptic)]
         
         
         # magnitude of distance to the Sun from Earth center (note: not from the spacecraft)
-        r_Sun_km = (1.000140612 - 0.016708617 * numpy.cos(M) - 0.000139589 * numpy.cos(2*M)) * 149597870.700
+        r_Sun_km = (1.000140612 - 0.016708617 * np.cos(M) - 0.000139589 * np.cos(2*M)) * 149597870.700
 
         
         # complete vector of Sun from Earth Center (ECI equatorial frame)
@@ -866,24 +889,24 @@ class MathUtilityFunctions:
 
         # This condition tends to give a numerical error, so solve for it independently.
         eps = 0.001
-        x = numpy.dot(obstacle1_unitVec, obstacle2_unitVec)
+        x = np.dot(obstacle1_unitVec, obstacle2_unitVec)
         
         if((x > -1-eps) and (x < -1+eps)):
             return False
         else:
-            theta  = numpy.arccos(x)
+            theta  = np.arccos(x)
                 
-        obj1_r = numpy.linalg.norm(object1_pos)
+        obj1_r = np.linalg.norm(object1_pos)
         if(obj1_r - obstacle_radius > 1e-5):
-            theta1 = numpy.arccos(obstacle_radius/obj1_r)
+            theta1 = np.arccos(obstacle_radius/obj1_r)
         elif(abs(obj1_r - obstacle_radius) < 1e-5):
             theta1 =  0.0
         else:
             return False # object1 is inside the obstacle
 
-        obj2_r = numpy.linalg.norm(object2_pos)
+        obj2_r = np.linalg.norm(object2_pos)
         if(obj2_r - obstacle_radius > 1e-5):
-            theta2 = numpy.arccos(obstacle_radius/obj2_r)
+            theta2 = np.arccos(obstacle_radius/obj2_r)
         elif(abs(obj2_r - obstacle_radius) < 1e-5):
             theta2 =  0.0
         else:
@@ -915,11 +938,11 @@ class MathUtilityFunctions:
             return [None, None]
 
         # calculate sun to target vector
-        Sun2Tar_pos_km = numpy.array(pos_km) - numpy.array(sunVector_km)
+        Sun2Tar_pos_km = np.array(pos_km) - np.array(sunVector_km)
         # calculate solar incidence angle
-        solar_zenith_angle_rad = MathUtilityFunctions.angle_between_vectors(pos_km, -1*numpy.array(Sun2Tar_pos_km))
+        solar_zenith_angle_rad = MathUtilityFunctions.angle_between_vectors(pos_km, -1*np.array(Sun2Tar_pos_km))
 
-        solar_distance = numpy.linalg.norm(Sun2Tar_pos_km)
+        solar_distance = np.linalg.norm(Sun2Tar_pos_km)
 
         return [solar_zenith_angle_rad, solar_distance]
 
@@ -944,31 +967,31 @@ class MathUtilityFunctions:
             :rtype: dict, float
             
         """
-        obs_position_km = numpy.array(obs_position_km)
-        obs_vel_vec_kmps = numpy.array(obs_vel_vec_kmps)
-        target_position_km = numpy.array(target_position_km)
+        obs_position_km = np.array(obs_position_km)
+        obs_vel_vec_kmps = np.array(obs_vel_vec_kmps)
+        target_position_km = np.array(target_position_km)
 
         #  Calculate range vector between spacecraft and POI (Target)
         range_vector_km = target_position_km - obs_position_km
 
-        alt_km = numpy.linalg.norm(obs_position_km) - Constants.radiusOfEarthInKM
-        look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(obs_position_km)))
-        incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
+        alt_km = np.linalg.norm(obs_position_km) - Constants.radiusOfEarthInKM
+        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(obs_position_km)))
+        incidence_angle_rad = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
 
         # 1. Get vector perpendicular to the cross-orbital plane, using the satellite velocity vector.
-        crossOrbPlaneNorVec = numpy.array(MathUtilityFunctions.normalize(obs_vel_vec_kmps))
+        crossOrbPlaneNorVec = np.array(MathUtilityFunctions.normalize(obs_vel_vec_kmps))
         # 2. Calculate projection of range-vector onto the cross-orbital-plane        
-        r_vec_projCrossOrbPlane_km = range_vector_km - (numpy.dot(range_vector_km, crossOrbPlaneNorVec)*crossOrbPlaneNorVec)      
+        r_vec_projCrossOrbPlane_km = range_vector_km - (np.dot(range_vector_km, crossOrbPlaneNorVec)*crossOrbPlaneNorVec)      
         # 3. Calculate the range-vector and viewing geometry to the "derived" observer position
         derived_range_vec_km = r_vec_projCrossOrbPlane_km
         derived_obs_pos_km = target_position_km - derived_range_vec_km
-        derived_look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(derived_range_vec_km), -1*MathUtilityFunctions.normalize(derived_obs_pos_km)))
+        derived_look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(derived_range_vec_km), -1*MathUtilityFunctions.normalize(derived_obs_pos_km)))
 
-        derived_alt_km = numpy.linalg.norm(derived_obs_pos_km) - Constants.radiusOfEarthInKM
-        derived_incidence_angle_rad = numpy.arcsin(numpy.sin(derived_look_angle)*(Constants.radiusOfEarthInKM + derived_alt_km)/Constants.radiusOfEarthInKM)
+        derived_alt_km = np.linalg.norm(derived_obs_pos_km) - Constants.radiusOfEarthInKM
+        derived_incidence_angle_rad = np.arcsin(np.sin(derived_look_angle)*(Constants.radiusOfEarthInKM + derived_alt_km)/Constants.radiusOfEarthInKM)
 
-        travel_dis_km = numpy.linalg.norm(derived_obs_pos_km - obs_position_km) 
-        travel_time_s = travel_dis_km/ numpy.linalg.norm(obs_vel_vec_kmps)
+        travel_dis_km = np.linalg.norm(derived_obs_pos_km - obs_position_km) 
+        travel_time_s = travel_dis_km/ np.linalg.norm(obs_vel_vec_kmps)
         derived_obsTime_JDUT1 = tObs_JDUT1 + travel_time_s
         
         #return {"derived_obsTime_JDUT1": tObs_JDUT1, "derived_obs_pos_km": obs_position_km, "derived_range_vec_km": range_vector_km, "derived_alt_km": alt_km, "derived_incidence_angle_rad": incidence_angle_rad}
@@ -984,7 +1007,7 @@ class MathUtilityFunctions:
         obs_alt_km = 0
         wav_low_nm = wav_low_m*1e9
         wav_high_nm = wav_high_m*1e9
-        obs_zenith_angle_deg = numpy.rad2deg(obs_zenith_angle_rad)
+        obs_zenith_angle_deg = np.rad2deg(obs_zenith_angle_rad)
         wav_step_percm = 40
         
         c1 = {'model': 6, # US standard

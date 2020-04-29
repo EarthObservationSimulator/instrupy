@@ -31,8 +31,8 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '   "sideLookAngle": 0'
                                                 ' },'
                                                 '"dataRate": 85,'
-                                                '"numberOfDetectorsRowsAlongTrack": 256,'
-                                                '"numberOfDetectorsColsCrossTrack": 1,'
+                                                '"numberDetectorRowsAT": 256,'
+                                                '"numberDetectorColsCT": 1,'
                                                 '"detectorWidth": 30e-6,'
                                                 '"focalLength": 0.7,'
                                                 '"operatingWavelength": 4.2e-6,'
@@ -69,12 +69,12 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         self.assertEqual(self.firesat.dataRate, 85)
         self.assertIsInstance(self.firesat.dataRate, float)
         self.assertIsInstance(self.firesat.orientation, Orientation)
-        self.assertEqual(self.firesat.orientation.x_rot_deg, 0)
-        self.assertEqual(self.firesat.orientation.y_rot_deg, 0)
-        self.assertEqual(self.firesat.orientation.z_rot_deg, 0)
+        self.assertEqual(self.firesat.orientation.euler_angle1, 0)
+        self.assertEqual(self.firesat.orientation.euler_angle2, 0)
+        self.assertEqual(self.firesat.orientation.euler_angle3, 0)
         self.assertIsInstance(self.firesat.fieldOfView, FieldOfView)
-        self.assertAlmostEqual(self.firesat.fieldOfView.get_rectangular_fov_specs()[0], 0.628)
-        self.assertAlmostEqual(self.firesat.fieldOfView.get_rectangular_fov_specs()[1], 115.8)
+        self.assertAlmostEqual(self.firesat.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[0], 0.628)
+        self.assertAlmostEqual(self.firesat.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[1], 115.8)
         self.assertEqual(self.firesat.scanTechnique, "WHISKBROOM")
         self.assertIsInstance(self.firesat.scanTechnique, str)        
         self.assertEqual(self.firesat.detectorWidth, 30e-6)
@@ -107,44 +107,6 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         self.assertIsNone(self.firesat._id)
         self.assertEqual(self.firesat._type, "Passive Optical Scanner")
 
-        # Test of an improper orientation specification. Although physically specifing XYZ as (0,10,0) degrees is the same as specifying 
-        # the side-look angle as 10 deg, the behavior of the code is to throw an error.
-        with self.assertRaises(Exception):
-            o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
-                                                '"name": "FireSat",'
-                                                '"mass": 28,'
-                                                '"volume": 0.12,' 
-                                                '"power": 32,'
-                                                '"fieldOfView": {'
-                                                '   "sensorGeometry": "RECTANGULAR",'
-                                                '   "alongTrackFieldOfView": 0.628,'
-                                                '   "crossTrackFieldOfView": 115.8'
-                                                ' },'
-                                                '"scanTechnique": "WHISKBROOM",'
-                                                '"orientation": {'
-                                                '   "convention": "XYZ",'
-                                                '   "xRotation": 0,'
-                                                '   "yRotation": 10,'
-                                                '   "zRotation": 0'
-                                                ' },'                                             
-                                                '"dataRate": 85,'
-                                                '"numberOfDetectorsRowsAlongTrack": 256,'
-                                                '"numberOfDetectorsColsCrossTrack": 1,'
-                                                '"detectorWidth": 30e-6,'
-                                                '"focalLength": 0.7,'
-                                                '"operatingWavelength": 4.2e-6,'
-                                                '"bandwidth": 1.9e-6,'
-                                                '"quantumEff": 0.5,'
-                                                '"targetBlackBodyTemp": 290,'
-                                                '"bitsPerPixel": 8,'
-                                                '"opticsSysEff": 0.75,'
-                                                '"numOfReadOutE": 25,'
-                                                '"apertureDia": 0.26,'
-                                                '"Fnum": 2.7,'
-                                                '"snrThreshold": 10,'
-                                                '"considerAtmosLoss": true}')
-
-        
         # Test of an improper field-of-view specification. 
         with self.assertRaises(Exception):
             o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
@@ -162,8 +124,8 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '   "sideLookAngle": 0'
                                                 ' },'
                                                 '"dataRate": 85,'
-                                                '"numberOfDetectorsRowsAlongTrack": 256,'
-                                                '"numberOfDetectorsColsCrossTrack": 1,'
+                                                '"numberDetectorRowsAT": 256,'
+                                                '"numberDetectorColsCT": 1,'
                                                 '"detectorWidth": 30e-6,'
                                                 '"focalLength": 0.7,'
                                                 '"operatingWavelength": 4.2e-6,'
@@ -193,8 +155,8 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '   "sideLookAngle": 0'
                                                 ' },'
                                                 '"dataRate": 85,'
-                                                '"numberOfDetectorsRowsAlongTrack": 256,'
-                                                '"numberOfDetectorsColsCrossTrack": 1,'
+                                                '"numberDetectorRowsAT": 256,'
+                                                '"numberDetectorColsCT": 1,'
                                                 '"detectorWidth": 30e-6,'
                                                 '"focalLength": 0.7,'
                                                 '"operatingWavelength": 4.2e-6,'
@@ -210,7 +172,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '"considerAtmosLoss": true}')
 
 
-        # Test of an PUSHBROOM scanning technique specification and more than one :code:`numberOfDetectorsRowsAlongTrack` specification.
+        # Test of an PUSHBROOM scanning technique specification and more than one :code:`numberDetectorRowsAT` specification.
         with self.assertRaises(Exception):
             o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
@@ -228,8 +190,8 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '   "sideLookAngle": 0'
                                                 ' },'
                                                 '"dataRate": 85,'
-                                                '"numberOfDetectorsRowsAlongTrack": 10,'
-                                                '"numberOfDetectorsColsCrossTrack": 1000,'
+                                                '"numberDetectorRowsAT": 10,'
+                                                '"numberDetectorColsCT": 1000,'
                                                 '"detectorWidth": 30e-6,'
                                                 '"focalLength": 0.7,'
                                                 '"operatingWavelength": 4.2e-6,'
@@ -244,7 +206,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '"snrThreshold": 10,'
                                                 '"considerAtmosLoss": true}')
 
-        # Test of an WHISKBROOM scanning technique specification and more than one :code:`numberOfDetectorsColsCrossTrack` specification.
+        # Test of an WHISKBROOM scanning technique specification and more than one :code:`numberDetectorColsCT` specification.
         with self.assertRaises(Exception):
             o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
@@ -262,8 +224,8 @@ class TestPassiveOpticalScanner(unittest.TestCase):
                                                 '   "sideLookAngle": 0'
                                                 ' },'
                                                 '"dataRate": 85,'
-                                                '"numberOfDetectorsRowsAlongTrack": 10,'
-                                                '"numberOfDetectorsColsCrossTrack": 100,'
+                                                '"numberDetectorRowsAT": 10,'
+                                                '"numberDetectorColsCT": 100,'
                                                 '"detectorWidth": 30e-6,'
                                                 '"focalLength": 0.7,'
                                                 '"operatingWavelength": 4.2e-6,'

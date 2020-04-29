@@ -4,7 +4,6 @@
 :synopsis: *Module to handle sensor type with the most basic attributes.*
 
 """
-
 import json
 import numpy
 import copy
@@ -35,7 +34,7 @@ class BasicSensor(Entity):
         :ivar fieldOfView: Field of view specification of instrument. 
         :vartype fieldOfView: :class:`instrupy.util.FieldOfView`   
 
-        :ivar fieldOfRegard: Field of view calculated taking into account manueverability of the payload. If no manueverability is specified, FOR = FOV.
+        :ivar fieldOfRegard: Field of view calculated taking into account manueverability of the payload.
         :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
        
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
@@ -43,12 +42,15 @@ class BasicSensor(Entity):
 
         :ivar bitsPerPixel: Bits encoded per pixel of image
         :vartype bitsPerPixel: int
+
+        :ivar minRequiredAccessTime: Minimum required access time in seconds over a ground-point for observation to be possible.
+        :vartype minRequiredAccessTime: float
    
     """
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, _id=None):
+            fieldOfView=None, fieldOfRegard=None, dataRate=None, bitsPerPixel = None, minRequiredAccessTime = None, _id=None):
         """Initialize a Basic Sensor object.
 
         """
@@ -57,11 +59,12 @@ class BasicSensor(Entity):
         self.mass = float(mass) if mass is not None else None
         self.volume = float(volume) if volume is not None else None
         self.power = float(power) if power is not None else None
-        self.orientation = copy.deepcopy(orientation) if orientation is not None else None
+        self.orientation = copy.deepcopy(orientation) if orientation is not None else Orientation(0,0,0,1,2,3)
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None            
+        self.minRequiredAccessTime = float(minRequiredAccessTime) if minRequiredAccessTime is not None else None  
         super(BasicSensor,self).__init__(_id, "Basic Sensor")
 
     @staticmethod
@@ -78,8 +81,9 @@ class BasicSensor(Entity):
                 fieldOfRegard= FieldOfView.from_json({**d.get("fieldOfView", None) , **{"maneuverability": d.get("maneuverability", None)}}),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
+                minRequiredAccessTime = d.get("minRequiredAccessTime", None),
                 _id = d.get("@id", None)
-            )
+                )
 
     def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
         ''' Calculate typical observation data metrics.
@@ -89,8 +93,8 @@ class BasicSensor(Entity):
                                Dictionary keys are: 
                                
                                * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
-                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial plane at the time of observation.
-                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane at the time of observation.
+                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial-plane frame at the time of observation.
+                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), Velocity of spacecraft in Earth Centered Inertial frame with equatorial-plane frame at the time of observation.
             :paramtype SpacecraftOrbitState: dict
 
             
@@ -106,20 +110,20 @@ class BasicSensor(Entity):
                       Dictionary keys are: 
                     
                       * :code:`Coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event.
-                      * :code:`Incidence angle [deg]` (:class:`float`) Incidence angle at target point calculated assuming spherical Earth.
-                      * :code:`Look angle [deg]` (:class:`float`) Look angle at target point calculated assuming spherical Earth.
-                      * :code:`Observation Range [km]` (:class:`float`) Distance from satellite to ground-point during the observation acquisition.
-                      * :code:`Solar Zenith [deg]` (:class:`float`) Solar Zenith during observation
+                      * :code:`Incidence angle [deg]` (:class:`float`) Incidence angle in degrees at target point calculated assuming spherical Earth.
+                      * :code:`Look angle [deg]` (:class:`float`) Look angle in degrees at target point calculated assuming spherical Earth.
+                      * :code:`Observation Range [km]` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
+                      * :code:`Solar Zenith [deg]` (:class:`float`) Solar Zenith angle in degrees during observation.
 
             :rtype: dict                      
         '''
         # Observation time in Julian Day UT1
         tObs_JDUT1 = SpacecraftOrbitState["Time[JDUT1]"]
 
-        # Calculate Target position in ECI frame
+        # Calculate Target position in ECI-frame
         TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
 
-        # Spacecraft position in Cartesian coordinates
+        # Spacecraft position in Cartesian coordinates ECI-frame
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
 
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM

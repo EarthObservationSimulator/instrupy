@@ -68,7 +68,6 @@ class Instrument(Entity):
         * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), velocity of spacecraft in Earth Centered Inertial frame with equatorial plane at the time of observation.
         
         :paramtype SpacecraftOrbitState: dict
-
         
         :param TargetCoords: Location of the observation.
 
@@ -93,8 +92,7 @@ class Instrument(Entity):
             
             .. todo:: update unit test
 
-            :returns: JSON string with the coverage specifications                     
-
+            :returns: JSON string with the coverage specifications            
             :rtype: dict
         
         """
@@ -103,13 +101,21 @@ class Instrument(Entity):
         instru_type = type(self._sensor).__name__
         if(instru_type == 'SyntheticApertureRadar'):
             purely_side_look = True
+        if(instru_type == 'PassiveOpticalScanner'):
+            if(self._sensor.scanTechnique == "PUSHBROOM" or self._sensor.scanTechnique == "WHISKBROOM"):
+                purely_side_look = True
         
-        orientation_specs = {"eulerAngle1": self._sensor.orientation.x_rot_deg,
-                             "eulerAngle2": self._sensor.orientation.y_rot_deg, 
-                             "eulerAngle3": self._sensor.orientation.z_rot_deg,
-                             "eulerSeq1": 1,
-                             "eulerSeq2": 2,
-                             "eulerSeq3": 3
+        if(hasattr(self._sensor, "minRequiredAccessTime")):
+            minRequiredAccessTime = self._sensor.minRequiredAccessTime
+        else:
+            minRequiredAccessTime = 0
+
+        orientation_specs = {"eulerAngle1": self._sensor.orientation.euler_angle1,
+                             "eulerAngle2": self._sensor.orientation.euler_angle2, 
+                             "eulerAngle3": self._sensor.orientation.euler_angle3,
+                             "eulerSeq1": self._sensor.orientation.euler_seq1,
+                             "eulerSeq2": self._sensor.orientation.euler_seq2,
+                             "eulerSeq3": self._sensor.orientation.euler_seq3,
                              }
         
         for_specs = {"geometry": self._sensor.fieldOfRegard._geometry,
@@ -117,7 +123,8 @@ class Instrument(Entity):
                      "clockAnglesVector": self._sensor.fieldOfRegard._clockAngleVec_deg,
                      "AlongTrackFov": self._sensor.fieldOfRegard._AT_fov_deg,
                      "CrossTrackFov": self._sensor.fieldOfRegard._CT_fov_deg,
-                     "yaw180_flag": self._sensor.fieldOfRegard._yaw180_flag
+                     "yaw180_flag": self._sensor.fieldOfRegard._yaw180_flag,
+                     "minRequiredAccessTime": minRequiredAccessTime
                     }
 
         if(hasattr(self._sensor, 'sceneFieldOfView')):
@@ -128,7 +135,8 @@ class Instrument(Entity):
                             "clockAnglesVector": self._sensor.sceneFieldOfView._clockAngleVec_deg,
                             "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
                             "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
-                            "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag
+                            "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag,
+                            "minRequiredAccessTime": minRequiredAccessTime
                             }
                 result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
                 return json.dumps(result)   
@@ -138,7 +146,8 @@ class Instrument(Entity):
                      "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg,
                      "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
                      "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
-                     "yaw180_flag": self._sensor.fieldOfView._yaw180_flag
+                     "yaw180_flag": self._sensor.fieldOfView._yaw180_flag,
+                     "minRequiredAccessTime": minRequiredAccessTime
                      }
 
 

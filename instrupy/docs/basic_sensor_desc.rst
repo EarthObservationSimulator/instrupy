@@ -8,7 +8,7 @@ Input JSON format specifications description
     :header: Parameter, Data type, Units, Description
     :widths: 10,10,5,40
 
-    @type, string, ,Must be *Basic Sensor*
+    @type, string, , Must be *Basic Sensor*
     @id, string, , Unique identifier for the instrument.
     name, string, ,Full name of the instrument 
     acronym, string, ,Acronym or initialism or abbreviation.
@@ -20,6 +20,7 @@ Input JSON format specifications description
     dataRate, float, Mega-bits-per-s,Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
     maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
+    minRequiredAccessTime, float, seconds, Minimum required access time over a ground-point for observation to be possible. 
 
 .. _basic_sensor_data_metrics_calc:
 
@@ -28,16 +29,13 @@ Output observation data metrics calculation
 
 .. csv-table:: Observation data metrics table
     :widths: 8,4,4,20
-    :header: Metric/Aux data,Data Type,Units,Description 
+    :header: Metric,Data Type,Units,Description 
      
-    Access From [JDUT1], float, Julian Date UT1, Access from time
-    Access Duration [s], float, seconds, Duration of access
-    POI index, integer,, Index of point of interest
-    Coverage [T/F], string ,, Indicates if observation was  possible during the access event  (True/ False). 
-    Incidence angle [deg], float,  degrees, Incidence angle at target point calculated assuming spherical Earth.
-    Look angle [deg], float,  degrees, Look angle at target point calculated assuming spherical Earth.
-    Observation Range [km], float, kilometers, Distance from satellite to ground-point during the observation acquisition. 
-    Solar Zenith [deg], float, degrees, Solar Zenith during observation
+    Coverage [T/F], string ,, Indicates if observation was possible during the access event *(Always True)*. 
+    Incidence angle [deg], float,  degrees, Incidence-angle at target point calculated assuming spherical Earth.
+    Look angle [deg], float,  degrees, Look-angle to the target point calculated assuming spherical Earth.
+    Observation Range [km], float, kilometers, Distance from satellite to ground-point during the observation. 
+    Solar Zenith [deg], float, degrees, Solar-zenith-angle during observation
 
 Viewing geometry
 -----------------

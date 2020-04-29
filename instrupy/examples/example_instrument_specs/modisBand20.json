@@ -16,8 +16,8 @@
             "sideLookAngle": 0
         },
         "dataRate": 6.2,
-        "numberOfDetectorsRowsAlongTrack": 10,
-        "numberOfDetectorsColsCrossTrack": 1,
+        "numberDetectorRowsAT": 10,
+        "numberDetectorColsCT": 1,
         "detectorWidth": 540e-6,
         "focalLength": 380.859e-3,
         "operatingWavelength": 3.7500e-6,
