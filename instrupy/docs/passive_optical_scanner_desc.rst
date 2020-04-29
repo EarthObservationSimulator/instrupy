@@ -40,7 +40,6 @@ Input JSON format specifications description
    maxDetectorExposureTime, float, seconds, maximum exposure time on the detector elements (optional parameter).
    snrThreshold, float,, Threshold value of SNR for observation to be classified as 'Valid'
    considerAtmosLoss, bool,, True/False flag to specify if atmospheric losses should be taken into account using LOWTRAN 3rd party package. Default is `False`.
-   minRequiredAccessTime, float, seconds, Minimum required access time over a ground-point for observation to be possible. Required for matrix imagers.
    maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
 
 .. figure:: passive_scanner_aperture_figure.png

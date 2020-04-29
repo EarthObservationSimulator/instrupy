@@ -101,14 +101,9 @@ class Instrument(Entity):
         instru_type = type(self._sensor).__name__
         if(instru_type == 'SyntheticApertureRadar'):
             purely_side_look = True
-        if(instru_type == 'PassiveOpticalScanner'):
+        """if(instru_type == 'PassiveOpticalScanner'):
             if(self._sensor.scanTechnique == "PUSHBROOM" or self._sensor.scanTechnique == "WHISKBROOM"):
-                purely_side_look = True
-        
-        if(hasattr(self._sensor, "minRequiredAccessTime")):
-            minRequiredAccessTime = self._sensor.minRequiredAccessTime
-        else:
-            minRequiredAccessTime = 0
+                purely_side_look = True """
 
         orientation_specs = {"eulerAngle1": self._sensor.orientation.euler_angle1,
                              "eulerAngle2": self._sensor.orientation.euler_angle2, 
@@ -123,8 +118,7 @@ class Instrument(Entity):
                      "clockAnglesVector": self._sensor.fieldOfRegard._clockAngleVec_deg,
                      "AlongTrackFov": self._sensor.fieldOfRegard._AT_fov_deg,
                      "CrossTrackFov": self._sensor.fieldOfRegard._CT_fov_deg,
-                     "yaw180_flag": self._sensor.fieldOfRegard._yaw180_flag,
-                     "minRequiredAccessTime": minRequiredAccessTime
+                     "yaw180_flag": self._sensor.fieldOfRegard._yaw180_flag
                     }
 
         if(hasattr(self._sensor, 'sceneFieldOfView')):
@@ -135,8 +129,7 @@ class Instrument(Entity):
                             "clockAnglesVector": self._sensor.sceneFieldOfView._clockAngleVec_deg,
                             "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
                             "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
-                            "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag,
-                            "minRequiredAccessTime": minRequiredAccessTime
+                            "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag
                             }
                 result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
                 return json.dumps(result)   
@@ -146,8 +139,7 @@ class Instrument(Entity):
                      "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg,
                      "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
                      "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
-                     "yaw180_flag": self._sensor.fieldOfView._yaw180_flag,
-                     "minRequiredAccessTime": minRequiredAccessTime
+                     "yaw180_flag": self._sensor.fieldOfView._yaw180_flag
                      }
 
 

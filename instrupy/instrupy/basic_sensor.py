@@ -42,15 +42,12 @@ class BasicSensor(Entity):
 
         :ivar bitsPerPixel: Bits encoded per pixel of image
         :vartype bitsPerPixel: int
-
-        :ivar minRequiredAccessTime: Minimum required access time in seconds over a ground-point for observation to be possible.
-        :vartype minRequiredAccessTime: float
    
     """
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, fieldOfRegard=None, dataRate=None, bitsPerPixel = None, minRequiredAccessTime = None, _id=None):
+            fieldOfView=None, fieldOfRegard=None, dataRate=None, bitsPerPixel = None, _id=None):
         """Initialize a Basic Sensor object.
 
         """
@@ -64,7 +61,6 @@ class BasicSensor(Entity):
         self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None            
-        self.minRequiredAccessTime = float(minRequiredAccessTime) if minRequiredAccessTime is not None else None  
         super(BasicSensor,self).__init__(_id, "Basic Sensor")
 
     @staticmethod
@@ -81,7 +77,6 @@ class BasicSensor(Entity):
                 fieldOfRegard= FieldOfView.from_json({**d.get("fieldOfView", None) , **{"maneuverability": d.get("maneuverability", None)}}),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
-                minRequiredAccessTime = d.get("minRequiredAccessTime", None),
                 _id = d.get("@id", None)
                 )
 

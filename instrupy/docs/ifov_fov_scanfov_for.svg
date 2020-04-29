@@ -22,6 +22,20 @@
   <defs
      id="defs2">
     <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker2850"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path2590"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
        inkscape:isstock="true"
        style="overflow:visible"
        id="marker3733"
@@ -824,9 +838,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.90509668"
-     inkscape:cx="2093.9123"
-     inkscape:cy="-1265.3235"
+     inkscape:zoom="2.56"
+     inkscape:cx="2569.1563"
+     inkscape:cy="-734.60943"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -834,7 +848,8 @@
      inkscape:window-height="1001"
      inkscape:window-x="-9"
      inkscape:window-y="-9"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="1"
+     inkscape:lockguides="true" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -5159,7 +5174,10 @@
          id="tspan4586">t = 90s to 110s</tspan></text>
     <g
        id="g7133-9"
-       transform="matrix(0.85732247,-0.41096359,0.4339998,0.6433298,344.45514,623.17188)">
+       transform="matrix(0.85732247,-0.41096359,0.4339998,0.6433298,344.45514,623.17188)"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          sodipodi:nodetypes="ccccc"
          inkscape:connector-curvature="0"
@@ -5220,16 +5238,25 @@
        d="m 566.24865,581.33967 105.3376,43.64009"
        id="path4582-19-9"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
+       sodipodi:nodetypes="cc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26499999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.79499998, 0.79499998;stroke-dashoffset:0;stroke-opacity:1"
        d="m 610.83536,572.44129 -13.96739,56.68546"
        id="path4584-0-4"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
+       sodipodi:nodetypes="cc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <g
        id="g7144-5"
-       transform="rotate(19.60627,-1086.7881,986.02752)">
+       transform="rotate(19.60627,-1086.7881,986.02752)"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          sodipodi:nodetypes="ccccc"
          inkscape:connector-curvature="0"
@@ -5290,16 +5317,25 @@
        d="m 554.08814,623.16872 c 5.91097,12.84879 8.83088,9.92938 5.06207,26.85312 33.80049,-16.60363 49.55194,-18.91249 83.45128,-13.35501 -6.78777,-11.84651 -8.64166,-12.48302 -7.23871,-29.42287 -31.17404,13.48127 -44.89508,16.56086 -81.27464,15.92476 z"
        id="path4588-5-1-6"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccc" />
+       sodipodi:nodetypes="ccccc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend-00-6-4)"
        d="m 620.59634,567.13179 26.98522,12.22996"
        id="path4632-3-4-8"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
+       sodipodi:nodetypes="cc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <g
        transform="translate(336.00784,482.12795)"
-       id="g7830-6">
+       id="g7830-6"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
       <path
          inkscape:connector-curvature="0"
          id="path7192-36"
@@ -5317,25 +5353,37 @@
        d="m 622.21599,599.28449 c -13.81269,-3.03976 -13.24665,1.05027 -24.46777,-12.16727 -7.15603,36.97222 -14.81972,50.92597 -39.7071,74.60441 13.54255,1.73579 15.16879,0.64156 27.83038,11.98223 8.06099,-32.99371 13.8849,-45.79344 36.34449,-74.41937 z"
        id="path4588-5-1-6-3"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccc" />
+       sodipodi:nodetypes="ccccc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <path
        style="fill:none;stroke:#4b8316;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:4,4;stroke-dashoffset:0;stroke-opacity:1"
        d="m 532.86027,598.78489 19.97839,81.9348"
        id="path4582-19-9-1"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
+       sodipodi:nodetypes="cc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26499999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.79499999, 0.79499999;stroke-dashoffset:0;stroke-opacity:1"
        d="m 593.14976,630.29982 -63.90111,-4.41065"
        id="path4584-0-4-2"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
+       sodipodi:nodetypes="cc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend-00-6-4-0)"
        d="m 529.24865,625.88917 5.06077,26.26161"
        id="path4632-3-4-8-9"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
+       sodipodi:nodetypes="cc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
@@ -5344,7 +5392,8 @@
        id="text1790-6-8-3-8-5"
        transform="rotate(23.219471)"
        inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96"><tspan
+       inkscape:export-ydpi="96"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"><tspan
          sodipodi:role="line"
          x="835.93616"
          y="315.72311"
@@ -5358,11 +5407,186 @@
        id="text1790-6-8-3-8-1"
        transform="rotate(76.322858)"
        inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96"><tspan
+       inkscape:export-ydpi="96"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\different_observation_areas.png"><tspan
          sodipodi:role="line"
          x="769.52344"
          y="-369.10843"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
          id="tspan1800-8-9-0-0-3">ground-track</tspan></text>
+    <g
+       transform="translate(397.0525,357.60091)"
+       id="g7830-7-1-3-8-25"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <path
+         inkscape:connector-curvature="0"
+         id="path7192-8-6-3-6-1"
+         d="m 259.31234,143.7277 2.58382,5.58105"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path7194-2-3-7-5-13"
+         d="m 264.22832,145.33961 -7.0864,2.83226"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <path
+       style="fill:none;stroke:#d17a22;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 632.96485,515.33501 c 2.95586,0.88173 32.49295,15.9959 33.87006,15.69357 1.65927,-1.77587 6.54323,-19.1438 19.5825,-32.9666 -1.99698,-0.21561 -32.56619,-13.45645 -33.9734,-14.97009 -9.03905,8.22393 -18.52427,28.39167 -19.47916,32.24312 z"
+       id="path4588-7-8-4-9-7-3-0-3-4-9"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <g
+       transform="translate(454.51666,356.77408)"
+       id="g7830-7-1-3-8-25-8"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <path
+         inkscape:connector-curvature="0"
+         id="path7192-8-6-3-6-1-1"
+         d="m 259.31234,143.7277 2.58382,5.58105"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path7194-2-3-7-5-13-4"
+         d="m 264.22832,145.33961 -7.0864,2.83226"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <path
+       style="fill:none;stroke:#d17a22;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 700.76432,520.70936 c 2.95586,0.88173 32.49295,15.9959 33.87006,15.69357 1.65927,-1.77587 6.54323,-19.1438 19.5825,-32.9666 -1.99698,-0.21561 -32.56619,-13.45645 -33.9734,-14.97009 -9.03905,8.22393 -18.52427,28.39167 -19.47916,32.24312 z"
+       id="path4588-7-8-4-9-7-3-0-3-4-9-0"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <g
+       transform="translate(529.34415,355.12043)"
+       id="g7830-7-1-3-8-25-4"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <path
+         inkscape:connector-curvature="0"
+         id="path7192-8-6-3-6-1-4"
+         d="m 259.31234,143.7277 2.58382,5.58105"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path7194-2-3-7-5-13-5"
+         d="m 264.22832,145.33961 -7.0864,2.83226"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <path
+       style="fill:none;stroke:#d17a22;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 766.91016,520.70936 c 2.95586,0.88173 32.49295,15.9959 33.87007,15.69357 1.65926,-1.77587 6.54323,-19.1438 19.5825,-32.9666 -1.99698,-0.21561 -32.5662,-13.45645 -33.97341,-14.97009 -9.03905,8.22393 -18.52427,28.39167 -19.47916,32.24312 z"
+       id="path4588-7-8-4-9-7-3-0-3-4-9-5"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccc"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#00b900;fill-opacity:1;stroke:none;stroke-width:0.26458332;"
+       x="660.28992"
+       y="485.9404"
+       id="text1790-1-0-2-0-0-8-9-3-5-4"
+       transform="rotate(0.86911264)"
+       inkscape:transform-center-x="33.032843"
+       inkscape:transform-center-y="-63.142426"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         x="660.28992"
+         y="485.9404"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332;fill:#00b900;fill-opacity:1;"
+         id="tspan7190-3-6-6-1-2">OK</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#00b900;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="731.25073"
+       y="489.72516"
+       id="text1790-1-0-2-0-0-8-9-3-5-4-9"
+       transform="rotate(0.86911264)"
+       inkscape:transform-center-x="33.032843"
+       inkscape:transform-center-y="-63.142426"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         x="731.25073"
+         y="489.72516"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#c85d00;fill-opacity:1;stroke-width:0.26458332"
+         id="tspan7190-3-6-6-1-2-0">NOK</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#00b900;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="805.362"
+       y="489.99921"
+       id="text1790-1-0-2-0-0-8-9-3-5-4-9-7"
+       transform="rotate(0.86911264)"
+       inkscape:transform-center-x="33.032843"
+       inkscape:transform-center-y="-63.142426"
+       inkscape:export-filename="C:\Users\vravindr\Dropbox\my_workspace\DSHIELD\orbits\orbitpy\docs\valid_vs_invalid_obs.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         x="805.362"
+         y="489.99921"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#c85d00;fill-opacity:1;stroke-width:0.26458332"
+         id="tspan7190-3-6-6-1-2-0-6">NOK</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="656.60748"
+       y="502.12119"
+       id="text1790-1-0-2-0-0-8-9-8"
+       transform="rotate(0.86911264)"
+       inkscape:transform-center-x="33.032843"
+       inkscape:transform-center-y="-63.142426"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         x="656.60748"
+         y="502.12119"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
+         id="tspan7190-3-6-8">Ground Point</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:4.93888855px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="675.39685"
+       y="459.72226"
+       id="text1790-1-0-2-0-0-8-9-8-7"
+       transform="rotate(0.86911264)"
+       inkscape:transform-center-x="33.032843"
+       inkscape:transform-center-y="-63.142426"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         x="675.39685"
+         y="459.72226"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
+         id="tspan7190-3-6-8-2">Sensor footprint</tspan><tspan
+         sodipodi:role="line"
+         x="675.39685"
+         y="465.89587"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
+         id="tspan2852">(image)</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;marker-end:url(#marker2850)"
+       d="m 681.09538,476.83398 -8.9917,15.29623"
+       id="path2585"
+       inkscape:connector-curvature="0" />
   </g>
 </svg>

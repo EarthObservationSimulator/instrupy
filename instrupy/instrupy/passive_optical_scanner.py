@@ -109,9 +109,6 @@ class PassiveOpticalScanner(Entity):
 
        :ivar snrThreshold: Threshold value of SNR for observation to be classified as 'Valid'
        :vartype snrThreshold: float
-
-       :ivar minRequiredAccessTime: Minimum required access time in seconds over a ground-point for observation to be possible. Required for matrix imagers.
-       :vartype minRequiredAccessTime: float
        
        :ivar considerAtmosLoss: Flag to specify that atmos loss is to be consdered. 
        :vartype considerAtmosLoss: bool
@@ -127,7 +124,7 @@ class PassiveOpticalScanner(Entity):
             Fnum = None, focalLength = None, 
             operatingWavelength = None, bandwidth = None, quantumEff = None, 
             opticsSysEff = None, numOfReadOutE = None, targetBlackBodyTemp = None,
-            bitsPerPixel = None, detectorWidth = None, maxDetectorExposureTime= None, snrThreshold = None, minRequiredAccessTime = None,
+            bitsPerPixel = None, detectorWidth = None, maxDetectorExposureTime= None, snrThreshold = None,
             considerAtmosLoss= None, _id=None):
         """Initialize a PassiveOpticalScanner object.
 
@@ -158,7 +155,6 @@ class PassiveOpticalScanner(Entity):
         self.detectorWidth = float(detectorWidth) if detectorWidth is not None else None
         self.snrThreshold = float(snrThreshold) if snrThreshold is not None else None
         self.maxDetectorExposureTime = float(maxDetectorExposureTime) if maxDetectorExposureTime is not None else None    
-        self.minRequiredAccessTime = float(minRequiredAccessTime) if minRequiredAccessTime is not None else None       
         self.considerAtmosLoss = bool(considerAtmosLoss) if considerAtmosLoss is not None else False # Set to False by default
 
         super(PassiveOpticalScanner,self).__init__(_id, "Passive Optical Scanner")
@@ -256,7 +252,6 @@ class PassiveOpticalScanner(Entity):
                         maxDetectorExposureTime = d.get("maxDetectorExposureTime", None),
                         snrThreshold = d.get("snrThreshold", None),
                         considerAtmosLoss = d.get("considerAtmosLoss", None),
-                        minRequiredAccessTime = d.get("minRequiredAccessTime", None),
                         _id = d.get("@id", None)
                         )
 
@@ -606,7 +601,6 @@ class PassiveOpticalScanner(Entity):
         [solar_inc_angle_rad, solar_distance] = MathUtilityFunctions.compute_sun_zenith(tObs_JDUT1, tar_pos_km)
         if(solar_inc_angle_rad is None) or (solar_inc_angle_rad >= numpy.pi/2): # check if Sun is below horizon
             return 1e-19 # return small number
-
         ''' 
         Calculate radiance from Sun [photons/s/m2/sr]. Note that here the two-way atmospheric losses (Sun to Ground to Observer) is taken into account, not just one way (Sun to Ground).
         Strictly speaking just the Sun to Ground atmospheric loss should be taken into account at this stage and a later stage the Ground to Sun atmos

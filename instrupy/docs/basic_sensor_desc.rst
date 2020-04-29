@@ -20,7 +20,6 @@ Input JSON format specifications description
     dataRate, float, Mega-bits-per-s,Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
     maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
-    minRequiredAccessTime, float, seconds, Minimum required access time over a ground-point for observation to be possible. 
 
 .. _basic_sensor_data_metrics_calc:
 

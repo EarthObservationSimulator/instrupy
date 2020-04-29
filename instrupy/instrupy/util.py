@@ -456,9 +456,8 @@ class FieldOfView(Entity):
             if(d.get("maneuverability", None)):
                 # Calculate the field-of-regard
                 manuv = d.get("maneuverability")
+                
                 mv_type = ManueverType.get(manuv["@type"])
-                if(mv_type is None):
-                    raise Exception('No manuever type specified. Specify either "CONE" or "ROLLONLY".')
                 if(mv_type == 'FIXED' or mv_type == 'YAW180'):
                     pass
                 elif(mv_type == 'CONE'):
