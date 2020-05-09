@@ -38,6 +38,7 @@ Input JSON format specifications description
    sceneNoiseTemp, float, Kelvin, Nominal scene noise temperature.
    systemNoiseFigure, float, decibels, System noise figure for the receiver. 
    radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere.
+   altitude, float, km, Altitude at which the instrument is flown
    sigmaNEZ0threshold, float, decibels, The :math:`\sigma_{NEZ0}` threshold for classification as a valid observation.
    maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)                                                                                                                       
 

@@ -180,8 +180,9 @@ class SyntheticApertureRadar(Entity):
         
         # initialize "Scene FOV" if required        
         numStripsInScene = d.get("numStripsInScene", None)
+        alt_km = d.get("altitude",None)
         if(numStripsInScene):
-            sc_AT_fov_deg = numStripsInScene * along_track_fov_deg
+            sc_AT_fov_deg = numpy.rad2deg(numStripsInScene * (D_az_m/2) / (alt_km*1e3)) # approximate azimuthal resolution used
             sc_CT_fov_deg = cross_track_fov_deg
             sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
             scene_fov = FieldOfView.from_json(sc_fov_json_str)
