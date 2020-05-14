@@ -17,9 +17,9 @@ The definition of Nadir-frame is as follows:
 
 *Nadir-frame*
 
-* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in ECI frame) => aligned to orbit plane normal
+* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in EarthFixed frame) => aligned to orbit plane normal
 * :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})` => shall be aligned to Velocity vector of Satellite in case of circular orbits
-* :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in ECI frame)
+* :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in EarthFixed frame)
 
 The first subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
 
