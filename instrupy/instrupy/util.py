@@ -883,16 +883,18 @@ class MathUtilityFunctions:
              .. note: The frame of reference for describing the object positions must be centered at spherical obstacle.
         
         """        
-        obstacle1_unitVec = MathUtilityFunctions.normalize(object1_pos)
-        obstacle2_unitVec = MathUtilityFunctions.normalize(object2_pos)  
+        obj1_unitVec = MathUtilityFunctions.normalize(object1_pos)
+        obj2_unitVec = MathUtilityFunctions.normalize(object2_pos)  
 
         # This condition tends to give a numerical error, so solve for it independently.
         eps = 1e-9
-        x = np.dot(obstacle1_unitVec, obstacle2_unitVec)
+        x = np.dot(obj1_unitVec, obj2_unitVec)
         
         if((x > -1-eps) and (x < -1+eps)):
             return False
         else:
+            if(x>1): 
+                x=1
             theta  = np.arccos(x)
                 
         obj1_r = np.linalg.norm(object1_pos)
