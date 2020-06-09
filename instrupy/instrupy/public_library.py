@@ -131,7 +131,7 @@ class Instrument(Entity):
                             "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
                             "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag
                             }
-                result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
+                result = {"@id": self._sensor._id, "Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
                 return json.dumps(result)   
                
         fov_specs = {"geometry": self._sensor.fieldOfView._geometry,
@@ -143,7 +143,7 @@ class Instrument(Entity):
                      }
 
 
-        result = {"Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
+        result = {"@id": self._sensor._id, "Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
         return json.dumps(result)
 
 ################################################### Legacy functions #################################################################    

@@ -178,8 +178,8 @@ class Orientation(Entity):
         imaging axis is along the instrument z-axis.
 
         **Nadir-frame:**
-        * :math:`\\bf X_{nadir}` axis: :math:`-({\\bf Z_{nadir}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in EarthFixed frame) => aligned to orbit-plane normal
-        * :math:`\\bf Y_{nadir}` axis: :math:`({\\bf Z_{nadir}} \\times {\\bf X_{nadir}})` => aligned to Velocity vector of Satellite for circular orbits
+        * :math:`\\bf X_{nadir}` axis: :math:`-({\\bf Z_{nadir}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in EarthFixed frame)
+        * :math:`\\bf Y_{nadir}` axis: :math:`({\\bf Z_{nadir}} \\times {\\bf X_{nadir}})`
         * :math:`\\bf Z_{nadir}` axis: Aligned to Nadir vector (position vector of satellite in EarthFixed frame)
 
         It is also assumed that the instrument imaging axis is along the instrument z-axis.
@@ -887,7 +887,7 @@ class MathUtilityFunctions:
         obstacle2_unitVec = MathUtilityFunctions.normalize(object2_pos)  
 
         # This condition tends to give a numerical error, so solve for it independently.
-        eps = 0.001
+        eps = 1e-9
         x = np.dot(obstacle1_unitVec, obstacle2_unitVec)
         
         if((x > -1-eps) and (x < -1+eps)):
@@ -1020,6 +1020,18 @@ class MathUtilityFunctions:
         TR = lowtran.transmittance(c1)
         TR = TR.where(TR['wavelength_nm']!=0, drop=True) # LowTran sometimes returns a entry with '0' wavelength (when the bandwidth is not "compatible" with the step-size)
         return TR 
+    
+    @staticmethod
+    def get_eca(fov_deg, alt_km):
+
+        RE = Constants.radiusOfEarthInKM 
+        sinRho = RE/(RE + alt_km)
+        hfov_deg = 0.5*fov_deg
+        elev_deg = np.rad2deg(np.arccos(np.sin(np.deg2rad(hfov_deg))/sinRho))
+        lambda_deg = 90 - hfov_deg - elev_deg # half-earth centric angle 
+        eca_deg = lambda_deg*2 # total earth centric angle
+
+        return eca_deg
 
 class FileUtilityFunctions:
 

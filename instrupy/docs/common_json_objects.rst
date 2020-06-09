@@ -17,8 +17,8 @@ The definition of Nadir-frame is as follows:
 
 *Nadir-frame*
 
-* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in EarthFixed frame) => aligned to orbit plane normal
-* :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})` => shall be aligned to Velocity vector of Satellite in case of circular orbits
+* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in EarthFixed frame)
+* :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})`
 * :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in EarthFixed frame)
 
 The first subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
@@ -172,7 +172,7 @@ Example:
 .. _maneuverability_json_object:
 
 :code:`maneuverability` JSON object
-####################################
+========================================
 Total maneuverability of payload pointing (combining satellite and payload maneuverability). Four types of 
 maneuverability are accepted: `Fixed`, `Cone`, `RollOnly`, `Yaw180Roll` and should be indicated in the 
 :code:`@type` name, value pair. Please refer to :ref:`manuv_desc` for a complete description of the options.

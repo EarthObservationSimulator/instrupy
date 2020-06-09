@@ -26,11 +26,11 @@ all: bare install docs
 
 docs: docs_clean #Build the documentation
 	-X=`pwd`; \
-	do echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make html; done
+	echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make html;
 
 docs_clean: 
 	-X=`pwd`; \
-	do echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make clean; done
+	echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make clean;
 
 install:
 	pip install -e .
