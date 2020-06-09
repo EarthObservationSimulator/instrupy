@@ -221,6 +221,7 @@ class SyntheticApertureRadar(Entity):
                         sceneNoiseTemp = d.get("sceneNoiseTemp", None),
                         systemNoiseFigure = d.get("systemNoiseFigure", None),
                         sigmaNEZ0threshold = d.get("sigmaNEZ0threshold", None),
+                        _id = d.get("@id", None)
                         )
 
     @staticmethod
