@@ -302,7 +302,7 @@ class FieldOfView(Entity):
         def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, 
                      AT_fov_deg = None, CT_fov_deg = None, yaw180_flag = None, _id = None):                       
 
-            if(coneAnglesVec_deg):
+            if(coneAnglesVec_deg is not None):
                 if(isinstance(coneAnglesVec_deg, list)):
                     self._coneAngleVec_deg = list(map(float, coneAnglesVec_deg))
                     self._coneAngleVec_deg = [x%360 for x in self._coneAngleVec_deg]
@@ -311,7 +311,7 @@ class FieldOfView(Entity):
             else:
                 self._coneAngleVec_deg = None
             
-            if(clockAnglesVec_deg):
+            if(clockAnglesVec_deg is not None):
                 if(isinstance(clockAnglesVec_deg, list)):
                     self._clockAngleVec_deg = list(map(float, clockAnglesVec_deg))
                     self._clockAngleVec_deg = [x%360 for x in self._clockAngleVec_deg]
@@ -320,10 +320,10 @@ class FieldOfView(Entity):
             else:
                 self._clockAngleVec_deg = None
 
-            self._geometry = geometry
-            self._AT_fov_deg = AT_fov_deg
-            self._CT_fov_deg = CT_fov_deg
-            self._yaw180_flag = bool(yaw180_flag) 
+            self._geometry = geometry if geometry is not None else None
+            self._AT_fov_deg = AT_fov_deg if AT_fov_deg is not None else None
+            self._CT_fov_deg = CT_fov_deg if CT_fov_deg is not None else None
+            self._yaw180_flag = bool(yaw180_flag) if yaw180_flag is not None else None
 
             super(FieldOfView, self).__init__(_id, "FieldOfView")
 

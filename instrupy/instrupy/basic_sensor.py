@@ -8,7 +8,7 @@ import json
 import numpy
 import copy
 import pandas, csv
-from .util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants
+from .util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry
 
 class BasicSensor(Entity):
     """A basic sensor class. 
@@ -56,7 +56,7 @@ class BasicSensor(Entity):
         self.mass = float(mass) if mass is not None else None
         self.volume = float(volume) if volume is not None else None
         self.power = float(power) if power is not None else None
-        self.orientation = copy.deepcopy(orientation) if orientation is not None else Orientation(0,0,0,1,2,3)
+        self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None
@@ -66,15 +66,17 @@ class BasicSensor(Entity):
     @staticmethod
     def from_dict(d):
         """Parses an instrument from a normalized JSON dictionary."""
+        default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
+        default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
         return BasicSensor(
                 name = d.get("name", None),
                 acronym = d.get("acronym", None),
                 mass = d.get("mass", None),
                 volume = d.get("volume", None),
                 power = d.get("power", None),
-                orientation = Orientation.from_json(d.get("orientation", None)),
-                fieldOfView = FieldOfView.from_json(d.get("fieldOfView", None)),
-                fieldOfRegard= FieldOfView.from_json({**d.get("fieldOfView", None) , **{"maneuverability": d.get("maneuverability", None)}}),
+                orientation = Orientation.from_json(d.get("orientation", default_orien)),
+                fieldOfView =  FieldOfView.from_json(d.get("fieldOfView", default_fov)),
+                fieldOfRegard= FieldOfView.from_json({**d.get("fieldOfView", default_fov) , **{"maneuverability": d.get("maneuverability", None)}}),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
                 _id = d.get("@id", None)

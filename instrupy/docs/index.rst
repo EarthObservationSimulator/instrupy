@@ -49,6 +49,7 @@ Examples
    common_json_objects
    api_reference
    miscellaneous
+   tests
 
 Glossary of terms used in the package
 ======================================

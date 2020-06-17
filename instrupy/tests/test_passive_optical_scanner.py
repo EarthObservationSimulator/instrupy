@@ -12,9 +12,6 @@ from instrupy.util import Orientation, FieldOfView
 
 
 class TestPassiveOpticalScanner(unittest.TestCase):
-
-
-
     firesat = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
                                                 '"mass": 28,'
