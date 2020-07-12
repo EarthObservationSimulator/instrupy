@@ -91,8 +91,8 @@ class SyntheticApertureRadar(Entity):
                            antenna port, and perhaps an additional 0.5 dB to 1.5 dB two-way through the radome.
         :vartype radarLosses: float
 
-        :ivar sigmaNEZ0threshold: The :math:`\\sigma_{NEZ0}` threshold for classification as a valid observation.
-        :vartype sigmaNEZ0threshold: float
+        :ivar sigmaNESZthreshold: The :math:`\\sigma_{NESZ}` threshold for classification as a valid observation.
+        :vartype sigmaNESZthreshold: float
 
         :cvar L_r: Reduction in SNR gain due to non-ideal range filtering.
         :vartype L_r: float
@@ -109,7 +109,7 @@ class SyntheticApertureRadar(Entity):
         :cvar L_atmos_dB: 2-way atmospheric loss of electromagnetic energy.
         :vartype L_atmos_dB: float
 
-        .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NEZ0}`
+        .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NESZ}`
           
     """
     L_r = float(1.2)
@@ -123,7 +123,7 @@ class SyntheticApertureRadar(Entity):
             sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
-            radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNEZ0threshold = None, _id=None):
+            radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNESZthreshold = None, _id=None):
         """Initialize a Synthetic Aperture Radar object.
 
         """          
@@ -148,9 +148,9 @@ class SyntheticApertureRadar(Entity):
         self.minimumPRF = float(minimumPRF) if minimumPRF is not None else None   
         self.maximumPRF = float(maximumPRF) if maximumPRF is not None else None 
         self.radarLosses = float(radarLosses) if radarLosses is not None else None
-        self.sceneNoiseTemp = float(sceneNoiseTemp) if sceneNoiseTemp is not None else None  
+        self.sceneNoiseTemp = float(sceneNoiseTemp) if sceneNoiseTemp is not None else float(290) # 290 K is default  
         self.systemNoiseFigure = float(systemNoiseFigure) if systemNoiseFigure is not None else None 
-        self.sigmaNEZ0threshold = float(sigmaNEZ0threshold) if sigmaNEZ0threshold is not None else None 
+        self.sigmaNESZthreshold = float(sigmaNESZthreshold) if sigmaNESZthreshold is not None else None 
         super(SyntheticApertureRadar,self).__init__(_id, "Synthetic Aperture Radar")
         
     @staticmethod
@@ -220,7 +220,7 @@ class SyntheticApertureRadar(Entity):
                         radarLosses = d.get("radarLosses", None),
                         sceneNoiseTemp = d.get("sceneNoiseTemp", None),
                         systemNoiseFigure = d.get("systemNoiseFigure", None),
-                        sigmaNEZ0threshold = d.get("sigmaNEZ0threshold", None),
+                        sigmaNESZthreshold = d.get("sigmaNESZthreshold", None),
                         _id = d.get("@id", None)
                         )
 
@@ -283,7 +283,7 @@ class SyntheticApertureRadar(Entity):
                       falls under the sensor FOV. **Coverage** is when the target location falls under sensor FOV *and* 
                       can be observed.
 
-            .. todo:: Include frequency dependent atmospheric losses in :math:`\\sigma_{NEZ0}` calculations.
+            .. todo:: Include frequency dependent atmospheric losses in :math:`\\sigma_{NESZ}` calculations.
                         
         '''
         
@@ -304,7 +304,8 @@ class SyntheticApertureRadar(Entity):
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
         look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
         incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)       
-
+        #print("look_angle = ", look_angle*180/numpy.pi)
+        #print("incidence_angle = ", incidence_angle_rad*180/numpy.pi)
         # Copying values into variables of more code-friendly variables
         Re = Constants.radiusOfEarthInKM * 1e3        
         c = Constants.speedOfLight
@@ -334,7 +335,7 @@ class SyntheticApertureRadar(Entity):
 
         # Note that the nominal look angle is cnsidered to evaluate the operable PRF.
         [f_P, W_gr] = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)
-      
+        # print(f_P)   
         isCovered = False
         rho_a = None
         rho_y = None
@@ -351,7 +352,7 @@ class SyntheticApertureRadar(Entity):
             # Note that this is not the same as incidence angle to middle of swath
             theta_i = incidence_angle_rad
                             
-            psi_g = numpy.pi/2.0 - theta_i # grazing angle                    
+            psi_g = numpy.pi/2.0 - theta_i # grazing angle   
             
             # [1] equation 17, find P_avg, average transmit power
             T_eff = tau_p # approximate effective pulse duration to be actual pulse duration, as in case of matched filter processing
@@ -373,14 +374,17 @@ class SyntheticApertureRadar(Entity):
             rho_a = SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az)
 
             # check if sigma NEZ nought satisfies uer supplied threshold. Note that lesser is better.
-            if(sigma_N_dB < self.sigmaNEZ0threshold):
-                isCovered = True
+            if self.sigmaNESZthreshold is not None:
+                if(sigma_N_dB < self.sigmaNESZthreshold):
+                    isCovered = True
+            else:
+                isCovered = True # no user specification => no constraint
 
-               
+             
         obsv_metrics = {}
         obsv_metrics["Ground Pixel Along-Track Resolution [m]"] = rho_a
         obsv_metrics["Ground Pixel Cross-Track Resolution [m]"] = rho_y
-        obsv_metrics["Sigma NEZ Nought [dB]"] = sigma_N_dB
+        obsv_metrics["Sigma NESZ [dB]"] = sigma_N_dB
         obsv_metrics["Incidence angle [deg]"] = numpy.rad2deg(theta_i) if theta_i is not None else numpy.nan
         obsv_metrics["(Nominal) Swath-width [km]"] = W_gr/1e3 if W_gr is not None else numpy.nan        
         obsv_metrics["Coverage [T/F]"] = isCovered
@@ -402,8 +406,41 @@ class SyntheticApertureRadar(Entity):
         [2] is the primary reference for this formulation, although some errors have been found (and corrected for the current
         implementation) in the text.
 
-        Of all the available valid PRFs, the highest PRF is chosen since it improves the :math:`\sigma_{NEZ0}` observation data-metric.
+        Of all the available valid PRFs, the highest PRF is chosen since it improves the :math:`\\sigma_{NESZ}` observation data-metric.
         The near-range and far-range calculations are based on the nominal instrument look-angle. 
+
+        :param f_Pmin: Minimum PRF in [Hz]
+        :paramtype f_Pmin: float
+
+        :param f_Pmax: Maximum PRF in [Hz]
+        :paramtype f_Pmax: float
+
+        :param v_sc_kmps: Satellite velocity in [km/s]
+        :paramtype v_sc_kmps: float
+
+        :param v_g_kmps: Satellite ground velocity in [km/s]
+        :paramtype v_g_kmps: float
+
+        :param alt_km: Altitude in [km]
+        :paramtype alt_km: float
+
+        :param instru_look_angle_rad: Instrument look angle (middle of the swath) in [radians]
+        :paramtype instru_look_angle_rad: float
+
+        :param tau_p: Pulse width in [s]
+        :paramtype tau_p: float
+
+        :param D_az: Antenna dimension along cross-range direction in [m]
+        :paramtype D_az: float
+
+        :param D_elv: Antenna dimension along range direction in [m]
+        :paramtype D_elv: float
+
+        :param fc: Carrier center frequency in [Hz]
+        :paramtype fc: float
+
+        :param dwn_az: Downsampling factor for Doppler processing
+        :paramtype dwn_az: int
 
         """
         h = alt_km * 1e3
@@ -413,17 +450,29 @@ class SyntheticApertureRadar(Entity):
 
         lamb = c/fc        
 
-        # full swath imaging-mode at nominal look-angle.
-        # NOTE: While calculating full swath width the instrument look angle is used!!!! Not the Target look angle.
-        theta_elv = lamb/ D_elv # 3-dB beamwidth (full-beamwidth) illuminating the swath
-        gamma_n = instru_look_angle_rad - 0.5*theta_elv
-        gamma_f = instru_look_angle_rad + 0.5*theta_elv
-        theta_in = numpy.arcsin(numpy.sin(gamma_n)*Rs/Re)
-        theta_if = numpy.arcsin(numpy.sin(gamma_f)*Rs/Re)
-        alpha_n = theta_in - gamma_n
-        alpha_f = theta_if - gamma_f
-        alpha_s = alpha_f - alpha_n
-        W_gr = Re*alpha_s  
+        full_swath = True
+        if(full_swath):
+            # full swath imaging-mode at nominal look-angle.
+            # NOTE: While calculating full swath width the instrument look angle is used!!!! Not the Target look angle.
+            theta_elv = lamb/ D_elv # 3-dB beamwidth (full-beamwidth) illuminating the swath
+            gamma_n = instru_look_angle_rad - 0.5*theta_elv
+            gamma_f = instru_look_angle_rad + 0.5*theta_elv
+            theta_in = numpy.arcsin(numpy.sin(gamma_n)*Rs/Re)
+            theta_if = numpy.arcsin(numpy.sin(gamma_f)*Rs/Re)
+            alpha_n = theta_in - gamma_n
+            alpha_f = theta_if - gamma_f
+            alpha_s = alpha_f - alpha_n
+            W_gr = Re*alpha_s  
+        else: # fixed swath
+            W_gr = 10e3
+            # [2] Figure 5.1.3.1 we get Swath width on the ground (there appear mistakes in the figure, but the equations are correct).
+            alpha_s = W_gr/Re
+            gamma_m = instru_look_angle_rad
+            theta_im = numpy.arcsin(numpy.sin(gamma_m)*Rs/Re)
+            alpha_m = theta_im - gamma_m  # [2] equation 5.1.3.5
+            alpha_n = alpha_m - alpha_s/2.0 # [2] equation 5.1.3.7
+            alpha_f = alpha_m + alpha_s/2.0 # [2] equation 5.1.3.8
+
 
         # Preprocessing to check if PRF allows for unambiguous echo detection from swath W_gr        
         Rn = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_n)) # [2] equation 5.1.3.9 slant-range to near edge of swath
@@ -432,9 +481,11 @@ class SyntheticApertureRadar(Entity):
         tau_near = 2*Rn/c # [2] equation 5.1.3.11
         tau_far = 2*Rf/c # [2] equation 5.1.3.12
 
+        
         PRFmax = 1.0/(2.0*tau_p + tau_far - tau_near) # max allowble PRF [2] equation 5.1.3.13
         PRFmin = v_sc_kmps*1e3/SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
-
+        #print("PRFmax: ", PRFmax)
+        #print("PRFmin: ", PRFmin)
         f_P = None    
         # Find the highest possible prf within the input prf range which allows for unambiguous echo detection. 
         for _f_P in range(int(f_Pmax), int(f_Pmin), -1): # step down in terms of 1 Hz

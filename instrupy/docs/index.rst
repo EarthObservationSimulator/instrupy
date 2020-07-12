@@ -25,7 +25,7 @@ For a detailed description see the following articles:
 Install
 ========
 
-Requires: :code:`python 3.8`, :code:`gfortran`
+Requires: :code:`python 3.8`, :code:`pip`, :code:`gfortran`
 
 1. Navigate to the :code:`instruments/instrupy/` directory and run :code:`make`. 
 2. Run tests using the :code:`make runtest` command and get the *OK* message.

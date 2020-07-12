@@ -2,6 +2,7 @@
 {
     "@type": "Synthetic Aperture Radar",
     "name": "Seasat-A",  
+    "@id": "sen1",
     "mass": 243, 
     "volume": 2.5, 
     "power": 500, 
@@ -23,10 +24,18 @@
     "sceneNoiseTemp": 290, 
     "bitsPerPixel": 5, 
     "systemNoiseFigure": 5.11,
-    "sigmaNEZ0threshold": -10, 
+    "sigmaNESZthreshold": -10, 
+    "maneuverability":{
+        "@type": "YAW180ROLL",
+        "rollMin": -10,
+        "rollMax": 10    
+    },
+    "altitude": 800,
+    "numStripsInScene":14392,
     "_references":  ["The Seasat-A Synthetic Aperture Radar System, Rolando L.Jordan 1980",
                      "Spaceborne SAR Study: LDRD ’92 Final Report",
                      "https://directory.eoportal.org/web/eoportal/satellite-missions/s/seasat"
-                    ]
+                    ],
+    "_notes": ["The maneuverability field does not correspond to SeaSat1 and is meant for purpose of illustration of the feature."]
       
 }

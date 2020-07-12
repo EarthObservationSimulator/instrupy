@@ -22,7 +22,7 @@
     "sceneNoiseTemp": 290, 
     "bitsPerPixel": 16, 
     "systemNoiseFigure": 4.3,
-    "sigmaNEZ0threshold": -10,
+    "sigmaNESZthreshold": -10,
     "_references": { 
                     "ref1": {
                             "doi":  "10.1587/transcom.2016pfi0008",

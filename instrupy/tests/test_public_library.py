@@ -92,7 +92,7 @@ class TestPublicLibrary(unittest.TestCase):
                             '"radarLosses": 3.5,' 
                             '"sceneNoiseTemp": 290,' 
                             '"systemNoiseFigure": 4.3,'
-                            '"sigmaNEZ0threshold": -10}')
+                            '"sigmaNESZthreshold": -10}')
 
         o = Instrument.from_json(microxsar_json)
         cov = json.loads(o.get_coverage_specs())

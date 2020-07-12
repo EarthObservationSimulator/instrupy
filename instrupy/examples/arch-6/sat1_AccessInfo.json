@@ -23,7 +23,7 @@
     "sceneNoiseTemp": 290, 
     "bitsPerPixel": 5, 
     "systemNoiseFigure": 5.11,
-    "sigmaNEZ0threshold": -10, 
+    "sigmaNESZthreshold": -10, 
     "_references":  ["The Seasat-A Synthetic Aperture Radar System, Rolando L.Jordan 1980",
                      "Spaceborne SAR Study: LDRD ’92 Final Report",
                      "https://directory.eoportal.org/web/eoportal/satellite-missions/s/seasat"

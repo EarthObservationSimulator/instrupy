@@ -23,6 +23,12 @@
     "sceneNoiseTemp": 290, 
     "bitsPerPixel": 5, 
     "systemNoiseFigure": 3.4,
-    "sigmaNEZ0threshold": -15, 
-    "_references":  ["Spaceborne SAR Study: LDRD ’92 Final Report"]
+    "sigmaNESZthreshold": -15,
+    "maneuverability":{
+        "@type": "ROLLONLY",
+        "rollMin": -15,
+        "rollMax": 15    
+    }, 
+    "_references":  ["Spaceborne SAR Study: LDRD ’92 Final Report"],
+    "_notes": ["The maneuverability field does not correspond to ERS1 and is meant for purpose of illustration of the feature."]
 }

@@ -16,7 +16,6 @@ class TestBasicSensor(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         # 
-
         super(TestBasicSensor, self).__init__(*args, **kwargs)
 
     def test_from_json_basic(self):
@@ -123,7 +122,7 @@ class TestBasicSensor(unittest.TestCase):
 
 
     def test_calc_typ_data_metrics_1(self):
-        """ Simple test involving satellite at 500 km above POI at (lat = 0,lon = 0). Date chosen so that ECEF and ECI frames are aligned.
+        """ Simple test involving satellite above POI at (lat = 0,lon = 0). Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
         """
@@ -140,7 +139,7 @@ class TestBasicSensor(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["Solar Zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and (lat=0, lon=0) position
 
     def test_calc_typ_data_metrics_2(self):
-        """ Test with satellite altitude of 500 km and making observation to the East.
+        """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to the East.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
@@ -175,7 +174,7 @@ class TestBasicSensor(unittest.TestCase):
 
 
     def test_calc_typ_data_metrics_3(self):
-        """ Test with satellite at altitude of 500 km and making observation to the West.
+        """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to the West.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
@@ -210,7 +209,7 @@ class TestBasicSensor(unittest.TestCase):
 
 
     def test_calc_typ_data_metrics_4(self):
-        """ Test with satellite at altitude of 500 km and making observation to South.
+        """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to South.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
@@ -245,7 +244,7 @@ class TestBasicSensor(unittest.TestCase):
         
 
     def test_calc_typ_data_metrics_5(self):
-        """ Test with satellite at altitude of 500 km and making observation to North.
+        """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to North.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.

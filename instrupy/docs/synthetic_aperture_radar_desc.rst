@@ -39,7 +39,7 @@ Input JSON format specifications description
    systemNoiseFigure, float, decibels, System noise figure for the receiver. 
    radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere.
    altitude, float, km, Altitude at which the instrument is flown
-   sigmaNEZ0threshold, float, decibels, The :math:`\sigma_{NEZ0}` threshold for classification as a valid observation.
+   sigmaNESZthreshold, float, decibels, "The :math:`\sigma_{NESZ}` threshold for classification as a valid observation. If not specified, it is assumed that this constraint does not exist."
    maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)                                                                                                                       
 
 .. _synthetic_aperture_radar_calc:
@@ -54,7 +54,7 @@ Output observation metrics calculation
     Coverage [T/F], string,, Indicates if observation was possible during the access event (True/ False).                                                                           
     Incidence Angle [deg], float, degrees, Incidence angle at target point calculated assuming spherical Earth.                                                                                                                       
     (Nominal) Swath-Width [m], float, meters, Swath-width of the strip of which the imaged pixel is part-off. Corresponding to the nominal instrument orientation.                                                                                         
-    Sigma NEZ Nought [dB], float, decibels, The backscatter coefficient of a target for which the signal power level in final image is equal to the noise power level.**Lesser is better.**       
+    Sigma NESZ [dB], float, decibels, The backscatter coefficient of a target for which the signal power level in final image is equal to the noise power level.**Lesser is better.**       
     Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                             
     Ground Pixel Cross-Track Resolution [m], float, meters, Cross-track pixel resolution    
 
@@ -103,7 +103,7 @@ From *[2] equation (5.3.6.3)* we get the minimum possible azimuth resolution (fo
 .. note:: It is assumed that the generated target geometry (from the satellite position and the target position) is such that the 
           instrument sees the ground-pixel at a strictly side-look geometry. 
 
-:math:`\sigma_{NEZ0}` calculations
+:math:`\sigma_{NESZ}` calculations
 -----------------------------------
 
 :math:`\psi_g = \dfrac{\pi}{2} - \theta_i` 
@@ -122,11 +122,11 @@ Use *[1] equation 8*, find :math:`G_A`
 
 :math:`G_A = 4 \pi \dfrac{\eta_{ap} A_A}{\lambda^2}`                
 
-*[1] equation 37* we can get the :math:`\sigma_{NEZ0}`
+*[1] equation 37* we can get the :math:`\sigma_{NESZ}`
 
-:math:`\sigma_{NEZ0} = \dfrac{265 \pi^3 k T}{c} (R^3  v_s  \cos\psi_g) \dfrac{ B_T F_N L_{radar} L_{atmos}}{P_{avg} G_A^2 \lambda^3} \dfrac{L_r L_a}{a_{wr} a_{wa}}`
+:math:`\sigma_{NESZ} = \dfrac{265 \pi^3 k T}{c} (R^3  v_s  \cos\psi_g) \dfrac{ B_T F_N L_{radar} L_{atmos}}{P_{avg} G_A^2 \lambda^3} \dfrac{L_r L_a}{a_{wr} a_{wa}}`
 
-:math:`\sigma_{NEZ0},_{dB} = 10 log_{10}\sigma_{NEZ0}`
+:math:`\sigma_{NESZ},_{dB} = 10 log_{10}\sigma_{NESZ}`
 
 .. note:: :math:`v_s` is to be used here. See [2] for more explanation.
 
@@ -194,7 +194,7 @@ The below conditions need to be satisfied:
     :math:`f_P< \dfrac{m}{\tau_{far} + \tau_p - \tau_{nadir}}`     
      
 
-Of all the available valid PRFs, the highest PRF is chosen since it improves the :math:`\sigma_{NEZ0}` observation data-metric.
+Of all the available valid PRFs, the highest PRF is chosen since it improves the :math:`\sigma_{NESZ}` observation data-metric.
 The reason is that the average transmit power increases (since we keep the transmit pulse length constant), and hence the received 
 image signal-to-noise-ratio increases.
 
