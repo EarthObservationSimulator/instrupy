@@ -5,6 +5,8 @@ References:
 
 1. *Performance Limits for Synthetic Aperture Radar - second edition SANDIA Report 2006.* ----> Main reference.
 2. *Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993.* ----> Reference for PRF validity calculations, corrections for spaceborne radar.
+3. *Synthetic Aperture Radar Polarimetry,  Jakob Van Zyl* ----> Reference for compact-pol and AIRSAR implementation for dual-pol.
+4. *SMAP Handbook* ----> Reference for SMAP implementation of dual-pol.
 
  .. note:: See :ref:`synthetic_aperture_radar_glossary` for names of the variables used in any discussion below.
 
@@ -26,26 +28,139 @@ Input JSON format specifications description
    numStripsInScene, int, , Number of consequetive scanned strips in a scene. See :ref:`ifov_fov_scenefov_for_desc`.
    dataRate, float, Megabits per s,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
-   pulseWidth, float, seconds, Actual pulse width.
+   pulseWidth, float, seconds, Actual pulse width (per channel/polarization).
    antennaAlongTrackDim, float, meters, Antenna size in the along-track direction.
    antennaCrossTrackDim, float, meters, Antenna size in the cross-track direction.
    antennaApertureEfficiency, float, ,Aperture efficiency of antenna (:math:`0 < \eta_{ap} < 1`).
    operatingFrequency, float, Hertz, Operating radar center frequency.
    peakTransmitPower, float, Watts, Peak transmit power.
-   chirpBandwidth, float, Hertz, Bandwidth of radar operation.
-   minimumPRF, float, Hertz, The minimum pulse-repetition-frequency of operation.
-   maximumPRF, float,  Hertz, The maximum pulse-repetition-frequency of operation.
+   chirpBandwidth, float, Hertz, Bandwidth of radar operation (per channel/polarization).
+   minimumPRF, float, Hertz, "The minimum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF is considered taking all pulses into account (i.e. PRFmaster))."
+   maximumPRF, float,  Hertz, "The maximum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF is considered taking all pulses into account (i.e. PRFmaster))."
    sceneNoiseTemp, float, Kelvin, Nominal scene noise temperature.
    systemNoiseFigure, float, decibels, System noise figure for the receiver. 
    radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere.
    altitude, float, km, Altitude at which the instrument is flown
    sigmaNESZthreshold, float, decibels, "The :math:`\sigma_{NESZ}` threshold for classification as a valid observation. If not specified, it is assumed that this constraint does not exist."
-   maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)                                                                                                                       
+   maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)       
+   polarization, :ref:`sar_pol_json_object`, ,Polarization configuration. Default is single polarization.
+   swathConfig, :ref:`sar_swath_config_json_object`, ,Swath Configuration. Default is full-swath.          
+
+.. _sar_swath_config_json_object:
+
+:code:`swathConfig` JSON object
+----------------------------------
+
+Swath configuration. Two types are accepted: `FullSwath` and `FixedSwath`. This should be indicated 
+in the :code:`@type` name, value pair. If this JSON object is absent, `FullSwath` is assumed.
+
+1. :code:`"@type":"FullSwath"` 
+
+Tne entire illumintated swath by the main-lobe of the antenna is considered. No other parameters are required.
+
+2. :code:`"@type":"FixedSwath"` 
+
+A fixed swath size (less than the swath illuminated by the main-lobe) is considered. The swath size to be used is to be
+input by the user. Deafult is 10km.
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   fixedSwathSize, float, kilometers ,Imaged Swath size
+
+Example:
+
+.. code-block:: javascript
+   
+   "swathConfig":{
+          "@type": "fixedswath",     
+          "fixedSwathSize": 25
+    }
+
+.. _sar_pol_json_object:
+
+:code:`polarization` JSON object
+----------------------------------
+
+Polarization specifications. Three types of polarization are accepted: `single`, `compact` and `dual`. This should be indicated 
+in the :code:`@type` name, value pair. If this JSON object is absent, (default) single polarization is assumed.
+
+1. :code:`"@type":"single"` 
+
+Single transmit and receive polarization
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   txPol, str, ,Transmit polarization (eg: H)
+   rxPol, str, ,Receive polarization (eg: H)
+
+2. :code:`"@type":"compact"` 
+
+Single transmit and dual receive polarization.
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   txPol, str, ,Transmit polarization (eg: 45degLinPol)
+   rxPol, str, ,Receive polarization (eg: H and V)
+
+3. :code:`"@type":"dual"` 
+
+Dual transmit and dual receive polarization. The :code:`pulseConfig` JSON object is used to specify the configuration of the pulse
+train used to enable dual-pol. Default is `AIRSAR` configuration.
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   txPol, str, ,Transmit polarization (eg: H and V)
+   rxPol, str, ,Receive polarization (eg: H and V)
+   pulseConfig, :ref:`pulseConfig_json_object`, ,Configuration of the pulse train. 
+
+.. _pulseConfig_json_object:
+
+:code:`pulseConfig` JSON object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+i. :code:`@type: "AIRSAR"`
+
+This pulse configuration is the same as the one implemented by the NASA/JPL AIRSAR systems (see Pg.32, Fig.2-5 in [3]). It consists of transmiting alternatng pulses of orthogonal
+polarization and filtering the received signal into seperate orthogonal polarizations.
+
+ii. :code:`"@type":"SMAP"` 
+
+This pulse configuration is the same as the one implemented by the SMAP radar (see Pg.41, Fig.26 in [4]). It consists of two slightly separated pulses of 
+orthogonal polarizations at different frequency bands. The received signal is seperated into the respective band and the orthgonal 
+polarizations measured. This requires an additional parameter called as the :code:`pulseSeperation` to indicate the seperation 
+between the pulses of the two orthogonal polarizations. If not specified a default value of 50% of the pulse-width (:code:`pulseWidth`) is considered.
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   pulseSeperation, float, seconds, Seperation between orthogonal polarized pulses. Default: 0.5*pulse-width.
+
+Example:
+
+.. code-block:: javascript
+   
+   "polarization":{
+          "@type": "dual",     
+          "txPol": "H, V",
+          "rxPol": "H, V",
+          "pulseConfig":{
+          "@type": "SMAP",
+          "pulseSeperation": 9e-6
+    }
 
 .. _synthetic_aperture_radar_calc:
 
-Output observation metrics calculation
-=========================================
+Output observation metrics calculation:
+========================================
 
 .. csv-table:: Observation data metrics table
     :widths: 8,4,4,20
@@ -130,9 +245,6 @@ Use *[1] equation 8*, find :math:`G_A`
 
 .. note:: :math:`v_s` is to be used here. See [2] for more explanation.
 
-Auxillary calculations
-=========================================
-
 Field-of-View calculations
 ---------------------------
 The antenna is assumed to be planar with dimensions :math:`D_{az} \hspace{1mm} D_{elv}`. The along-track and cross-track 
@@ -147,9 +259,10 @@ hence a rectangular field-of-view geometry.
 
 Checking validity of pulse repetition frequency (PRF)
 ------------------------------------------------------
+
 The user supplies a range of operable PRFs of the SAR instrument. Depending on the orbit conditions (the altitude of satellite
 in our case) a usable/ valid PRF has to be selected for target observation. [2] is the primary reference for this formulation, although some errors have been found (and corrected for the current
-implementation) in the text. 
+implementation) in the text.
 
 .. warning:: The nominal orientation of the instrument is considered while evaluating the near range and far range and hence the operable PRF. If
              the actual instrument look-angle is different, the selected PRF may not be correct.  
@@ -198,6 +311,39 @@ Of all the available valid PRFs, the highest PRF is chosen since it improves the
 The reason is that the average transmit power increases (since we keep the transmit pulse length constant), and hence the received 
 image signal-to-noise-ratio increases.
 
+Dual-pol (AIRSAR/ SMAP) considerations:
+-----------------------------------------
+
+In case of dual-polarization additional considerations must be taken into account while calculating the PRF, PRF validity and :math:`\sigma_{NESZ}`.
+
+AIRSAR dual-pol config
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The PRF range specified by the user refers to the range of the master PRF (:math:`PRF_{master}`), i.e. the PRF calculated 
+considering pulses from both the channels. 
+
+The PRF minimum constraint as calculated in the single-pol/ compact-pol apply, albeit to each 
+*channel*, i.e. each polarization. Thus :math:`PRF_{ch} = 0.5 PRF_{master}` needs to satisfy the PRF minimum constraint, 
+where :math:`PRF_{ch}` is the channel PRF.
+
+The PRF maximum constraint as calculated in the single-pol/ compact-pol needs to be applied on the :math:`PRF_{master}`. 
+Thus :math:`PRF_{master}` needs to satisfy the PRF maximum constraint. Likewise for the transmit-pulse overlap and nadir-echo
+overlap conditions. 
+
+The :math:`\sigma_{NESZ}` calculation is done by considering
+the PRF of each channel i.e. :math:`PRF_{ch}`.
+
+SMAP dual-pol config
+^^^^^^^^^^^^^^^^^^^^^
+
+The PRF constraint calculations must be done by considering that the
+total-pulse-width = 2 * :code:`pulseWidth` + :code:`pulseSeperation`
+
+where :code:`pulseWidth` is the user input pulse width per polarization and :code:`pulseSeperation` is the 
+seperation between the pulses of the orthogonal polarization.
+
+The :math:`\sigma_{NESZ}` calculation is done with the pulse-width = :code:`pulseWidth`
+
 .. _synthetic_aperture_radar_glossary:
 
 Glossary
@@ -243,6 +389,8 @@ Glossary
 * :math:`\tau_{far}`:  Time of return of echo (from transmit time) from the far end of swath
 * :math:`PRF_{MAX}`: Maximum allowable PRF
 * :math:`PRF_{MIN}`: Maximum allowable PRF
+* :math:`PRF_{ch}`: Channel (per polarization) PRF
+* :math:`PRF_{master}`: Master PRF (becomes significant in case of dual-pol)
 * :math:`N`: The number of transmit pulses after which echo from desired swath is received
 * :math:`\tau_{nadir}`: Time of return of pulse from Nadir
 * :math:`M`: Maximum number of transmit pulses after which echo from desired region completes

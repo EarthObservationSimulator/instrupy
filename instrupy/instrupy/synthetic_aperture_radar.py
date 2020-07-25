@@ -14,7 +14,23 @@ import json
 import numpy
 import copy
 import pandas, csv
-from .util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions
+from .util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
+
+class PolTypeSAR(EnumEntity):
+    """Enumeration of recognized SAR polarization types"""
+    SINGLE = "SINGLE",
+    COMPACT = "COMPACT",
+    DUAL = "DUAL"
+
+class DualPolPulseConfig(EnumEntity):
+    """Enumeration of recognized dual-polarization pulse configurations"""
+    AIRSAR = "AIRSAR",
+    SMAP = "SMAP"
+
+class SwathTypeSAR(EnumEntity):
+    """Enumeration of recognized SAR swath imaging configurations"""
+    FULL = "FULL",
+    FIXED = "FIXED"
 
 class SyntheticApertureRadar(Entity):
     """A synthetic aperture radar class estimating observation data-metrics from Stripmap mode of imaging.       
@@ -109,6 +125,21 @@ class SyntheticApertureRadar(Entity):
         :cvar L_atmos_dB: 2-way atmospheric loss of electromagnetic energy.
         :vartype L_atmos_dB: float
 
+        :cvar polType: SAR polarization type
+        :vartype polType: :class:`PolTypeSAR`
+
+        :cvar dualPolPulseConfig: In case of SMAP dual-pol configuration, this parameter indicates the pulse configuration.
+        :vartype dualPolPulseConfig: :class:`DualPolPulseConfig`
+
+        :cvar dualPolPulseSep: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds.
+        :vartype dualPolPulseSep: float
+
+        :cvar swathType: SAR polarization type
+        :vartype swathType: :class:`SwathTypeSAR`
+
+        :cvar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath.
+        :vartype fixedSwathSize: float
+
         .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NESZ}`
           
     """
@@ -123,7 +154,8 @@ class SyntheticApertureRadar(Entity):
             sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
-            radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNESZthreshold = None, _id=None):
+            radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNESZthreshold = None, 
+            polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, fixedSwathSize = None, _id=None):
         """Initialize a Synthetic Aperture Radar object.
 
         """          
@@ -151,6 +183,11 @@ class SyntheticApertureRadar(Entity):
         self.sceneNoiseTemp = float(sceneNoiseTemp) if sceneNoiseTemp is not None else float(290) # 290 K is default  
         self.systemNoiseFigure = float(systemNoiseFigure) if systemNoiseFigure is not None else None 
         self.sigmaNESZthreshold = float(sigmaNESZthreshold) if sigmaNESZthreshold is not None else None 
+        self.polType = PolTypeSAR.get(polType) if polType is not None else None  
+        self.dualPolPulseConfig = DualPolPulseConfig.get(dualPolPulseConfig) if dualPolPulseConfig is not None else None  
+        self.dualPolPulseSep = float(dualPolPulseSep) if dualPolPulseSep is not None else None  
+        self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
+        self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
         super(SyntheticApertureRadar,self).__init__(_id, "Synthetic Aperture Radar")
         
     @staticmethod
@@ -196,6 +233,38 @@ class SyntheticApertureRadar(Entity):
         else:
             fldofreg_str = {**json.loads(fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
  
+        # initialize the polarization configuration
+        pol = d.get("polarization", None)
+        dualPolPulseConfig = None
+        dualPolPulseSep = None
+        if(pol):
+            polType = PolTypeSAR.get(pol["@type"])
+            if(polType == PolTypeSAR.DUAL):
+                if(pol.get("pulseConfig")):
+                    if(pol["pulseConfig"].get("@type") == DualPolPulseConfig.SMAP):
+                        dualPolPulseConfig = DualPolPulseConfig.SMAP
+                        dualPolPulseSep = pol["pulseConfig"].get("pulseSeperation") if pol["pulseConfig"].get("pulseSeperation", None) is not None else 0.5*d.get("pulseWidth")
+                    elif(pol["pulseConfig"].get("@type") == DualPolPulseConfig.AIRSAR):
+                        dualPolPulseConfig = DualPolPulseConfig.AIRSAR
+                        dualPolPulseSep = None
+                    else:
+                        raise RuntimeError("Unknown pulse configuration in Dual-polarization specification.")
+        else: # assign default polarization
+            polType = PolTypeSAR.SINGLE
+            
+
+        # initialize the swath configuration
+        fixedSwathSize = None
+        swathConfig = d.get("swathConfig", None)
+        if(swathConfig):
+            swathType = SwathTypeSAR.get(swathConfig["@type"])
+            
+            if(swathType == SwathTypeSAR.FIXED):
+                fixedSwathSize = swathConfig.get("fixedSwathSize") if swathConfig.get("fixedSwathSize", None) is not None else 10 # default to 10km
+        else: # assign default
+            swathType = SwathTypeSAR.FULL
+            
+
         return SyntheticApertureRadar(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
@@ -221,6 +290,11 @@ class SyntheticApertureRadar(Entity):
                         sceneNoiseTemp = d.get("sceneNoiseTemp", None),
                         systemNoiseFigure = d.get("systemNoiseFigure", None),
                         sigmaNESZthreshold = d.get("sigmaNESZthreshold", None),
+                        polType=polType,
+                        dualPolPulseConfig = dualPolPulseConfig,
+                        dualPolPulseSep=dualPolPulseSep,
+                        swathType=swathType,
+                        fixedSwathSize=fixedSwathSize,
                         _id = d.get("@id", None)
                         )
 
@@ -292,7 +366,7 @@ class SyntheticApertureRadar(Entity):
 
         # Calculate Target position in ECI frame
         TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
-
+        print("TargetPosition_km = ", TargetPosition_km)
         # Spacecraft position in Cartesian coordinates
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
         SpacecraftVelocity_kmps = numpy.array([SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]]) 
@@ -302,10 +376,11 @@ class SyntheticApertureRadar(Entity):
         range_vector_km = TargetPosition_km - SpacecraftPosition_km
 
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
+        print("alt_km = ", alt_km)
         look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
         incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)       
-        #print("look_angle = ", look_angle*180/numpy.pi)
-        #print("incidence_angle = ", incidence_angle_rad*180/numpy.pi)
+        print("look_angle = ", look_angle*180/numpy.pi)
+        print("incidence_angle = ", incidence_angle_rad*180/numpy.pi)
         # Copying values into variables of more code-friendly variables
         Re = Constants.radiusOfEarthInKM * 1e3        
         c = Constants.speedOfLight
@@ -333,9 +408,12 @@ class SyntheticApertureRadar(Entity):
                                   
         instru_look_angle_rad = numpy.abs(numpy.deg2rad(self.orientation.euler_angle2)) # nominal instrument look angle
 
-        # Note that the nominal look angle is cnsidered to evaluate the operable PRF.
-        [f_P, W_gr] = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)
-        # print(f_P)   
+        # Note that the nominal look angle is considered to evaluate the operable PRF.
+        [f_P, W_gr_illum, W_gr_obs] = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, 
+                                                                             instru_look_angle_rad, tau_p, D_az, D_elv, fc,
+                                                                             self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
+                                                                             self.swathType, self.fixedSwathSize)
+        print(f_P)   
         isCovered = False
         rho_a = None
         rho_y = None
@@ -386,14 +464,17 @@ class SyntheticApertureRadar(Entity):
         obsv_metrics["Ground Pixel Cross-Track Resolution [m]"] = rho_y
         obsv_metrics["Sigma NESZ [dB]"] = sigma_N_dB
         obsv_metrics["Incidence angle [deg]"] = numpy.rad2deg(theta_i) if theta_i is not None else numpy.nan
-        obsv_metrics["(Nominal) Swath-width [km]"] = W_gr/1e3 if W_gr is not None else numpy.nan        
+        obsv_metrics["(Nominal) Swath-width [km]"] = W_gr_obs/1e3 if W_gr_obs is not None else numpy.nan        
         obsv_metrics["Coverage [T/F]"] = isCovered
 
         return obsv_metrics
                 
 
     @staticmethod
-    def find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc_kmps, v_g_kmps, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc):
+    def find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc_kmps, v_g_kmps, alt_km, 
+                                        instru_look_angle_rad, tau_p_ch, D_az, D_elv, fc, 
+                                        pol_type, dual_pol_conf, dual_pol_ps, 
+                                        swath_type, fixed_swath_size_km):
         """ Function to find the highest possible pulse repetition frequency within the user supplied range of PRFs, which 
             shall allow observation of target. Not all PRFs are valid and a valid PRF has to be chosen so that it meets all
             the below conditions:
@@ -427,8 +508,8 @@ class SyntheticApertureRadar(Entity):
         :param instru_look_angle_rad: Instrument look angle (middle of the swath) in [radians]
         :paramtype instru_look_angle_rad: float
 
-        :param tau_p: Pulse width in [s]
-        :paramtype tau_p: float
+        :param tau_p_ch: Pulse width in [s] per polarization/ channel
+        :paramtype tau_p_ch: float
 
         :param D_az: Antenna dimension along cross-range direction in [m]
         :paramtype D_az: float
@@ -442,6 +523,20 @@ class SyntheticApertureRadar(Entity):
         :param dwn_az: Downsampling factor for Doppler processing
         :paramtype dwn_az: int
 
+        :param pol_type: SAR polarization type
+        :paramtype pol_type: :class:`PolTypeSAR`
+
+        :cvar dual_pol_conf: In case of SMAP dual-pol configuration, this parameter indicates the pulse configuration.
+        :vartype dual_pol_conf: :class:`DualPolPulseConfig`
+
+        :param dual_pol_ps: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds.
+        :paramtype dual_pol_ps: float
+
+        :param swath_type: SAR polarization type
+        :paramtype swath_type: :class:`SwathTypeSAR`
+
+        :param fixed_swath_size_km: In case of fixed swath configuration this parameter indicates the size of the fixed swath.
+        :paramtype fixed_swath_size_km: float
         """
         h = alt_km * 1e3
         Re = Constants.radiusOfEarthInKM * 1e3         
@@ -450,42 +545,79 @@ class SyntheticApertureRadar(Entity):
 
         lamb = c/fc        
 
-        full_swath = True
-        if(full_swath):
-            # full swath imaging-mode at nominal look-angle.
-            # NOTE: While calculating full swath width the instrument look angle is used!!!! Not the Target look angle.
-            theta_elv = lamb/ D_elv # 3-dB beamwidth (full-beamwidth) illuminating the swath
-            gamma_n = instru_look_angle_rad - 0.5*theta_elv
-            gamma_f = instru_look_angle_rad + 0.5*theta_elv
-            theta_in = numpy.arcsin(numpy.sin(gamma_n)*Rs/Re)
-            theta_if = numpy.arcsin(numpy.sin(gamma_f)*Rs/Re)
-            alpha_n = theta_in - gamma_n
-            alpha_f = theta_if - gamma_f
-            alpha_s = alpha_f - alpha_n
-            W_gr = Re*alpha_s  
-        else: # fixed swath
-            W_gr = 10e3
-            # [2] Figure 5.1.3.1 we get Swath width on the ground (there appear mistakes in the figure, but the equations are correct).
-            alpha_s = W_gr/Re
+        # NOTE: While calculating full swath width the instrument look angle is used!!!! Not the Target look angle.
+        theta_elv = lamb/ D_elv # null-to-null (full-beamwidth) illuminating the swath
+        gamma_n_illum = instru_look_angle_rad - 0.5*theta_elv
+        gamma_f_illum = instru_look_angle_rad + 0.5*theta_elv
+        theta_in_illum = numpy.arcsin(numpy.sin(gamma_n_illum)*Rs/Re)
+        theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
+        alpha_n_illum = theta_in_illum - gamma_n_illum
+        alpha_f_illum = theta_if_illum - gamma_f_illum
+        alpha_s_illum = alpha_f_illum - alpha_n_illum
+        W_gr_illum = Re*alpha_s_illum  # illuminated swath
+
+        Rn_illum = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_n_illum)) # [2] equation 5.1.3.9 slant-range to near edge of swath
+        Rf_illum = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_f_illum)) # [2] equation 5.1.3.10 slant-range to far edge of swath
+        
+        tau_near_illum = 2*Rn_illum/c # [2] equation 5.1.3.11
+        tau_far_illum = 2*Rf_illum/c # [2] equation 5.1.3.12
+
+        if(swath_type == SwathTypeSAR.FULL):
+            W_gr_obs = W_gr_illum  # desired (observed) swath
+
+        elif(swath_type == SwathTypeSAR.FIXED): # fixed swath
+            
+            if(fixed_swath_size_km*1e3 < W_gr_illum):
+                W_gr_obs = fixed_swath_size_km*1e3
+            else:
+                W_gr_obs = W_gr_illum
+
+            alpha_s_obs = W_gr_obs/Re
             gamma_m = instru_look_angle_rad
             theta_im = numpy.arcsin(numpy.sin(gamma_m)*Rs/Re)
             alpha_m = theta_im - gamma_m  # [2] equation 5.1.3.5
-            alpha_n = alpha_m - alpha_s/2.0 # [2] equation 5.1.3.7
-            alpha_f = alpha_m + alpha_s/2.0 # [2] equation 5.1.3.8
+            alpha_n_obs = alpha_m - alpha_s_obs/2.0 # [2] equation 5.1.3.7
+            alpha_f_obs = alpha_m + alpha_s_obs/2.0 # [2] equation 5.1.3.8
 
+            Rn_obs = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_n_obs)) # [2] equation 5.1.3.9 slant-range to near edge of swath
+            Rf_obs = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_f_obs)) # [2] equation 5.1.3.10 slant-range to far edge of swath
+            
+            tau_near_obs = 2*Rn_obs/c # [2] equation 5.1.3.11
+            tau_far_obs = 2*Rf_obs/c # [2] equation 5.1.3.12
 
-        # Preprocessing to check if PRF allows for unambiguous echo detection from swath W_gr        
-        Rn = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_n)) # [2] equation 5.1.3.9 slant-range to near edge of swath
-        Rf = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_f)) # [2] equation 5.1.3.10 slant-range to far edge of swath
+        else:
+            raise RuntimeError("Unknown swath configuration type.")
+
+        PRFmin_f = 1 # Factor by which the minimum PRF constraint must be increased. Becomes significant in case of dual-pol.
+        if(pol_type == PolTypeSAR.SINGLE or pol_type == PolTypeSAR.COMPACT):
+            tau_p = tau_p_ch
+        elif(pol_type == PolTypeSAR.DUAL):
+            if(dual_pol_conf == DualPolPulseConfig.AIRSAR):
+                tau_p = tau_p_ch
+                PRFmin_f = 2
+            elif(dual_pol_conf == DualPolPulseConfig.SMAP):
+                print(dual_pol_ps)
+                tau_p = 2*tau_p_ch + dual_pol_ps            
+            else:
+                raise RuntimeError("Unknown dual-pol pulse configuration type.")
+
+        else:
+            raise RuntimeError("Unknown polarization type.")       
         
-        tau_near = 2*Rn/c # [2] equation 5.1.3.11
-        tau_far = 2*Rf/c # [2] equation 5.1.3.12
-
+        if(swath_type == SwathTypeSAR.FULL):
+            PRFmax = 1.0/(2.0*tau_p + tau_far_illum - tau_near_illum) # max allowble PRF [2] equation 5.1.3.13. This condition ensures that only one swath-echo is in a pulse period.
+        elif(swath_type == SwathTypeSAR.FIXED):
+            # PRF max constraint is loosened and is equal to the frequency corresponding to the sum of the 
+            # length of echo to the echo from the desired swath.
+            PRFmax = 1.0/(2.0*tau_p + tau_far_obs - tau_near_obs) # max allowble PRF [2] equation 5.1.3.13        
+        else:
+            raise RuntimeError("Unknown swath configuration type.")
         
-        PRFmax = 1.0/(2.0*tau_p + tau_far - tau_near) # max allowble PRF [2] equation 5.1.3.13
-        PRFmin = v_sc_kmps*1e3/SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
-        #print("PRFmax: ", PRFmax)
-        #print("PRFmin: ", PRFmin)
+        PRFmin = PRFmin_f*v_sc_kmps*1e3/SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
+        
+        print("PRFmax: ", PRFmax)
+        print("PRFmin: ", PRFmin)
+        
         f_P = None    
         # Find the highest possible prf within the input prf range which allows for unambiguous echo detection. 
         for _f_P in range(int(f_Pmax), int(f_Pmin), -1): # step down in terms of 1 Hz
@@ -496,28 +628,84 @@ class SyntheticApertureRadar(Entity):
                 PRFOK = False 
                 continue # goto next iteration of _f_P
             
-            # perform second check of PRF validity, check that target echo is not eclipsed by transmit pulse
-            # inequality [2] 5.1.4.1 
-            N = int(_f_P*2.0*Rn/c) + 1
-            if(not(((N-1)/(tau_near-tau_p) < _f_P ) and (_f_P < N/(tau_far + tau_p)))):
-                PRFOK = False 
-                continue # goto next iteration of _f_P
-                        
-            # perform second check of PRF validity, check that target echo is not eclipsed by nadir echo 
-            # from any of the succeeding pulses (from the transmit pulse under consideration to the pulse 
-            # just before the echo)
-            # refer my notes for the nadir interference condition
-            # inequality [2] 5.1.5.2 seems wrong. 
-            tau_nadir = 2.0*h/c
-            M = int(_f_P*2.0*Rf/c) + 1
-            for m in range(1,M):
-                if(((m/(tau_near - tau_p - tau_nadir)) > _f_P) and (_f_P > (m/(tau_far + tau_p - tau_nadir)))):
+            if(swath_type == SwathTypeSAR.FULL):
+                # perform second check of PRF validity, check that target echo is not eclipsed by transmit pulse
+                # inequality [2] 5.1.4.1 
+                N = int(_f_P*2.0*Rn_illum/c) + 1
+                if(not(((N-1)/(tau_near_illum-tau_p) < _f_P ) and (_f_P < N/(tau_far_illum + tau_p)))):
+                    PRFOK = False 
+                    continue # goto next iteration of _f_P
+                            
+                # perform second check of PRF validity, check that target echo is not eclipsed by nadir echo 
+                # from any of the succeeding pulses (from the transmit pulse under consideration to the pulse 
+                # just before the echo)
+                # refer my notes for the nadir interference condition
+                # inequality [2] 5.1.5.2 seems wrong. 
+                tau_nadir = 2.0*h/c
+                if(tau_near_illum -tau_nadir - tau_p <= 0): # evaluate the condition independent of f_P
                     PRFOK = False # there is nadir echo overlap with desired echo for the mth pulse
-                    continue # goto next iteration of _f_P 
+                    break # break used since condition is independent of f_P
+                M = int(_f_P*2.0*Rf_illum/c) + 1
+                for m in range(1,M):
+                    if(((m/(tau_near_illum - tau_p - tau_nadir)) > _f_P) and (_f_P > (m/(tau_far_illum + tau_p - tau_nadir)))):
+                        PRFOK = False # there is nadir echo overlap with desired echo for the mth pulse
+                        continue # goto next iteration of _f_P 
+
+            elif(swath_type == SwathTypeSAR.FIXED):
+                # If fixed swath check only in the desired echo window region
+
+                # perform second check of PRF validity, check that target echo is not eclipsed by transmit pulse
+                # inequality [2] 5.1.4.1 
+                N = int(_f_P*2.0*Rn_obs/c) + 1
+                if(not(((N-1)/(tau_near_obs-tau_p) < _f_P ) and (_f_P < N/(tau_far_obs + tau_p)))):
+                    PRFOK = False 
+                    continue # goto next iteration of _f_P     
+
+                # perform second check of PRF validity, check that target echo is not eclipsed by nadir echo 
+                # from any of the succeeding pulses (from the transmit pulse under consideration to the pulse 
+                # just before the echo)
+                # refer my notes for the nadir interference condition
+                # inequality [2] 5.1.5.2 seems wrong. 
+                
+                tau_nadir = 2.0*h/c
+                if(tau_near_obs -tau_nadir - tau_p <= 0): # evaluate the condition independent of f_P
+                    PRFOK = False # there is nadir echo overlap with desired echo for the mth pulse
+                    break # break used since condition is independent of f_P
+
+                M = int(_f_P*2.0*Rf_obs/c) + 1
+                for m in range(1,M):
+                    if(((m/(tau_near_obs - tau_p - tau_nadir)) > _f_P) and (_f_P > (m/(tau_far_obs + tau_p - tau_nadir)))):
+                        PRFOK = False # there is nadir echo overlap with desired echo 
+                        continue # goto next iteration of _f_P 
+                
+                # To prevent range ambiguity the previous echos from the total illuminated swath should not 
+                # overlap with the desired echo (current). This condition can be formulated similar to the Nadir
+                # interference condition, albeit with the nadir-echo replaced in terms of main-lobe echo from pulses
+                # occuring after the refernce pulse until the desired echo window has ended.
+                tau_ML_start = tau_near_illum # ML => Main Lobe
+                tau_ML_len = tau_far_illum - tau_near_illum # length of main-lobe echo
+                W = int(_f_P*2.0*Rf_obs/c) + 1
+                for w in range(1,W):                    
+                    """
+                    # below code causes errors
+                    print(1, (w/(tau_near_obs - tau_ML_len - tau_ML_start)) < _f_P)
+                    print(2, _f_P < (w/(tau_far_obs + tau_p - tau_ML_start)))
+                    if(((w/(tau_near_obs - tau_ML_len - tau_ML_start)) > _f_P) and (_f_P > (w/(tau_far_obs + tau_p - tau_ML_start)))):
+                        PRFOK = False # there is main echo overlap with desired echo 
+                        print("main echo overlap")
+                        continue # goto next iteration of _f_P 
+                    """
+                    cond1 = (tau_near_obs > tau_ML_len + tau_ML_start + w/_f_P)                    
+                    cond2 =  tau_ML_start > tau_far_obs + tau_p - w/_f_P
+                    if( (not cond1) and (not cond2)):
+                        PRFOK = False # there is main echo overlap with desired echo 
+                        #print("main echo overlap")
+                        continue # goto next iteration of _f_P 
+                
 
             # If control has reached here and if PRFOK is still True, then this is a valid PRF
             if(PRFOK == True):
                 f_P = _f_P
                 break
 
-        return [f_P, W_gr]        
+        return [f_P, W_gr_illum, W_gr_obs]        

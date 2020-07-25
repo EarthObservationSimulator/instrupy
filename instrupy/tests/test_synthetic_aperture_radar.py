@@ -413,7 +413,8 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         fc = 9.65e9
         self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0], 4184)  
 
-    def test_calc_typ_data_metrics_1(self):
+    # TODO
+    def xtest_calc_typ_data_metrics_1(self):
         """ MicroXSAR typical data-metrics. Truth values taken from the reference (below) are approximately equal to those computed by this
             test. There is ambiguity in the actual operating point used in computation of the truth value (eg: exact PRF within
             the given range, pulse width.)s.
@@ -422,7 +423,11 @@ class TestSyntheticApertureRadar(unittest.TestCase):
             Communications, vol. E100.B, no. 9, pp. 1653–1660, 2017
         """
         # 
-
+        """ # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
+        epoch_JDUT1 = 2458543.06088
+        SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': (Re + h)*1e-3, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': orb_speed*1e-3, 'vz[km/s]': 0} # equatorial orbit, altitude 600 km
+        TargetCoords = {'Lat [deg]': 0.798, 'Lon [deg]': 0} # g
+        """
         epoch_JDUT1 = 2451623.999630
         # lat = 0, lon = 0 corresponds to [6378, 0, 0] km in ECI for observer position, check using Matlab function: eci2lla([6378, 0, 0] ,[2000 3 20 11 59 28.000])
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6378.137 + 600, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': 0, 'vy[km/s]': 7.6126, 'vz[km/s]': 0} # equatorial orbit, altitude 600 km
