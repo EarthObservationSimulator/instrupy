@@ -1,7 +1,7 @@
 """ 
-.. module:: synthetic_aperture_radar
+.. module:: synthetic_aperture_radar_mode1
 
-:synopsis: *Module to handle synthetic_aperture_radar type of instrument.*
+:synopsis: *Module to handle Stripmap SAR instrument operating mode.*
 
         Inline code comments contain references to the following articles:
 
@@ -14,25 +14,10 @@ import json
 import numpy
 import copy
 import pandas, csv
-from .util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
+from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
+from instrupy.synthetic_aperture_radar.util import *
 
-class PolTypeSAR(EnumEntity):
-    """Enumeration of recognized SAR polarization types"""
-    SINGLE = "SINGLE",
-    COMPACT = "COMPACT",
-    DUAL = "DUAL"
-
-class DualPolPulseConfig(EnumEntity):
-    """Enumeration of recognized dual-polarization pulse configurations"""
-    AIRSAR = "AIRSAR",
-    SMAP = "SMAP"
-
-class SwathTypeSAR(EnumEntity):
-    """Enumeration of recognized SAR swath imaging configurations"""
-    FULL = "FULL",
-    FIXED = "FIXED"
-
-class SyntheticApertureRadar(Entity):
+class SyntheticApertureRadarMode1(Entity):
     """A synthetic aperture radar class estimating observation data-metrics from Stripmap mode of imaging.       
       
         A full-swath imaging mode is considered, meaning the swath-width is the area illuminated by the 3-dB beamwidth of the antenna.
@@ -156,7 +141,7 @@ class SyntheticApertureRadar(Entity):
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
             radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNESZthreshold = None, 
             polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, fixedSwathSize = None, _id=None):
-        """Initialize a Synthetic Aperture Radar object.
+        """Initialize a Synthetic Aperture Radar Mode 1 object.
 
         """          
         self.name = str(name) if name is not None else None
@@ -188,7 +173,7 @@ class SyntheticApertureRadar(Entity):
         self.dualPolPulseSep = float(dualPolPulseSep) if dualPolPulseSep is not None else None  
         self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
-        super(SyntheticApertureRadar,self).__init__(_id, "Synthetic Aperture Radar")
+        super(SyntheticApertureRadarMode1,self).__init__(_id, "Synthetic Aperture Radar Mode1")
         
     @staticmethod
     def from_dict(d):
@@ -265,7 +250,7 @@ class SyntheticApertureRadar(Entity):
             swathType = SwathTypeSAR.FULL
             
 
-        return SyntheticApertureRadar(
+        return SyntheticApertureRadarMode1(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
                         mass = d.get("mass", None),
@@ -319,7 +304,118 @@ class SyntheticApertureRadar(Entity):
         return (D_az/2.0)*(v_g_kmps/ v_sc_kmps)
 
 
-    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
+    def calc_typ_data_metrics(self, SpacecraftOrbitState = None, TargetCoords = None, 
+                                    alt_km = None, v_sc_kmps = None, v_g_kmps = None, incidence_angle_deg = None, 
+                                    instru_look_angle_from_GP_inc_angle = False):
+        
+        if(SpacecraftOrbitState):
+            obsv_metrics = SyntheticApertureRadarMode1.calc_typ_data_metrics_impl2(self, SpacecraftOrbitState, TargetCoords, instru_look_angle_from_GP_inc_angle)
+        else:
+            obsv_metrics = SyntheticApertureRadarMode1.calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, numpy.deg2rad(incidence_angle_deg), instru_look_angle_from_GP_inc_angle)
+
+        return obsv_metrics
+
+
+    def calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, incidence_angle, instru_look_angle_from_GP_inc_angle = False):
+
+        look_angle = numpy.arcsin(numpy.sin(incidence_angle)*Constants.radiusOfEarthInKM/(Constants.radiusOfEarthInKM + alt_km)) 
+        #print("incidence_angle", incidence_angle*180/numpy.pi)
+        #print("look_angle", look_angle*180/numpy.pi)
+        range_km = Constants.radiusOfEarthInKM * (numpy.sin(incidence_angle - look_angle)/ numpy.sin(look_angle))
+
+        if(instru_look_angle_from_GP_inc_angle):
+            instru_look_angle_rad = look_angle
+        else:
+            instru_look_angle_rad = numpy.abs(numpy.deg2rad(self.orientation.euler_angle2)) # nominal instrument look angle
+
+         # Copying values into variables of more code-friendly variables
+        Re = Constants.radiusOfEarthInKM * 1e3        
+        c = Constants.speedOfLight
+        k = Constants.Boltzmann
+        tau_p = self.pulseWidth        
+        B_T = self.chirpBandwidth
+        P_T = self.peakTransmitPower
+        D_az = self.antennaAlongTrackDim
+        D_elv = self.antennaCrossTrackDim
+        fc = self.operatingFrequency
+        eta_ap = self.antennaApertureEfficiency               
+        PRFmin_Hz = self.minimumPRF    
+        PRFmax_Hz = self.maximumPRF   
+        L_radar = 10.0**(self.radarLosses/10.0) # convert to linear units
+        F_N = 10.0**(self.systemNoiseFigure/10.0) # convert to linear units
+        L_atmos = 10.0**(SyntheticApertureRadarMode1.L_atmos_dB/10.0) # convert to linear units
+        L_r = SyntheticApertureRadarMode1.L_r
+        L_a = SyntheticApertureRadarMode1.L_a
+        a_wr = SyntheticApertureRadarMode1.a_wr
+        a_wa = SyntheticApertureRadarMode1.a_wa
+        T = self.sceneNoiseTemp       
+
+        #print(tau_p)
+        #print(fc)
+        #print(self.polType)
+        # Note that the nominal look angle is considered to evaluate the operable PRF.
+        [f_P, W_gr_illum, W_gr_obs] = SyntheticApertureRadarMode1.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, 
+                                                                             instru_look_angle_rad, tau_p, D_az, D_elv, fc,
+                                                                             self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
+                                                                             self.swathType, self.fixedSwathSize)
+        isCovered = False
+        rho_a = None
+        rho_y = None
+        sigma_N_dB = None
+        theta_i = None
+
+        #print("f_P", f_P)
+
+        if (f_P is not None): # Observation is (perhaps (since determined at nominal instrument look-angle)) possible at PRF = f_P        
+            
+            R = range_km*1e3
+
+            lamb = c/fc
+
+            # Note that this is not the same as incidence angle to middle of swath
+            theta_i = incidence_angle
+                            
+            psi_g = numpy.pi/2.0 - theta_i # grazing angle   
+            
+            # [1] equation 17, find P_avg, average transmit power
+            T_eff = tau_p # approximate effective pulse duration to be actual pulse duration, as in case of matched filter processing
+            d = T_eff * f_P # [1] equation 17
+            P_avg = d*P_T
+            
+            # [1] equation 8, find G_A
+            A_A = D_elv*D_az
+            G_A = 4.0*numpy.pi*eta_ap*A_A/lamb**2  
+            
+            # [1] equation 37 we can get the sigma_N. Note that the spacecraft speed is used in the equation and not the ground-speed, see [2] for explanation.              
+            sigma_N = (265.0*numpy.pi**3*k*T / c)*(R**3 * (v_sc_kmps*1e3) * numpy.cos(psi_g))*(B_T*F_N*L_radar*L_atmos/ (P_avg*G_A**2*lamb**3))*(L_r*L_a/(a_wr*a_wa))
+            sigma_N_dB = 10.0*numpy.log10(sigma_N)
+
+            # [1] equations 36, 23 we can get rho_y
+            rho_y = a_wr*c/(2*B_T*numpy.cos(psi_g))
+
+            # [1] equation 69 we get minimum possible azimuth resolution (for strip mapping)
+            rho_a = SyntheticApertureRadarMode1.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az)
+
+            # check if sigma NEZ nought satisfies uer supplied threshold. Note that lesser is better.
+            if self.sigmaNESZthreshold is not None:
+                if(sigma_N_dB < self.sigmaNESZthreshold):
+                    isCovered = True
+            else:
+                isCovered = True # no user specification => no constraint
+
+             
+        obsv_metrics = {}
+        obsv_metrics["Ground Pixel Along-Track Resolution [m]"] = rho_a
+        obsv_metrics["Ground Pixel Cross-Track Resolution [m]"] = rho_y
+        obsv_metrics["Sigma NESZ [dB]"] = sigma_N_dB
+        obsv_metrics["Incidence angle [deg]"] = numpy.rad2deg(theta_i) if theta_i is not None else numpy.nan
+        obsv_metrics["(Nominal) Swath-width [km]"] = W_gr_obs/1e3 if W_gr_obs is not None else numpy.nan        
+        obsv_metrics["Coverage [T/F]"] = isCovered
+        obsv_metrics["PRF[Hz]"] = f_P # TODO: not observation metric
+
+        return obsv_metrics
+
+    def calc_typ_data_metrics_impl2(self, SpacecraftOrbitState, TargetCoords, instru_look_angle_from_GP_inc_angle = False):
         ''' Calculate typical observation data metrics.
 
             :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
@@ -338,6 +434,11 @@ class SyntheticApertureRadar(Entity):
                                 
                                * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
             :paramtype TargetCoords: dict
+
+            :param instru_look_angle_from_GP_inc_angle: Flag (True or False) to indicate if the look angle to the middle of the swath is to be considered using the instrument nominal look-angle, 
+                                                     or the specific detected incidence angle to the ground-pixel. Default is False.
+
+            :paramtype instru_look_angle_from_GP_inc_angle: bool
 
             :returns: Typical calculated observation data metrics.
 
@@ -366,7 +467,6 @@ class SyntheticApertureRadar(Entity):
 
         # Calculate Target position in ECI frame
         TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
-        print("TargetPosition_km = ", TargetPosition_km)
         # Spacecraft position in Cartesian coordinates
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
         SpacecraftVelocity_kmps = numpy.array([SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]]) 
@@ -376,98 +476,21 @@ class SyntheticApertureRadar(Entity):
         range_vector_km = TargetPosition_km - SpacecraftPosition_km
 
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
-        print("alt_km = ", alt_km)
+
         look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
         incidence_angle_rad = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)       
-        print("look_angle = ", look_angle*180/numpy.pi)
-        print("incidence_angle = ", incidence_angle_rad*180/numpy.pi)
-        # Copying values into variables of more code-friendly variables
-        Re = Constants.radiusOfEarthInKM * 1e3        
-        c = Constants.speedOfLight
-        k = Constants.Boltzmann
-        tau_p = self.pulseWidth        
-        B_T = self.chirpBandwidth
-        P_T = self.peakTransmitPower
-        D_az = self.antennaAlongTrackDim
-        D_elv = self.antennaCrossTrackDim
-        fc = self.operatingFrequency
-        eta_ap = self.antennaApertureEfficiency               
-        PRFmin_Hz = self.minimumPRF    
-        PRFmax_Hz = self.maximumPRF   
-        L_radar = 10.0**(self.radarLosses/10.0) # convert to linear units
-        F_N = 10.0**(self.systemNoiseFigure/10.0) # convert to linear units
-        L_atmos = 10.0**(SyntheticApertureRadar.L_atmos_dB/10.0) # convert to linear units
-        L_r = SyntheticApertureRadar.L_r
-        L_a = SyntheticApertureRadar.L_a
-        a_wr = SyntheticApertureRadar.a_wr
-        a_wa = SyntheticApertureRadar.a_wa
-        T = self.sceneNoiseTemp
-              
+
+
         v_g_kmps = 1e-3 * MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km*1e3, SpacecraftVelocity_kmps*1e3) # This is approximation, since the image footprint velocity is not necessarily equal to the
-                                                # satellite footprint speed. However it is reasonable approximation in case of low-altitudes and small look angles. TBD: Improve the model.
-                                  
-        instru_look_angle_rad = numpy.abs(numpy.deg2rad(self.orientation.euler_angle2)) # nominal instrument look angle
+                                        # satellite footprint speed. However it is reasonable approximation in case of low-altitudes and small look angles. TBD: Improve the model.
+    
 
-        # Note that the nominal look angle is considered to evaluate the operable PRF.
-        [f_P, W_gr_illum, W_gr_obs] = SyntheticApertureRadar.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, 
-                                                                             instru_look_angle_rad, tau_p, D_az, D_elv, fc,
-                                                                             self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
-                                                                             self.swathType, self.fixedSwathSize)
-        print(f_P)   
-        isCovered = False
-        rho_a = None
-        rho_y = None
-        sigma_N_dB = None
-        theta_i = None
-
-        if (f_P is not None): # Observation is (perhaps (since determined at nominal instrument look-angle)) possible at PRF = f_P        
-            
-            range_km = numpy.linalg.norm(range_vector_km)
-            R = range_km*1e3
-
-            lamb = c/fc
-
-            # Note that this is not the same as incidence angle to middle of swath
-            theta_i = incidence_angle_rad
-                            
-            psi_g = numpy.pi/2.0 - theta_i # grazing angle   
-            
-            # [1] equation 17, find P_avg, average transmit power
-            T_eff = tau_p # approximate effective pulse duration to be actual pulse duration, as in case of matched filter processing
-            d = T_eff * f_P # [1] equation 17
-            P_avg = d*P_T
-            
-            # [1] equation 8, find G_A
-            A_A = D_elv*D_az
-            G_A = 4.0*numpy.pi*eta_ap*A_A/lamb**2  
-            
-            # [1] equation 37 we can get the sigma_N. Note that the spacecraft speed is used in the equation and not the ground-speed, see [2] for explanation.              
-            sigma_N = (265.0*numpy.pi**3*k*T / c)*(R**3 * (v_sc_kmps*1e3) * numpy.cos(psi_g))*(B_T*F_N*L_radar*L_atmos/ (P_avg*G_A**2*lamb**3))*(L_r*L_a/(a_wr*a_wa))
-            sigma_N_dB = 10.0*numpy.log10(sigma_N)
-
-            # [1] equations 36, 23 we can get rho_y
-            rho_y = a_wr*c/(2*B_T*numpy.cos(psi_g))
-
-            # [1] equation 69 we get minimum possible azimuth resolution (for strip mapping)
-            rho_a = SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az)
-
-            # check if sigma NEZ nought satisfies uer supplied threshold. Note that lesser is better.
-            if self.sigmaNESZthreshold is not None:
-                if(sigma_N_dB < self.sigmaNESZthreshold):
-                    isCovered = True
-            else:
-                isCovered = True # no user specification => no constraint
-
-             
-        obsv_metrics = {}
-        obsv_metrics["Ground Pixel Along-Track Resolution [m]"] = rho_a
-        obsv_metrics["Ground Pixel Cross-Track Resolution [m]"] = rho_y
-        obsv_metrics["Sigma NESZ [dB]"] = sigma_N_dB
-        obsv_metrics["Incidence angle [deg]"] = numpy.rad2deg(theta_i) if theta_i is not None else numpy.nan
-        obsv_metrics["(Nominal) Swath-width [km]"] = W_gr_obs/1e3 if W_gr_obs is not None else numpy.nan        
-        obsv_metrics["Coverage [T/F]"] = isCovered
+        #print("v_sc_kmps", v_sc_kmps)
+        #print("v_g_kmps", v_g_kmps)
+        obsv_metrics = SyntheticApertureRadarMode1.calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, incidence_angle_rad, instru_look_angle_from_GP_inc_angle)
 
         return obsv_metrics
+       
                 
 
     @staticmethod
@@ -596,7 +619,7 @@ class SyntheticApertureRadar(Entity):
                 tau_p = tau_p_ch
                 PRFmin_f = 2
             elif(dual_pol_conf == DualPolPulseConfig.SMAP):
-                print(dual_pol_ps)
+                #print(dual_pol_ps)
                 tau_p = 2*tau_p_ch + dual_pol_ps            
             else:
                 raise RuntimeError("Unknown dual-pol pulse configuration type.")
@@ -613,10 +636,10 @@ class SyntheticApertureRadar(Entity):
         else:
             raise RuntimeError("Unknown swath configuration type.")
         
-        PRFmin = PRFmin_f*v_sc_kmps*1e3/SyntheticApertureRadar.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
+        PRFmin = PRFmin_f*v_sc_kmps*1e3/SyntheticApertureRadarMode1.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
         
-        print("PRFmax: ", PRFmax)
-        print("PRFmin: ", PRFmin)
+        #print("PRFmax: ", PRFmax)
+        #print("PRFmin: ", PRFmin)
         
         f_P = None    
         # Find the highest possible prf within the input prf range which allows for unambiguous echo detection. 

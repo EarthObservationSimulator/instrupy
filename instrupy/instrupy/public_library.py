@@ -4,7 +4,7 @@
 :synopsis: *Provides easy interface to the package main functionalities, independent of the instrument type.*
 
 """
-from .util import Entity, MathUtilityFunctions
+from .util import Entity, MathUtilityFunctions, SensorGeometry, FileUtilityFunctions
 from .basic_sensor import BasicSensor
 from .passive_optical_scanner import PassiveOpticalScanner
 from .synthetic_aperture_radar import SyntheticApertureRadar
@@ -13,12 +13,114 @@ import pandas, csv
 import json
 import numpy
 
+class InstrumentCoverageParameters():
+        """ Data structure to hold instrument coverage related parameters.
+
+        :ivar _id: Payload identifier (Optional)
+        :vartype _id: str
+
+        :ivar fov_geom: Geometry of the field-of-view
+        :vartype fov_geom: :class:`FOVGeometry`
+
+        :ivar fov_cone: List of cone angles in degrees
+        :vartype fov_cone: list, float
+
+        :ivar fov_clock: List of clock angles in degrees
+        :vartype fov_clock: list, float
+
+        :ivar fov_at: Along-track FOV in degrees
+        :vartype fov_at: float
+
+        :ivar fov_ct: Cross-track FOV in degrees
+        :vartype fov_ct: float
+
+        :ivar orien_eu_seq1: Euler sequence 1
+        :vartype orien_eu_seq1: int
+
+        :ivar orien_eu_seq2: Euler sequence 2
+        :vartype orien_eu_seq2: int
+
+        :ivar orien_eu_seq3: Euler sequence 3
+        :vartype orien_eu_seq3: int
+
+        :ivar orien_eu_ang1: Euler angle 1 in degrees
+        :vartype orien_eu_ang1: float
+
+        :ivar orien_eu_ang2: Euler angle 2 in degrees
+        :vartype orien_eu_ang2: float
+
+        :ivar orien_eu_ang3: Euler angle 3 in degrees
+        :vartype orien_eu_ang3: float
+
+        :ivar purely_side_look: Flag to specify if instrument operates in a strictly side-looking viewing geometry.
+        :vartype purely_side_look: bool
+
+        :ivar yaw180_flag: Flag applies in case of field-of-regard. If true, it signifies that the field-of-regard includes the field-of-view of payload rotated along nadir by 180 deg. 
+        :vartype yaw180_flag: bool
+        
+        """
+        def __init__(self, _id = None, fov_geom = None, fov_cone = None, fov_clock = None, fov_at = None, fov_ct = None, 
+                    orien_eu_seq1 = None, orien_eu_seq2 = None, orien_eu_seq3 = None, 
+                    orien_eu_ang1 = None, orien_eu_ang2 = None, orien_eu_ang3 = None,
+                    purely_side_look = None, yaw180_flag = None):
+            
+    
+            self._id = str(_id) if _id is not None else None
+            self.fov_geom = SensorGeometry.get(fov_geom) if fov_geom is not None else None
+            self.fov_cone = [float(i) for i in fov_cone] if fov_cone is not None else None
+            self.fov_clock = [float(i) for i in fov_clock] if fov_clock is not None else None # clock can be "None" if Conical Sensor
+            if(self.fov_clock is None):
+                if(self.fov_geom=='CONICAL'):
+                    self.fov_clock = [0]
+                else:
+                    pass
+                    #raise RuntimeError("Missing clock angles from instrument coverage specifications for non-conical sensor fov.")
+            self.fov_at = float(fov_at) if fov_at is not None else None
+            self.fov_ct = float(fov_ct) if fov_ct is not None else None
+            self.orien_eu_seq1 = int(orien_eu_seq1) if orien_eu_seq1 is not None else None
+            self.orien_eu_seq2 = int(orien_eu_seq2) if orien_eu_seq2 is not None else None
+            self.orien_eu_seq3 = int(orien_eu_seq3) if orien_eu_seq3 is not None else None
+            self.orien_eu_ang1 = float(orien_eu_ang1) if orien_eu_ang1 is not None else None
+            self.orien_eu_ang2 = float(orien_eu_ang2) if orien_eu_ang2 is not None else None
+            self.orien_eu_ang3 = float(orien_eu_ang3) if orien_eu_ang3 is not None else None
+            self.purely_side_look = bool(purely_side_look) if purely_side_look is not None else None
+            self.yaw180_flag = bool(yaw180_flag) if yaw180_flag is not None else None
+
+
+        def get_as_string(self, param):
+            """ Get the necessary instrument coverage specifications in string format so it can be directly passed
+                as arguments to the :code:`orbitpropcov` program.
+            """
+            if(param == 'Geometry'):
+                return self.fov_geom.name
+            elif(param == 'Clock'):
+                clock = [str(i) for i in self.fov_clock] 
+                clock = ','.join(clock) 
+                return clock
+            elif(param == 'Cone'):
+                cone = [str(i) for i in self.fov_cone] 
+                cone = ','.join(cone) 
+                return cone 
+            elif(param == 'Orientation'):
+                orien = str(self.orien_eu_seq1) + ',' + str(self.orien_eu_seq2) + ',' + str(self.orien_eu_seq3) + ',' + \
+                    str(self.orien_eu_ang1) + ',' + str(self.orien_eu_ang2) + ',' + str(self.orien_eu_ang3)
+                return orien
+            elif(param == 'yaw180_flag'):
+                return str(int(self.yaw180_flag))
+            else:
+                raise RuntimeError("Unknown parameter") 
+
 class Instrument(Entity): 
     """ A class to serve as single interface to different types of instruments.
      
         :ivar _sensor: Object of relevant instrument.
         :vartype _sensor: :class:`instrupy.basic_sensor.BasicSensor` (or) :class:`instrupy.passive_optical_sensor.PassiveOpticalSensor` (or) :class:`instrupy.synthetic_aperture_radar.SyntheticApertureRadar`
 
+        :ivar _instru_id: Instrument id
+        :ivartype _instru_id: str
+
+        :ivar _ssen_id: List of subsensor ids
+        :ivartype _ssen_id: list, int
     """
     def __init__(self, specs = dict()):
         """ Initialize an instrument.
@@ -49,6 +151,9 @@ class Instrument(Entity):
             self._sensor = None  
             raise Exception("Something wrong in initializing instrument \n" + str(e))
 
+        self._instru_id = self._sensor.instru_id
+        self._ssen_id = self._sensor.ssen_id
+
         super(Instrument,self).__init__(specs.get("@id", None), "Instrument")
 
     @staticmethod
@@ -56,7 +161,7 @@ class Instrument(Entity):
         """ Parses a instrument from a normalized JSON dictionary. """
         return Instrument(d)
 
-    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):   
+    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords, subsensor_id = None):   
         """ Calculate the typical observation data-metrics.
         
         :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
@@ -81,10 +186,10 @@ class Instrument(Entity):
         :rtype: dict
 
         """ 
-        return self._sensor.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)   
+        return self._sensor.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords, subsensor_id)   
 
-    def get_coverage_specs(self):
-        """ Get field-of-view (or scene-field-of-view) and the field-of-regard specifications for the instrument. Also returns
+    def get_coverage_specs(self, _ssen_id = None):
+        """ Get field-of-view (or scene-field-of-view) and the field-of-regard specifications for the instrument-subsensor. Also returns
             the orientation (common for both FOV, FOR) and if the instrument is constrained to take observations at a strictly 
             side-looking (no squint) target geometry. The :code:`yaw180_flag` indicates if the instrument coverage includes
             orientation of the instrument rotated by 180 deg about the yaw axis from the nominal orientation. This is significant
@@ -92,59 +197,99 @@ class Instrument(Entity):
             
             .. todo:: update unit test
 
+            :param _ssen_id: subsensor id
+            :paramtype _ssen_id: int
+
             :returns: JSON string with the coverage specifications            
             :rtype: dict
         
         """
+        if _ssen_id is not None:
+            _ssen_id_indx = self._ssen_id.index(_ssen_id)
+            _ssen = self._sensor.subsensor[_ssen_id_indx]
+        else:
+            _ssen = self._sensor.subsensor[0]
+
         # determine if instrument takes observations at a purely side looking geometry
         purely_side_look = False
         instru_type = type(self._sensor).__name__
         if(instru_type == 'SyntheticApertureRadar'):
             purely_side_look = True
         """if(instru_type == 'PassiveOpticalScanner'):
-            if(self._sensor.scanTechnique == "PUSHBROOM" or self._sensor.scanTechnique == "WHISKBROOM"):
+            if(_ssen.scanTechnique == "PUSHBROOM" or _ssen.scanTechnique == "WHISKBROOM"):
                 purely_side_look = True """
 
-        orientation_specs = {"eulerAngle1": self._sensor.orientation.euler_angle1,
-                             "eulerAngle2": self._sensor.orientation.euler_angle2, 
-                             "eulerAngle3": self._sensor.orientation.euler_angle3,
-                             "eulerSeq1": self._sensor.orientation.euler_seq1,
-                             "eulerSeq2": self._sensor.orientation.euler_seq2,
-                             "eulerSeq3": self._sensor.orientation.euler_seq3,
-                             }
+        orientation_specs = {"eulerAngle1": _ssen.orientation.euler_angle1,
+                            "eulerAngle2": _ssen.orientation.euler_angle2, 
+                            "eulerAngle3": _ssen.orientation.euler_angle3,
+                            "eulerSeq1": _ssen.orientation.euler_seq1,
+                            "eulerSeq2": _ssen.orientation.euler_seq2,
+                            "eulerSeq3": _ssen.orientation.euler_seq3,
+                            }
         
-        for_specs = {"geometry": self._sensor.fieldOfRegard._geometry,
-                     "coneAnglesVector" : self._sensor.fieldOfRegard._coneAngleVec_deg,
-                     "clockAnglesVector": self._sensor.fieldOfRegard._clockAngleVec_deg,
-                     "AlongTrackFov": self._sensor.fieldOfRegard._AT_fov_deg,
-                     "CrossTrackFov": self._sensor.fieldOfRegard._CT_fov_deg,
-                     "yaw180_flag": self._sensor.fieldOfRegard._yaw180_flag
+        for_specs = {"geometry": _ssen.fieldOfRegard._geometry,
+                    "coneAnglesVector" : _ssen.fieldOfRegard._coneAngleVec_deg,
+                    "clockAnglesVector": _ssen.fieldOfRegard._clockAngleVec_deg,
+                    "AlongTrackFov": _ssen.fieldOfRegard._AT_fov_deg,
+                    "CrossTrackFov": _ssen.fieldOfRegard._CT_fov_deg,
+                    "yaw180_flag": _ssen.fieldOfRegard._yaw180_flag
                     }
 
-        if(hasattr(self._sensor, 'sceneFieldOfView')):
-            if(self._sensor.sceneFieldOfView):
+        if(hasattr(_ssen, 'sceneFieldOfView')):
+            if(_ssen.sceneFieldOfView):
                 # if there exists a scene FOV, pass the corresponding fov specifications for coverage caclulations
-                fov_specs = {"geometry": self._sensor.sceneFieldOfView._geometry,
-                            "coneAnglesVector" : self._sensor.sceneFieldOfView._coneAngleVec_deg,
-                            "clockAnglesVector": self._sensor.sceneFieldOfView._clockAngleVec_deg,
-                            "AlongTrackFov": self._sensor.sceneFieldOfView._AT_fov_deg,
-                            "CrossTrackFov": self._sensor.sceneFieldOfView._CT_fov_deg,
-                            "yaw180_flag": self._sensor.sceneFieldOfView._yaw180_flag
+                fov_specs = {"geometry": _ssen.sceneFieldOfView._geometry,
+                            "coneAnglesVector" : _ssen.sceneFieldOfView._coneAngleVec_deg,
+                            "clockAnglesVector": _ssen.sceneFieldOfView._clockAngleVec_deg,
+                            "AlongTrackFov": _ssen.sceneFieldOfView._AT_fov_deg,
+                            "CrossTrackFov": _ssen.sceneFieldOfView._CT_fov_deg,
+                            "yaw180_flag": _ssen.sceneFieldOfView._yaw180_flag
                             }
-                result = {"@id": self._sensor._id, "Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
+                result = {"@id": _ssen._id, "Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
                 return json.dumps(result)   
-               
-        fov_specs = {"geometry": self._sensor.fieldOfView._geometry,
-                     "coneAnglesVector" : self._sensor.fieldOfView._coneAngleVec_deg,
-                     "clockAnglesVector": self._sensor.fieldOfView._clockAngleVec_deg,
-                     "AlongTrackFov": self._sensor.fieldOfView._AT_fov_deg,
-                     "CrossTrackFov": self._sensor.fieldOfView._CT_fov_deg,
-                     "yaw180_flag": self._sensor.fieldOfView._yaw180_flag
-                     }
+            
+        fov_specs = {"geometry": _ssen.fieldOfView._geometry,
+                    "coneAnglesVector" : _ssen.fieldOfView._coneAngleVec_deg,
+                    "clockAnglesVector": _ssen.fieldOfView._clockAngleVec_deg,
+                    "AlongTrackFov": _ssen.fieldOfView._AT_fov_deg,
+                    "CrossTrackFov": _ssen.fieldOfView._CT_fov_deg,
+                    "yaw180_flag": _ssen.fieldOfView._yaw180_flag
+                    }
 
-
-        result = {"@id": self._sensor._id, "Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
+        result = {"@id": _ssen._id, "Orientation": orientation_specs, "fieldOfView": fov_specs, "purely_side_look": purely_side_look, "fieldOfRegard": for_specs}
         return json.dumps(result)
+
+    def get_FOV_FOR_objs(self, _ssen_id):
+        """ Obtain field-of-view (FOV), field-of-regard (FOR) for a given instrument, sub-sensor in the 
+            :class:`instrupy.public_library.InstrumentCoverageParameters` object format.
+
+        :param _ssen_id: Subsensor identifier
+        :paramtype _ssen_id:  int
+
+        :returns: FOV and FOR related parameters
+        :rtype: list, :class:`InstrumentCoverageParameters`
+        
+        """       
+        _ics = FileUtilityFunctions.from_json(self.get_coverage_specs(_ssen_id))
+        ics_fldofview = InstrumentCoverageParameters(_ics["@id"], _ics["fieldOfView"]["geometry"], 
+                                            _ics["fieldOfView"]["coneAnglesVector"], _ics["fieldOfView"]["clockAnglesVector"],
+                                            _ics["fieldOfView"]["AlongTrackFov"], _ics["fieldOfView"]["CrossTrackFov"],
+                                            _ics["Orientation"]["eulerSeq1"], _ics["Orientation"]["eulerSeq2"], _ics["Orientation"]["eulerSeq3"],
+                                            _ics["Orientation"]["eulerAngle1"], _ics["Orientation"]["eulerAngle2"], _ics["Orientation"]["eulerAngle3"],
+                                            _ics["purely_side_look"], _ics["fieldOfView"]["yaw180_flag"]
+                                            )           
+        ics_fldofreg = InstrumentCoverageParameters(_ics["@id"], _ics["fieldOfRegard"]["geometry"], 
+                                            _ics["fieldOfRegard"]["coneAnglesVector"], _ics["fieldOfRegard"]["clockAnglesVector"],
+                                            _ics["fieldOfRegard"]["AlongTrackFov"], _ics["fieldOfRegard"]["CrossTrackFov"],
+                                            _ics["Orientation"]["eulerSeq1"], _ics["Orientation"]["eulerSeq2"], _ics["Orientation"]["eulerSeq3"],
+                                            _ics["Orientation"]["eulerAngle1"], _ics["Orientation"]["eulerAngle2"], _ics["Orientation"]["eulerAngle3"],
+                                            _ics["purely_side_look"], _ics["fieldOfRegard"]["yaw180_flag"]
+                                            )           
+        print("Instrument + subsensor ID is: ", _ics["@id"])
+        print("fieldOfRegard is: ", _ics["fieldOfRegard"])
+        print("Orientation:", _ics["Orientation"])
+        print("purely_side_look:", _ics["purely_side_look"])
+        return [ics_fldofview, ics_fldofreg]       
 
 ################################################### Legacy functions #################################################################    
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):
