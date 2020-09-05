@@ -70,8 +70,6 @@ Glossary of terms used in the package
 
 * Satellite, spacecraft are synonymous.
 
-* Observation incidence angle is synonymus with the elevation angle at the target. 
-
 
 Coding Conventions
 ===================

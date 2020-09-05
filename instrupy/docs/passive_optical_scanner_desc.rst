@@ -5,6 +5,9 @@ References:
 
 1. James R. Wertz and  Wiley J. Larson  (editors), *Space Mission Analysis and Design*, 3rd edition, chapter 9. 
 
+Types of Operating Modes
+==========================
+There are no special types of operating modes (only a single mode type). 
 
 Input JSON format specifications description
 ===============================================

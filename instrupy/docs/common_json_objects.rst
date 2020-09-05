@@ -3,6 +3,67 @@ Common Input JSON Objects
 
 This page contains description of the user-configurable JSON objects shared by the different instruments. 
 
+.. _mode_json_obj:
+
+:code:`mode` JSON object format
+================================
+Several modes (in a list) maybe specified within a single instrument. Each mode corresponds to a specific operating point. For example, 
+consider a *Synthetic Aperture Radar* type instrument which operates in both L-band and C-band. Such an instrument is considered
+to be made up of two *sub-sensors* with each sub-sensor of instrument type *Synthetic Aperture Radar* and operating at L-band
+and C-band. A mode-identifier is to be specified by the user with which the subsensor can be referenced.
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
+
+   @id, string,, Unique identifier
+   @type, string,, For SAR specify Stripmap or ScanSar. For others leave empty.
+
+The parameters outside the mode block are used as the common parameters for all the sub-sensors, while the parameters specified
+within a mode list entry are specific to the particular sub-sensor.
+
+Example: The example below is that of a *Basic Sensor* type instrument with two modes. The common parameters for both the modes
+are outside the :code:`mode` block. The `NadirObservationMode` has a nadir viewing geometry with a 35 deg Conical FOV. The `SideObservationMode`
+has a side looking geometry (both the side) at 25 deg conical FOV.
+ 
+.. code-block:: python
+
+               {        
+                  "@type": "Basic Sensor",
+                  "name": "Atom",
+                  "@id": "senX",  
+                  "mass": 28, 
+                  "volume": 0.12, 
+                  "power": 32, 
+                  "bitsPerPixel": 8, 
+                  "mode":[{
+                        "@id": "NadirObservationMode"
+                        "fieldOfView": {
+                              "sensorGeometry": "CONICAL",
+                              "fullConeAngle": 35
+                        },
+                        "orientation": {
+                              "convention": "NADIR"
+                        }      
+                  },
+                  {
+                        "@id": "SideObservationMode"
+                        "fieldOfView": {
+                           "sensorGeometry": "CONICAL",
+                           "fullConeAngle": 25
+                        },
+                        "orientation": {
+                           "convention": "SIDE_LOOK",
+                           "sideLookAngle": 30
+                        },
+                        "maneuverability":{
+                           "@type": "YAW180"
+                        }        
+                        }
+                  ]
+               }
+
+
 .. _orientation_json_obj:
 
 :code:`orientation` JSON object format
@@ -174,7 +235,7 @@ Example:
 :code:`maneuverability` JSON object
 ========================================
 Total maneuverability of payload pointing (combining satellite and payload maneuverability). Four types of 
-maneuverability are accepted: `Fixed`, `Cone`, `RollOnly`, `Yaw180Roll` and should be indicated in the 
+maneuverability are accepted: `Fixed`, `Cone`, `RollOnly`, `Yaw180`, `Yaw180Roll` and should be indicated in the 
 :code:`@type` name, value pair. Please refer to :ref:`manuv_desc` for a complete description of the options.
 
 1. :code:`"@type":"Fixed"`
@@ -235,7 +296,19 @@ Example:
         "rollMax": 5
    }
 
-4. :code:`"@type":"Yaw180Roll"`
+4. :code:`"@type":"Yaw180"`
+
+This option allows for a 180 deg manuver option about the yaw axis. 
+
+Example:
+
+.. code-block:: javascript
+   
+   "maneuverability":{
+        "@type":"Yaw180"
+   }
+
+5. :code:`"@type":"Yaw180Roll"`
 
 This option is similar to the :code:`RollOnly` option, but also includes 180 deg manuver option about the yaw axis. 
 Such an option is expected for instruments which require a pure-side-looking target geometry.

@@ -1,6 +1,10 @@
 Basic Sensor Description
 ************************
 
+Types of Operating Modes
+==========================
+There are no special types of operating modes (only a single mode type). 
+
 Input JSON format specifications description
 =========================================================
 
