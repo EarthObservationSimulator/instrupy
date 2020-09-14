@@ -7,20 +7,26 @@
 
         1. Performance Limits for Synthetic Aperture Radar - second edition SANDIA Report 2006. ----> Main reference.
         2. Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993. ----> Reference for PRF validity calculations, corrections for spaceborne radar.
-        
+        3. V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020, pp. 1-20, doi: 10.1109/AERO47225.2020.9172705.
+        ScanSAR concepts
+        3. Tomiyasu, Kiyo. "Conceptual performance of a satellite borne, wide swath synthetic aperture radar." IEEE Transactions on Geoscience and Remote Sensing 2 (1981): 108-116.
+        4. Moore, Richard K., John P. Claassen, and Y. H. Lin. "Scanning spaceborne synthetic aperture radar with integrated radiometer." IEEE Transactions on Aerospace and Electronic Systems 3 (1981): 410-421.
+        5. Currie, A., and Ma A. Brown. "Wide-swath SAR." In IEE Proceedings F (Radar and Signal Processing), vol. 139, no. 2, pp. 122-135. IET Digital Library, 1992.
+        6. Chang, Chi-Yung, Michael Y. Jin, Yun-Ling Lou, and Benjamin Holt. "First SIR-C scansar results." IEEE transactions on geoscience and remote sensing 34, no. 5 (1996): 1278-1281.
+
 """
 
 import json
 import numpy
 import copy
 import pandas, csv
+import warnings
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
 
 class ScanTech(EnumEntity):
     """Enumeration of recognized SAR scanning techniques"""
     STRIPMAP = "STRIPMAP",
     SCANSAR = "SCANSAR",
-    SPOTLIGHT = "SPOTLIGHT"
 
 class PolTypeSAR(EnumEntity):
     """Enumeration of recognized SAR polarization types"""
@@ -197,7 +203,7 @@ class SyntheticApertureRadarModel(Entity):
         self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
         self.numSubSwaths = float(numSubSwaths) if numSubSwaths is not None else None  
-        super(SyntheticApertureRadarModel,self).__init__(_id, "Synthetic Aperture Radar Mode1")
+        super(SyntheticApertureRadarModel,self).__init__(_id, "Synthetic Aperture Radar")
         
     @staticmethod
     def from_dict(d):
@@ -247,7 +253,7 @@ class SyntheticApertureRadarModel(Entity):
             elif(_scan == ScanTech.STRIPMAP):
                 numSubSwaths = d.get("numSubSwaths",None)               
                 if numSubSwaths is not None:
-                    raise Warning("numSubSwaths parameter should NOT be specified for Stripmap. It shall be ignored.")
+                    warnings.warn("numSubSwaths parameter should NOT be specified for Stripmap. It shall be ignored.")
                 numSubSwaths = 1 # stripmap is scansar with one subswath
 
             # calculate instrument FOV based on antenna dimensions
@@ -256,7 +262,7 @@ class SyntheticApertureRadarModel(Entity):
             opWavelength =  Constants.speedOfLight/ d.get("operatingFrequency", None)
             # calculate antenna beamwidth and hence fovs [1] Eqn 41.
             along_track_fov_deg = numpy.rad2deg(opWavelength/ D_az_m)
-            cross_track_fov_deg = numSubSwaths*numpy.rad2deg(opWavelength/ D_elv_m)
+            cross_track_fov_deg = numSubSwaths*numpy.rad2deg(opWavelength/ D_elv_m) # number of subswaths x antenna cross-track beamwidth
             fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(along_track_fov_deg)+ ',"crossTrackFieldOfView":' + str(cross_track_fov_deg) + '}' 
             
             # initialize "Scene FOV" if required        
@@ -288,7 +294,7 @@ class SyntheticApertureRadarModel(Entity):
                     if(_scan == ScanTech.SCANSAR):
                         fixedSwathSize = None
                         swathConfig = SwathTypeSAR.FULL  
-                        raise Warning("ScanSAR supports only FULL swath configuration. Specified FIXED swath configuration is ignored.")
+                        warnings.warn("ScanSAR supports only FULL swath configuration. Specified FIXED swath configuration is ignored.")
                         
             else: # assign default
                 swathType = SwathTypeSAR.FULL       
@@ -442,7 +448,7 @@ class SyntheticApertureRadarModel(Entity):
 
             # [1] equation 69 we get minimum possible azimuth resolution (for strip mapping)
             rho_a = SyntheticApertureRadarModel.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az)
-            # modify in case of scansar
+            # modify in case of scansar (multiple sub-swaths => trading off azimuthal resolution)
             rho_a = rho_a*self.numSubSwaths
 
             # check if sigma NEZ nought satisfies uer supplied threshold. Note that lesser is better.
@@ -545,9 +551,9 @@ class SyntheticApertureRadarModel(Entity):
     @staticmethod
     def find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc_kmps, v_g_kmps, alt_km, 
                                         instru_look_angle_rad, tau_p_ch, D_az, D_elv, fc, 
-                                        pol_type, dual_pol_conf, dual_pol_ps, 
-                                        swath_type, fixed_swath_size_km,
-                                        n_subswt):
+                                        pol_type=PolTypeSAR.SINGLE, dual_pol_conf=None, dual_pol_ps=None, 
+                                        swath_type=SwathTypeSAR.FULL, fixed_swath_size_km=10,
+                                        n_subswt=1):
         """ Function to find the highest possible pulse repetition frequency within the user supplied range of PRFs, which 
             shall allow observation of target. Not all PRFs are valid and a valid PRF has to be chosen so that it meets all
             the below conditions:
@@ -596,22 +602,22 @@ class SyntheticApertureRadarModel(Entity):
         :param dwn_az: Downsampling factor for Doppler processing
         :paramtype dwn_az: int
 
-        :param pol_type: SAR polarization type
+        :param pol_type: SAR polarization type (default PolTypeSAR.SINGLE)
         :paramtype pol_type: :class:`PolTypeSAR`
 
-        :cvar dual_pol_conf: In case of SMAP dual-pol configuration, this parameter indicates the pulse configuration.
+        :cvar dual_pol_conf: In case of SMAP dual-pol configuration, this parameter indicates the pulse configuration. (default is None)
         :vartype dual_pol_conf: :class:`DualPolPulseConfig`
 
-        :param dual_pol_ps: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds.
+        :param dual_pol_ps: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds. (default is None)
         :paramtype dual_pol_ps: float
 
-        :param swath_type: Desired swath type. For ScanSAR only "FULL" is accepted.
+        :param swath_type: Desired swath type. For ScanSAR only "FULL" is accepted. (default = SwathTypeSAR.FULL)
         :paramtype swath_type: :class:`SwathTypeSAR`
 
         :param fixed_swath_size_km: In case of fixed swath configuration this parameter indicates the size of the fixed swath. Not applicable for ScanSAR.
         :paramtype fixed_swath_size_km: float
 
-        :param n_subswt: Number of subswaths
+        :param n_subswt: Number of subswaths (default = 1)
         :paramtype n_subswt: int
 
         """
@@ -701,9 +707,9 @@ class SyntheticApertureRadarModel(Entity):
         else:
             raise RuntimeError("Unknown swath configuration type.")
         
-        # PRFmin 
+        # Note that the PRFmin(stripmap) = PRFmin(scansar) (independent of number of sub-swaths) 
         PRFmin = PRFmin_f*v_sc_kmps*1e3/SyntheticApertureRadarModel.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
-        # Note that the PRFmin(stripmap) = PRFmin(scansar) (independent of number of sub-swaths)
+        
 
         #print("PRFmax: ", PRFmax)
         #print("PRFmin: ", PRFmin)
@@ -729,8 +735,7 @@ class SyntheticApertureRadarModel(Entity):
                 # perform second check of PRF validity, check that target echo is not eclipsed by nadir echo 
                 # from any of the succeeding pulses (from the transmit pulse under consideration to the pulse 
                 # just before the echo)
-                # refer my notes for the nadir interference condition
-                # inequality [2] 5.1.5.2 seems wrong. 
+                # Inequality [2] 5.1.5.2 seems wrong. Refer to [3] Appendix Section A for the corrected version (R2 in eqn(38) is a type, and must be replaced by Rn). 
                 tau_nadir = 2.0*h/c
                 if(tau_near_illum -tau_nadir - tau_p <= 0): # evaluate the condition independent of f_P
                     PRFOK = False # there is nadir echo overlap with desired echo for the mth pulse
@@ -754,8 +759,7 @@ class SyntheticApertureRadarModel(Entity):
                 # perform second check of PRF validity, check that target echo is not eclipsed by nadir echo 
                 # from any of the succeeding pulses (from the transmit pulse under consideration to the pulse 
                 # just before the echo)
-                # refer my notes for the nadir interference condition
-                # inequality [2] 5.1.5.2 seems wrong. 
+                # inequality [2] 5.1.5.2 seems wrong.  Refer to [3] Appendix Section A for the corrected version (R2 in eqn(38) is a type, and must be replaced by Rn). 
                 
                 tau_nadir = 2.0*h/c
                 if(tau_near_obs -tau_nadir - tau_p <= 0): # evaluate the condition independent of f_P

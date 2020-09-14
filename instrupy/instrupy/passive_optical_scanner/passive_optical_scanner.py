@@ -11,7 +11,7 @@ import copy
 import pandas, csv
 import random
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
-from instrupy.passive_optical_scanner.passive_optical_scanner_mode1 import PassiveOpticalScannerModel
+from instrupy.passive_optical_scanner.passive_optical_scanner_model import PassiveOpticalScannerModel
 
 class PassiveOpticalScanner(Entity):
     """A synthetic aperture radar class. Instrument may support multiple operating modes and operating points which are 

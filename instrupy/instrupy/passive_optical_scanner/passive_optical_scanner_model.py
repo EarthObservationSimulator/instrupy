@@ -696,7 +696,7 @@ class PassiveOpticalScannerModel(Entity):
             trEff_ObsPath = TR_ObsPath['transmission'][0].values[:,0]
             wav_m = TR_SunPath['wavelength_nm'].values * 1e-9
             for indx in range(0,len(wav_m)-1):
-                Lint = Lint + (0.5*(trEff_SunPath[indx]+trEff_SunPath[indx+1]))*(0.5*(trEff_ObsPath[indx]+trEff_ObsPath[indx+1]))*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bbT_K) - PassiveOpticalScanner.planck_photon_integral(wav_m[indx+1], bbT_K))
+                Lint = Lint + (0.5*(trEff_SunPath[indx]+trEff_SunPath[indx+1]))*(0.5*(trEff_ObsPath[indx]+trEff_ObsPath[indx+1]))*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bbT_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx+1], bbT_K))
         else:
             Lint = (PassiveOpticalScannerModel.planck_photon_integral(wav_high_m, bbT_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_low_m, bbT_K))
 

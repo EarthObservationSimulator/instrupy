@@ -1,4 +1,4 @@
-"""Unit tests for instrupy.passive_optical_sensor module.
+"""Unit tests for instrupy.passive_optical_sensor.passive_optical_sensor_model
 """
 
 import unittest
@@ -11,8 +11,8 @@ from instrupy.passive_optical_scanner import *
 from instrupy.util import Orientation, FieldOfView
 
 
-class TestPassiveOpticalScanner(unittest.TestCase):
-    firesat = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
+class TestPassiveOpticalScannerModel(unittest.TestCase):
+    firesat = PassiveOpticalScannerModel.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
                                                 '"mass": 28,'
                                                 '"volume": 0.12,' 
@@ -100,13 +100,13 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         self.assertIsInstance(self.firesat.snrThreshold, float)
         self.assertTrue(self.firesat.considerAtmosLoss)
         self.assertIsInstance(self.firesat.considerAtmosLoss, bool)
-        self.assertIsInstance(self.firesat, PassiveOpticalScanner)
+        self.assertIsInstance(self.firesat, PassiveOpticalScannerModel)
         self.assertIsNone(self.firesat._id)
         self.assertEqual(self.firesat._type, "Passive Optical Scanner")
 
         # Test of an improper field-of-view specification. 
         with self.assertRaises(Exception):
-            o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
+            o = PassiveOpticalScannerModel.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
                                                 '"mass": 28,'
                                                 '"volume": 0.12,' 
@@ -140,7 +140,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
 
         # Test of an improper scanning technique specification
         with self.assertRaises(Exception):
-            o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
+            o = PassiveOpticalScannerModel.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"fieldOfView": {'
                                                 '   "sensorGeometry": "RECTANGULAR",'
                                                 '   "alongTrackFieldOfView": 0.628,'
@@ -171,7 +171,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
 
         # Test of an PUSHBROOM scanning technique specification and more than one :code:`numberDetectorRowsAT` specification.
         with self.assertRaises(Exception):
-            o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
+            o = PassiveOpticalScannerModel.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
                                                 '"mass": 28,'
                                                 '"volume": 0.12,' 
@@ -205,7 +205,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
 
         # Test of an WHISKBROOM scanning technique specification and more than one :code:`numberDetectorColsCT` specification.
         with self.assertRaises(Exception):
-            o = PassiveOpticalScanner.from_json('{"@type": "Passive Optical Scanner",'
+            o = PassiveOpticalScannerModel.from_json('{"@type": "Passive Optical Scanner",'
                                                 '"name": "FireSat",'
                                                 '"mass": 28,'
                                                 '"volume": 0.12,' 
@@ -240,16 +240,16 @@ class TestPassiveOpticalScanner(unittest.TestCase):
     def test_planck_photon_integral(self):
 
         # Test trivial case with 0 wavelength
-        self.assertAlmostEqual(PassiveOpticalScanner.planck_photon_integral(0,290), 0)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.planck_photon_integral(0,290), 0)
 
         """ Tests using online calculator from <https://www.opticsthewebsite.com/OpticsCalculators.aspx> as truth data.
             Note that the online calculator requires minimum wavelength to be set as 1e-9 um which is nearly 0 wavelength.
 
         """
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.planck_photon_integral(12e-6,1500), 1.46801e+20 * 1e4)
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.planck_photon_integral(2e-6,500), 3.36875e+14 * 1e4) 
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.planck_photon_integral(500e-6,45), 4.10754e+15 * 1e4) 
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.planck_photon_integral(1e9,45), 4.40891e+15 * 1e4)  # specifying 1e9 m as wavelength is to get approximately the radiance over entire spectrum
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.planck_photon_integral(12e-6,1500), 1.46801e+20 * 1e4)
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.planck_photon_integral(2e-6,500), 3.36875e+14 * 1e4) 
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.planck_photon_integral(500e-6,45), 4.10754e+15 * 1e4) 
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.planck_photon_integral(1e9,45), 4.40891e+15 * 1e4)  # specifying 1e9 m as wavelength is to get approximately the radiance over entire spectrum
     
     def test_radianceWithEarthAsBlackBodyRadiator(self):
 
@@ -258,25 +258,25 @@ class TestPassiveOpticalScanner(unittest.TestCase):
             Note that the online calculator requires minimum wavelength to be set as 1e-9 um which is nearly 0 wavelength.
 
         """
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, 0, considerAtmosLoss = False),  5.08113e+17 * 1e4) # 10 um to 22.5 um at 290 K, 0 deg incidence angle
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(6e-6, 4e-6, 180.5, 0, considerAtmosLoss = False),  6.74299e+14 * 1e4) 
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(0.5e-6, 0.8e-6, 270, 0, considerAtmosLoss = False),  2.74990e-5 * 1e4) 
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(140e-6, 40e-6, 330, 0, considerAtmosLoss = False),  1.77269e+16 * 1e4)
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, 0, considerAtmosLoss = False),  5.08113e+17 * 1e4) # 10 um to 22.5 um at 290 K, 0 deg incidence angle
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(6e-6, 4e-6, 180.5, 0, considerAtmosLoss = False),  6.74299e+14 * 1e4) 
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(0.5e-6, 0.8e-6, 270, 0, considerAtmosLoss = False),  2.74990e-5 * 1e4) 
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(140e-6, 40e-6, 330, 0, considerAtmosLoss = False),  1.77269e+16 * 1e4)
 
         # Tests with 10 um to 22.5 um at 290 K at different incidence angles
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, 0.1, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.1)) 
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, -0.1, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.1))
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, 0.5 + 2*3.141, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.5))
-        self.assertNearlyZeroErrorFraction(PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, -0.5 - 8*3.141, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.5))
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, 0.1, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.1)) 
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, -0.1, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.1))
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, 0.5 + 2*3.141, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.5))
+        self.assertNearlyZeroErrorFraction(PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, -0.5 - 8*3.141, considerAtmosLoss = False),  5.08113e+17 * 1e4 * numpy.cos(0.5))
 
 
         # Tests with unrealistic observation incidence angles
         with self.assertRaises(Exception):
-            PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, numpy.deg2rad(91), considerAtmosLoss = False)
+            PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, numpy.deg2rad(91), considerAtmosLoss = False)
         with self.assertRaises(Exception):
-            PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, numpy.deg2rad(-91), considerAtmosLoss = False)
+            PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, numpy.deg2rad(-91), considerAtmosLoss = False)
         with self.assertRaises(Exception):
-            PassiveOpticalScanner.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, numpy.deg2rad(-91 + 360*8), considerAtmosLoss = False)
+            PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(16.25e-6, 12.5e-6, 290, numpy.deg2rad(-91 + 360*8), considerAtmosLoss = False)
 
     
     def test_radianceWithEarthAsReflector(self):
@@ -292,13 +292,13 @@ class TestPassiveOpticalScanner(unittest.TestCase):
 
         """ Test: Reflected energy far-outside visible wavelengths must be near 0. 
         """
-        self.assertAlmostEqual(PassiveOpticalScanner.radianceWithEarthAsReflector(0.5e-9, 0.2e-9, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), 0)
-        self.assertAlmostEqual(PassiveOpticalScanner.radianceWithEarthAsReflector(1, 1e-2, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), 0, places = 3)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.radianceWithEarthAsReflector(0.5e-9, 0.2e-9, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), 0)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.radianceWithEarthAsReflector(1, 1e-2, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), 0, places = 3)
 
         """ Test: Reflected energy for visible wavelengths must be greater than that of other wavelengths, keeping bandwidth same.
         """        
-        self.assertGreater(PassiveOpticalScanner.radianceWithEarthAsReflector(0.5e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), PassiveOpticalScanner.radianceWithEarthAsReflector(6e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True)) # longer wavelengths than visible
-        self.assertGreater(PassiveOpticalScanner.radianceWithEarthAsReflector(0.5e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), PassiveOpticalScanner.radianceWithEarthAsReflector(0.25e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True)) # shorter wavelengths than visible
+        self.assertGreater(PassiveOpticalScannerModel.radianceWithEarthAsReflector(0.5e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), PassiveOpticalScannerModel.radianceWithEarthAsReflector(6e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True)) # longer wavelengths than visible
+        self.assertGreater(PassiveOpticalScannerModel.radianceWithEarthAsReflector(0.5e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), PassiveOpticalScannerModel.radianceWithEarthAsReflector(0.25e-6, 0.2e-6, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True)) # shorter wavelengths than visible
 
         """
             Test with another observer position, one where the observer sees the target pixel (of fixed area) at a larger angle.
@@ -306,7 +306,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         opWav_m = 0.5e-6
         bw_m = 0.2e-6
         obs2_pos_km = [6893.654271085462, -9.186593534864809e-013, 1215.537243668513]
-        self.assertGreater(PassiveOpticalScanner.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), PassiveOpticalScanner.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs2_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True)) # longer wavelengths than visible
+        self.assertGreater(PassiveOpticalScannerModel.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True), PassiveOpticalScannerModel.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs2_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss = True)) # longer wavelengths than visible
 
 
     
@@ -325,7 +325,7 @@ class TestPassiveOpticalScanner(unittest.TestCase):
         pixelArea_m2 = 30.0519 * 30.0519
         Ti_s = 24.1827e-6
         # The InstruPy computed value must be greater than truth value since SMAD does not cosdier the energy reflected off Sun, and the date corresponds to satellite over target at day-time.
-        self.assertGreater(PassiveOpticalScanner.calculate_number_of_signal_electrons(opWav_m, bw_m, bbT_K, apDia_m, opTrns, QE, tObs_JDUT1, obs_pos_km, tar_pos_km, pixelArea_m2, Ti_s, considerAtmosLoss = True), 8286.104444633884)        
+        self.assertGreater(PassiveOpticalScannerModel.calculate_number_of_signal_electrons(opWav_m, bw_m, bbT_K, apDia_m, opTrns, QE, tObs_JDUT1, obs_pos_km, tar_pos_km, pixelArea_m2, Ti_s, considerAtmosLoss = True), 8286.104444633884)        
 
     def test_calc_typ_data_metrics(self):
         
@@ -349,35 +349,35 @@ class TestPassiveOpticalScanner(unittest.TestCase):
     def test_calculate_integration_time(self):
 
         # Test: PUSHBROOM scanning
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("PUSHBROOM",1, 1, 12.5, 1), 12.5)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("PushbroOM",1, 150, 12.5, 0.1), 12.5)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("PUSHBROOM",1, 150, 12.5, 0.1, crossTrack_fov_deg = 30), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("PUSHBROOM",1, 1, 12.5, 1), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("PushbroOM",1, 150, 12.5, 0.1), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("PUSHBROOM",1, 150, 12.5, 0.1, crossTrack_fov_deg = 30), 12.5)
         # check max exposure time functionality
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("PUSHBROOM",1, 150, 12.5, 0.1, maxDetectorExposureTime = 5), 5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("PUSHBROOM",1, 150, 12.5, 0.1, maxDetectorExposureTime = 5), 5)
         
         with self.assertRaises(Exception): # Exception expected if number of detector rows in along-track direction is not 1.
-            PassiveOpticalScanner.calculate_integration_time("PUSHBROOM",10, 150, 12.5, 1)
+            PassiveOpticalScannerModel.calculate_integration_time("PUSHBROOM",10, 150, 12.5, 1)
 
         # Test: Whiskroom scanning
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("WHISKBROOM",1, 1, 12.5, 1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30), 12.5/30)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("WhiskbrOOM",1, 1, 12.5, 0.1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30), 12.5/300)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("WHISKBRooM",20, 1, 12.5, 0.1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30), 12.5/300)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("WHISKBROOM",1, 1, 12.5, 1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30), 12.5/30)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("WhiskbrOOM",1, 1, 12.5, 0.1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30), 12.5/300)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("WHISKBRooM",20, 1, 12.5, 0.1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30), 12.5/300)
         # check max exposure time functionality
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("WHISKBRooM",20, 1, 12.5, 0.1, maxDetectorExposureTime = (12.5/3000), crossTrack_fov_deg = 30), 12.5/3000)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("WHISKBRooM",20, 1, 12.5, 0.1, maxDetectorExposureTime = (12.5/3000), crossTrack_fov_deg = 30), 12.5/3000)
 
         with self.assertRaises(Exception): # Exception expected if number of detector columns in cross-track direction is not 1.
-            PassiveOpticalScanner.calculate_integration_time("WHISKBROOM",10, 150, 12.5, 1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30)
+            PassiveOpticalScannerModel.calculate_integration_time("WHISKBROOM",10, 150, 12.5, 1, maxDetectorExposureTime = None, crossTrack_fov_deg = 30)
 
         with self.assertRaises(Exception): # Exception expected if cross-track-fov is not specified
-            PassiveOpticalScanner.calculate_integration_time("WHISKBROOM",20, 1, 12.5, 0.1, maxDetectorExposureTime = None, crossTrack_fov_deg = None)
+            PassiveOpticalScannerModel.calculate_integration_time("WHISKBROOM",20, 1, 12.5, 0.1, maxDetectorExposureTime = None, crossTrack_fov_deg = None)
 
         # Test: MATRIX_IMAGER scanning
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("MATRIX_IMAGER",1, 1, 12.5, 1), 12.5)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("MATRIX_IMAGER",1, 1, 12.5, 0.1), 12.5)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("Matrix_Imager",20, 1, 12.5, 0.1), 12.5)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("matrix_imager",1, 20, 12.5, 0.1), 12.5)
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("mATrIX_ImAGEr",20, 20, 12.5, 0.1, 30), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("MATRIX_IMAGER",1, 1, 12.5, 1), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("MATRIX_IMAGER",1, 1, 12.5, 0.1), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("Matrix_Imager",20, 1, 12.5, 0.1), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("matrix_imager",1, 20, 12.5, 0.1), 12.5)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("mATrIX_ImAGEr",20, 20, 12.5, 0.1, 30), 12.5)
         # check max exposure time functionality
-        self.assertAlmostEqual(PassiveOpticalScanner.calculate_integration_time("matrix_imager",1, 20, 12.5, 0.1, maxDetectorExposureTime = 1.2), 1.2)
+        self.assertAlmostEqual(PassiveOpticalScannerModel.calculate_integration_time("matrix_imager",1, 20, 12.5, 0.1, maxDetectorExposureTime = 1.2), 1.2)
         
         

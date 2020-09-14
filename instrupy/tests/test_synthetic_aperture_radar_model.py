@@ -1,4 +1,4 @@
-"""Unit tests for instrupy.synthetic_aperture_radar module.
+"""Unit tests for instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model
 """
 
 import unittest
@@ -7,16 +7,16 @@ import numpy
 import sys, os
 
 
-from instrupy.synthetic_aperture_radar import *
+from instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model import *
 from instrupy.util import Orientation, FieldOfView, FileUtilityFunctions
 
 
-class TestSyntheticApertureRadar(unittest.TestCase):
+class TestSyntheticApertureRadarModel(unittest.TestCase):
 
     # SAR without specification of maneuverability, numStripsInScene, altitude fields
     # H. Saito et al., “Compact x-band synthetic aperture radar for 100kg class satellite,” IEICE Transactions on
     # Communications, vol. E100.B, no. 9, pp. 1653–1660, 2017
-    microxsar = SyntheticApertureRadar.from_json( '{"@type": "Synthetic Aperture Radar",'
+    microxsar = SyntheticApertureRadarModel.from_json( '{"@type": "Synthetic Aperture Radar",'
                                                   '"name": "MiroXSAR",'  
                                                   '"mass": 130,' 
                                                   '"volume": 0.343,' 
@@ -42,7 +42,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
                                                   '"sigmaNESZthreshold": -15}')
 
     # SAR with maneuverability, numStripsInScene, altitude fields and without other optional fields
-    seasat = SyntheticApertureRadar.from_json(  '{"@type": "Synthetic Aperture Radar",'
+    seasat = SyntheticApertureRadarModel.from_json(  '{"@type": "Synthetic Aperture Radar",'
                                                 '"orientation": {'
                                                 '    "convention": "SIDE_LOOK",'
                                                 '    "sideLookAngle": 20.5'
@@ -66,7 +66,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
                                                 '"altitude": 800,'
                                                 '"numStripsInScene":14392'
                                                 '}')
-    _seasat = SyntheticApertureRadar.from_json(  '{"@type": "Synthetic Aperture Radar",'
+    _seasat = SyntheticApertureRadarModel.from_json(  '{"@type": "Synthetic Aperture Radar",'
                                                 '"orientation": {'
                                                 '    "convention": "SIDE_LOOK",'
                                                 '    "sideLookAngle": 20.5'
@@ -92,7 +92,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
                                                 '}')
 
     # SAR with maneuverability field and without other optional fields
-    ers1 = SyntheticApertureRadar.from_json('{"@type": "Synthetic Aperture Radar",'
+    ers1 = SyntheticApertureRadarModel.from_json('{"@type": "Synthetic Aperture Radar",'
                                             '   "orientation": {'
                                             '      "convention": "SIDE_LOOK",'
                                             '      "sideLookAngle": 20'
@@ -117,7 +117,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         # 
-        super(TestSyntheticApertureRadar, self).__init__(*args, **kwargs)
+        super(TestSyntheticApertureRadarModel, self).__init__(*args, **kwargs)
 
     def test_from_json_basic_1(self):
         """ Test initialization of the synthetic aperture radar in the many different ways allowed. 
@@ -184,7 +184,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
         # Test of an improper orientation specification. Although physically specifing XYZ as (0,10,0) degrees is the same as specifying 
         # the side-look angle as 10 deg, the behavior of the code is to throw an error.
         with self.assertRaises(Exception):
-            o = SyntheticApertureRadar.from_json( '{"@type": "Synthetic Aperture Radar",'
+            o = SyntheticApertureRadarModel.from_json( '{"@type": "Synthetic Aperture Radar",'
                                                   '"name": "MiroXSAR",'  
                                                   '"mass": 130,' 
                                                   '"volume": 0.343,' 
@@ -213,7 +213,7 @@ class TestSyntheticApertureRadar(unittest.TestCase):
 
         # Check for invalid PRF min, max specification
         with self.assertRaises(Exception):
-            o = SyntheticApertureRadar.from_json( '{"@type": "Synthetic Aperture Radar",'
+            o = SyntheticApertureRadarModel.from_json( '{"@type": "Synthetic Aperture Radar",'
                                                   '"name": "MiroXSAR",'  
                                                   '"mass": 130,' 
                                                   '"volume": 0.343,' 

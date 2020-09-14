@@ -1,4 +1,4 @@
-"""Unit tests for instrupy.basic_sensor module.
+"""Unit tests for instrupy.basic_sensor.basic_sensor_model.
 """
 
 import unittest
@@ -7,23 +7,23 @@ import numpy as np
 import sys, os
 import random
 
-from instrupy.basic_sensor import *
+from instrupy.basic_sensor import BasicSensorModel
 from instrupy.util import Orientation, FieldOfView, SensorGeometry
 
 RE = 6378.137 # [km] radius of Earth
 
-class TestBasicSensor(unittest.TestCase):
+class TestBasicSensorModel(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         # 
-        super(TestBasicSensor, self).__init__(*args, **kwargs)
+        super(TestBasicSensorModel, self).__init__(*args, **kwargs)
 
     def test_from_json_basic(self):
         """ Test initialization of basic sensor in the many different ways allowed.
         """
         # Test: Typical case
         x = random.uniform(10,50)
-        o = BasicSensor.from_json('{"name": "Atom","acronym":"At", "@id": "bs1","mass":10,"volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12,' \
+        o = BasicSensorModel.from_json('{"name": "Atom","acronym":"At", "@id": "bs1","mass":10,"volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12,' \
                                   '"orientation": {"convention": "NADIR"},' \
                                   '"fieldOfView": {"sensorGeometry": "Conical", "fullConeAngle":'+ str(x)+' },' \
                                   '"maneuverability":{"@type": "FIXED"}}')
@@ -74,10 +74,10 @@ class TestBasicSensor(unittest.TestCase):
         self.assertEqual(o.fieldOfRegard._AT_fov_deg, x)
         self.assertEqual(o.fieldOfRegard._CT_fov_deg, x)
         
-        self.assertIsInstance(o, BasicSensor)
+        self.assertIsInstance(o, BasicSensorModel)
 
         # Test: Test default initialization of orientation, FOV and FOR fields.        
-        o = BasicSensor.from_json('{}')
+        o = BasicSensorModel.from_json('{}')
         self.assertIsNone(o.name)
         self.assertIsNone(o.acronym)
         self.assertIsNone(o.mass)
@@ -109,7 +109,7 @@ class TestBasicSensor(unittest.TestCase):
         self.assertIsNone(o._id)
 
         # test acronym is initialized to name when no specified
-        o = BasicSensor.from_json('{"name": "Atom"}' )
+        o = BasicSensorModel.from_json('{"name": "Atom"}' )
         self.assertEqual(o._type, "Basic Sensor")
         self.assertEqual(o.name, "Atom")
         self.assertIsInstance(o.name, str)
@@ -118,7 +118,7 @@ class TestBasicSensor(unittest.TestCase):
         
         # Test: Incomplete field-of-view specification, test that Exception is raised
         with self.assertRaises(Exception):
-            BasicSensor.from_json('{"name": "Atom","mass":10,"volume":12.45, "fieldOfView": {"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 10 }}')
+            BasicSensorModel.from_json('{"name": "Atom","mass":10,"volume":12.45, "fieldOfView": {"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 10 }}')
 
 
     def test_calc_typ_data_metrics_1(self):
@@ -126,7 +126,7 @@ class TestBasicSensor(unittest.TestCase):
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
         """
-        o = BasicSensor.from_json('{}')  
+        o = BasicSensorModel.from_json('{}')  
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': None, 'vy[km/s]': None, 'vz[km/s]': None} # altitude 500 km
@@ -144,13 +144,13 @@ class TestBasicSensor(unittest.TestCase):
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
         """
-        o = BasicSensor.from_json('{}')
+        o = BasicSensorModel.from_json('{}')
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         
         # test with reference model which is good for small angles
         poi_lon_deg = random.uniform(0.01, 0.1)
-        nadir_angle_deg = abs(numpy.rad2deg(RE*numpy.deg2rad(poi_lon_deg)/ 500)) # approximate model, good for small nadir angles
-        range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
+        nadir_angle_deg = abs(np.rad2deg(RE*np.deg2rad(poi_lon_deg)/ 500)) # approximate model, good for small nadir angles
+        range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': None, 'vy[km/s]': None, 'vz[km/s]': None} # altitude 500 km
         TargetCoords = {'Lat [deg]': 0, 'Lon [deg]': poi_lon_deg}
         obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
@@ -179,13 +179,13 @@ class TestBasicSensor(unittest.TestCase):
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
         """
-        o = BasicSensor.from_json('{}')
+        o = BasicSensorModel.from_json('{}')
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         
         # test with reference model which is good for small angles
         poi_lon_deg = -1 * random.uniform(0.01, 0.1) 
-        nadir_angle_deg = abs(numpy.rad2deg(RE*numpy.deg2rad(poi_lon_deg)/ 500)) # approximate model, good for small nadir angles
-        range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
+        nadir_angle_deg = abs(np.rad2deg(RE*np.deg2rad(poi_lon_deg)/ 500)) # approximate model, good for small nadir angles
+        range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': None, 'vy[km/s]': None, 'vz[km/s]': None} # altitude 500 km
         TargetCoords = {'Lat [deg]': 0, 'Lon [deg]': poi_lon_deg}
         obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
@@ -214,13 +214,13 @@ class TestBasicSensor(unittest.TestCase):
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
         """
-        o = BasicSensor.from_json('{}')
+        o = BasicSensorModel.from_json('{}')
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         
         # test with reference model which is good for small angles
         poi_lat_deg = -1 * random.uniform(0.01, 0.1)
-        nadir_angle_deg = abs(numpy.rad2deg(RE*numpy.deg2rad(poi_lat_deg)/ 500))
-        range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
+        nadir_angle_deg = abs(np.rad2deg(RE*np.deg2rad(poi_lat_deg)/ 500))
+        range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': None, 'vy[km/s]': None, 'vz[km/s]': None} # altitude 500 km
         TargetCoords = {'Lat [deg]': poi_lat_deg, 'Lon [deg]': 0}
         obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
@@ -249,13 +249,13 @@ class TestBasicSensor(unittest.TestCase):
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
             Velocity vector do not influence the calcs.
         """
-        o = BasicSensor.from_json('{}')
+        o = BasicSensorModel.from_json('{}')
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         
         # test with reference model which is good for small angles
         poi_lat_deg = random.uniform(0.01, 0.1)
-        nadir_angle_deg = abs(numpy.rad2deg(RE*numpy.deg2rad(poi_lat_deg)/ 500))
-        range_km = 500/numpy.cos(numpy.deg2rad(nadir_angle_deg))
+        nadir_angle_deg = abs(np.rad2deg(RE*np.deg2rad(poi_lat_deg)/ 500))
+        range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'Time[JDUT1]':epoch_JDUT1, 'x[km]': 6878.137, 'y[km]': 0, 'z[km]': 0, 'vx[km/s]': None, 'vy[km/s]': None, 'vz[km/s]': None} # altitude 500 km
         TargetCoords = {'Lat [deg]': poi_lat_deg, 'Lon [deg]': 0}
         obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
