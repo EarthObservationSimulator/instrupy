@@ -11,11 +11,7 @@ import copy
 import pandas, csv
 import random
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
-from instrupy.basic_sensor.basic_sensor_mode1 import BasicSensorMode1
-
-class ModeTypeBasicSensor(EnumEntity):
-    """Enumeration of recognized basic sensor mode types"""
-    MODE1 = "MODE1"
+from instrupy.basic_sensor.basic_sensor_model import BasicSensorModel
 
 class BasicSensor(Entity):
     """A synthetic aperture radar class. Instrument may support multiple operating modes and operating points which are 
@@ -65,23 +61,15 @@ class BasicSensor(Entity):
                 try:
                     del _data['@id']
                 except:
-                    pass
-                    
-                try:
-                    mode_type = ModeTypeBasicSensor.get(_data.get("@type", None))
-                    del _data['@type']
-                except:
-                    mode_type = ModeTypeBasicSensor.MODE1 # default to Mode1
-
+                    pass                    
+                
                 _ssen.update(_data)
-
-                if(mode_type == ModeTypeBasicSensor.MODE1):
-                    ssen_id.append(_ssen_id)
-                    subsensor.append(BasicSensorMode1.from_dict(_ssen))
-
+                subsensor.append(BasicSensorModel.from_dict(_ssen))
+                
+                ssen_id.append(_ssen_id)
         else:
-            # no mode definition => default single mode of operation (mode1 = Mode1) is to be considered
-            subsensor = [BasicSensorMode1.from_dict(specs)]
+            # no mode definition => default single mode of operation is to be considered
+            subsensor = [BasicSensorModel.from_dict(specs)]
             ssen_id = [specs["@id"]]
         
         self.ssen_id = ssen_id

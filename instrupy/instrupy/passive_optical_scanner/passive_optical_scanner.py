@@ -11,11 +11,7 @@ import copy
 import pandas, csv
 import random
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
-from instrupy.passive_optical_scanner.passive_optical_scanner_mode1 import PassiveOpticalScannerMode1
-
-class ModeTypePassiveOpticalScanner(EnumEntity):
-    """Enumeration of recognized passive optical scanner mode types"""
-    MODE1 = "MODE1"
+from instrupy.passive_optical_scanner.passive_optical_scanner_mode1 import PassiveOpticalScannerModel
 
 class PassiveOpticalScanner(Entity):
     """A synthetic aperture radar class. Instrument may support multiple operating modes and operating points which are 
@@ -65,23 +61,16 @@ class PassiveOpticalScanner(Entity):
                 try:
                     del _data['@id']
                 except:
-                    pass
-                    
-                try:
-                    mode_type = ModeTypePassiveOpticalScanner.get(_data.get("@type", None))
-                    del _data['@type']
-                except:
-                    mode_type = ModeTypePassiveOpticalScanner.MODE1 # default to Mode1
-
+                    pass                    
+                
                 _ssen.update(_data)
-
-                if(mode_type == ModeTypePassiveOpticalScanner.MODE1):
-                    ssen_id.append(_ssen_id)
-                    subsensor.append(PassiveOpticalScannerMode1.from_dict(_ssen))
+                subsensor.append(PassiveOpticalScannerModel.from_dict(_ssen))
+                
+                ssen_id.append(_ssen_id)
 
         else:
-            # no mode definition => default single mode of operation (mode1 = Mode1) is to be considered
-            subsensor = [PassiveOpticalScannerMode1.from_dict(specs)]
+            # no mode definition => default single mode of operation is to be considered
+            subsensor = [PassiveOpticalScannerModel.from_dict(specs)]
             ssen_id = [specs["@id"]]
         
         self.ssen_id = ssen_id

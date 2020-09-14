@@ -1,5 +1,5 @@
 """ 
-.. module:: passive_optical_scanner_mode1
+.. module:: passive_optical_scanner_model
 
 :synopsis: *Module to handle passive optical scanners with detectors operating at 
             Visible and near-Visible (IR and UV) wavelengths.*
@@ -21,7 +21,7 @@ class ScanTech(EnumEntity):
     WHISKBROOM = "WHISKBROOM",
     MATRIX_IMAGER = "MATRIX_IMAGER"
 
-class PassiveOpticalScannerMode1(Entity):
+class PassiveOpticalScannerModel(Entity):
 
     """A passive optical scanner class. Supports following sub-types of passive optical scanners: 
        
@@ -126,7 +126,7 @@ class PassiveOpticalScannerMode1(Entity):
             opticsSysEff = None, numOfReadOutE = None, targetBlackBodyTemp = None,
             bitsPerPixel = None, detectorWidth = None, maxDetectorExposureTime= None, snrThreshold = None,
             considerAtmosLoss= None, _id=None):
-        """Initialize a PassiveOpticalScanner object.
+        """Initialization
 
         """
         self.name = str(name) if name is not None else None
@@ -157,7 +157,7 @@ class PassiveOpticalScannerMode1(Entity):
         self.maxDetectorExposureTime = float(maxDetectorExposureTime) if maxDetectorExposureTime is not None else None    
         self.considerAtmosLoss = bool(considerAtmosLoss) if considerAtmosLoss is not None else False # Set to False by default
 
-        super(PassiveOpticalScannerMode1,self).__init__(_id, "Passive Optical Scanner")
+        super(PassiveOpticalScannerModel,self).__init__(_id, "Passive Optical Scanner")
 
     @staticmethod
     def from_dict(d):
@@ -224,7 +224,7 @@ class PassiveOpticalScannerMode1(Entity):
                 else:
                     fldofreg_str = {**fov_json_str, **{"maneuverability": d.get("maneuverability", None)}}
 
-                return PassiveOpticalScannerMode1(
+                return PassiveOpticalScannerModel(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
                         mass = d.get("mass", None),
@@ -331,9 +331,9 @@ class PassiveOpticalScannerMode1(Entity):
         nadir_accessDuration_s = numpy.deg2rad(self.fieldOfView.get_ATCT_fov()[0])*alt_km/ (MathUtilityFunctions.compute_satellite_footprint_speed(SpacecraftPosition_km,SpacecraftVelocity_kmps) *1e-3) # analytical calculation of the access duration
         
         # The analytically caclulated access duration at the nadir is given as input to the integration time caclulations
-        Ti_s = PassiveOpticalScannerMode1.calculate_integration_time(self.scanTechnique, self.numberDetectorRowsAT, self.numberDetectorColsCT, nadir_accessDuration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[1])
+        Ti_s = PassiveOpticalScannerModel.calculate_integration_time(self.scanTechnique, self.numberDetectorRowsAT, self.numberDetectorColsCT, nadir_accessDuration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.get_rectangular_fov_specs_from_custom_fov_specs()[1])
         
-        Ne = PassiveOpticalScannerMode1.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp, 
+        Ne = PassiveOpticalScannerModel.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp, 
                                                                        self.apertureDia, self.opticsSysEff, self.quantumEff,  
                                                                        tObs_JDUT1, SpacecraftPosition_km, TargetPosition_km, pixelArea_m2, Ti_s,
                                                                        self.considerAtmosLoss)
@@ -356,7 +356,7 @@ class PassiveOpticalScannerMode1(Entity):
             DR = numpy.NaN
 
         # find noise equivalent temperature difference
-        Ne_new = PassiveOpticalScannerMode1.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp + 1,
+        Ne_new = PassiveOpticalScannerModel.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp + 1,
                                                                            self.apertureDia, self.opticsSysEff, self.quantumEff, 
                                                                            tObs_JDUT1, SpacecraftPosition_km, TargetPosition_km, pixelArea_m2, Ti_s,
                                                                            self.considerAtmosLoss)
@@ -505,7 +505,7 @@ class PassiveOpticalScannerMode1(Entity):
         obsIncAng_rad = numpy.arcsin(numpy.sin(lookAngle_rad)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
  
         # estimate total radiance from the surface [photons/s/m2/sr] to the direction of the observer                     
-        Lint = PassiveOpticalScannerMode1.radianceWithEarthAsBlackBodyRadiator(opWav_m, bw_m, bbT_K, obsIncAng_rad, considerAtmosLoss) + PassiveOpticalScannerMode1.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, pixelArea_m2, considerAtmosLoss)
+        Lint = PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(opWav_m, bw_m, bbT_K, obsIncAng_rad, considerAtmosLoss) + PassiveOpticalScannerModel.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, pixelArea_m2, considerAtmosLoss)
 
         # total radiated, reflected photon rate
         L = Lint * pixelArea_m2
@@ -557,7 +557,7 @@ class PassiveOpticalScannerMode1(Entity):
         if((obsIncAng_rad > numpy.pi/2) and (obsIncAng_rad < (3/2) * numpy.pi)):
             raise Exception("Observation incidence angle should be in range -90 deg to 90 deg.")
         
-        Lint_ER = PassiveOpticalScannerMode1.planck_photon_integral_with_wavlen_dependent_atmos_loss_1((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), bbT_K, obsIncAng_rad, considerAtmosLoss)
+        Lint_ER = PassiveOpticalScannerModel.planck_photon_integral_with_wavlen_dependent_atmos_loss_1((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), bbT_K, obsIncAng_rad, considerAtmosLoss)
         
         # Assume Lambertian surface obeying Lambert's cosine law.
         Lint_ER = Lint_ER * numpy.cos(obsIncAng_rad)  
@@ -606,7 +606,7 @@ class PassiveOpticalScannerMode1(Entity):
         Strictly speaking just the Sun to Ground atmospheric loss should be taken into account at this stage and a later stage the Ground to Sun atmos
         loss should be taken into account. Mathmatically the below implementation is correct, and is favored since it is easier to code. 
         '''
-        Lint = PassiveOpticalScannerMode1.planck_photon_integral_with_wavlen_dependent_atmos_loss_2((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), Constants.SunBlackBodyTemperature, solar_inc_angle_rad, obsIncAng_rad, considerAtmosLoss)
+        Lint = PassiveOpticalScannerModel.planck_photon_integral_with_wavlen_dependent_atmos_loss_2((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), Constants.SunBlackBodyTemperature, solar_inc_angle_rad, obsIncAng_rad, considerAtmosLoss)
 
         # Calculate downwelling radiance assuming Lambertian surface obeying Lambert's cosine law.
         Lint_dwnwell = Lint * numpy.cos(solar_inc_angle_rad)  
@@ -652,9 +652,9 @@ class PassiveOpticalScannerMode1(Entity):
             trEff = TR['transmission'][0].values[:,0]
             wav_m = TR['wavelength_nm'].values * 1e-9
             for indx in range(0,len(wav_m)-1):
-                Lint = Lint + 0.5*(trEff[indx]+trEff[indx+1])*(PassiveOpticalScannerMode1.planck_photon_integral(wav_m[indx], bbT_K) - PassiveOpticalScannerMode1.planck_photon_integral(wav_m[indx+1], bbT_K))
+                Lint = Lint + 0.5*(trEff[indx]+trEff[indx+1])*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bbT_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx+1], bbT_K))
         else:
-            Lint = (PassiveOpticalScannerMode1.planck_photon_integral(wav_high_m, bbT_K) - PassiveOpticalScannerMode1.planck_photon_integral(wav_low_m, bbT_K))
+            Lint = (PassiveOpticalScannerModel.planck_photon_integral(wav_high_m, bbT_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_low_m, bbT_K))
         return Lint
 
     @staticmethod
@@ -696,9 +696,9 @@ class PassiveOpticalScannerMode1(Entity):
             trEff_ObsPath = TR_ObsPath['transmission'][0].values[:,0]
             wav_m = TR_SunPath['wavelength_nm'].values * 1e-9
             for indx in range(0,len(wav_m)-1):
-                Lint = Lint + (0.5*(trEff_SunPath[indx]+trEff_SunPath[indx+1]))*(0.5*(trEff_ObsPath[indx]+trEff_ObsPath[indx+1]))*(PassiveOpticalScannerMode1.planck_photon_integral(wav_m[indx], bbT_K) - PassiveOpticalScanner.planck_photon_integral(wav_m[indx+1], bbT_K))
+                Lint = Lint + (0.5*(trEff_SunPath[indx]+trEff_SunPath[indx+1]))*(0.5*(trEff_ObsPath[indx]+trEff_ObsPath[indx+1]))*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bbT_K) - PassiveOpticalScanner.planck_photon_integral(wav_m[indx+1], bbT_K))
         else:
-            Lint = (PassiveOpticalScannerMode1.planck_photon_integral(wav_high_m, bbT_K) - PassiveOpticalScannerMode1.planck_photon_integral(wav_low_m, bbT_K))
+            Lint = (PassiveOpticalScannerModel.planck_photon_integral(wav_high_m, bbT_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_low_m, bbT_K))
 
         return Lint
 

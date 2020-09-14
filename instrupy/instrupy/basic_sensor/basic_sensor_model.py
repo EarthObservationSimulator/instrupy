@@ -1,5 +1,5 @@
 """ 
-.. module:: basic_sensor_mode1
+.. module:: basic_sensor_model
 
 :synopsis: *Module to handle sensor type with the most basic attributes.*
 
@@ -10,7 +10,7 @@ import copy
 import pandas, csv
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry
 
-class BasicSensorMode1(Entity):
+class BasicSensorModel(Entity):
     """A basic sensor class. 
       
         :ivar name: Full name of the instrument.
@@ -48,7 +48,7 @@ class BasicSensorMode1(Entity):
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
             fieldOfView=None, fieldOfRegard=None, dataRate=None, bitsPerPixel = None, _id=None):
-        """Initialize a Basic Sensor object.
+        """Initialization
 
         """
         self.name = str(name) if name is not None else None
@@ -61,14 +61,14 @@ class BasicSensorMode1(Entity):
         self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None            
-        super(BasicSensorMode1,self).__init__(_id, "Basic Sensor")
+        super(BasicSensorModel,self).__init__(_id, "Basic Sensor")
 
     @staticmethod
     def from_dict(d):
         """Parses an instrument from a normalized JSON dictionary."""
         default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
         default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
-        return BasicSensorMode1(
+        return BasicSensorModel(
                 name = d.get("name", None),
                 acronym = d.get("acronym", None),
                 mass = d.get("mass", None),

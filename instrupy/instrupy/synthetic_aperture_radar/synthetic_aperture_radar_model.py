@@ -1,7 +1,7 @@
 """ 
-.. module:: synthetic_aperture_radar_mode1
+.. module:: synthetic_aperture_radar_model
 
-:synopsis: *Module to handle Stripmap SAR instrument operating mode.*
+:synopsis: *Module to handle SAR instrument model.*
 
         Inline code comments contain references to the following articles:
 
@@ -15,9 +15,30 @@ import numpy
 import copy
 import pandas, csv
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
-from instrupy.synthetic_aperture_radar.util import *
 
-class SyntheticApertureRadarMode1(Entity):
+class ScanTech(EnumEntity):
+    """Enumeration of recognized SAR scanning techniques"""
+    STRIPMAP = "STRIPMAP",
+    SCANSAR = "SCANSAR",
+    SPOTLIGHT = "SPOTLIGHT"
+
+class PolTypeSAR(EnumEntity):
+    """Enumeration of recognized SAR polarization types"""
+    SINGLE = "SINGLE",
+    COMPACT = "COMPACT",
+    DUAL = "DUAL"
+
+class DualPolPulseConfig(EnumEntity):
+    """Enumeration of recognized dual-polarization pulse configurations"""
+    AIRSAR = "AIRSAR",
+    SMAP = "SMAP"
+
+class SwathTypeSAR(EnumEntity):
+    """Enumeration of recognized SAR swath imaging configurations"""
+    FULL = "FULL",
+    FIXED = "FIXED"
+
+class SyntheticApertureRadarModel(Entity):
     """A synthetic aperture radar class estimating observation data-metrics from Stripmap mode of imaging.       
       
         A full-swath imaging mode is considered, meaning the swath-width is the area illuminated by the 3-dB beamwidth of the antenna.
@@ -125,6 +146,9 @@ class SyntheticApertureRadarMode1(Entity):
         :cvar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath.
         :vartype fixedSwathSize: float
 
+        :cvar numSubSwaths: Number of sub-swaths (scans)
+        :vartype numSubSwaths: int
+
         .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NESZ}`
           
     """
@@ -140,9 +164,8 @@ class SyntheticApertureRadarMode1(Entity):
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
             radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNESZthreshold = None, 
-            polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, fixedSwathSize = None, _id=None):
-        """Initialize a Synthetic Aperture Radar Mode 1 object.
-
+            polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, fixedSwathSize = None, numSubSwaths = None, _id=None):
+        """Initialization
         """          
         self.name = str(name) if name is not None else None
         self.acronym = str(acronym) if acronym is not None else self.name
@@ -173,14 +196,15 @@ class SyntheticApertureRadarMode1(Entity):
         self.dualPolPulseSep = float(dualPolPulseSep) if dualPolPulseSep is not None else None  
         self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
-        super(SyntheticApertureRadarMode1,self).__init__(_id, "Synthetic Aperture Radar Mode1")
+        self.numSubSwaths = float(numSubSwaths) if numSubSwaths is not None else None  
+        super(SyntheticApertureRadarModel,self).__init__(_id, "Synthetic Aperture Radar Mode1")
         
     @staticmethod
     def from_dict(d):
         """ Parses an instrument from a normalized JSON dictionary.
 
         """
-        # Only side-looking orientation of instrument suported for synthetic aperture radar stripmap imaging
+        # Only side-looking orientation of instrument suported for synthetic aperture radar 
         orien_json_str = d.get("orientation", None)
         if(FileUtilityFunctions.from_json(orien_json_str).get("convention",None) != "SIDE_LOOK"):
             raise Exception("Only side-looking orientation of instrument supported for the synthetic aperture radar imaging.")
@@ -191,33 +215,6 @@ class SyntheticApertureRadarMode1(Entity):
         if(_PRFmin > _PRFmax):
             raise Exception("PRF minimum must be less than or equal to PRF maximum.")
 
-        # calculate instrument FOV based on antenna dimensions
-        D_az_m = d.get("antennaAlongTrackDim", None)
-        D_elv_m = d.get("antennaCrossTrackDim", None)
-        opWavelength =  Constants.speedOfLight/ d.get("operatingFrequency", None)
-        # calculate antenna beamwidth and hence fovs [1] Eqn 41.
-        along_track_fov_deg = numpy.rad2deg(opWavelength/ D_az_m)
-        cross_track_fov_deg = numpy.rad2deg(opWavelength/ D_elv_m)
-        fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(along_track_fov_deg)+ ',"crossTrackFieldOfView":' + str(cross_track_fov_deg) + '}' 
-        
-        # initialize "Scene FOV" if required        
-        numStripsInScene = d.get("numStripsInScene", None)
-        alt_km = d.get("altitude",None)
-        if(numStripsInScene):
-            sc_AT_fov_deg = numpy.rad2deg(numStripsInScene * (D_az_m/2) / (alt_km*1e3)) # approximate azimuthal resolution used
-            sc_CT_fov_deg = cross_track_fov_deg
-            sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
-            scene_fov = FieldOfView.from_json(sc_fov_json_str)
-        else:
-            sc_fov_json_str = None
-            scene_fov = None
-
-        # initialize field-of-regard
-        if(sc_fov_json_str):
-            fldofreg_str = {**json.loads(sc_fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
-        else:
-            fldofreg_str = {**json.loads(fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
- 
         # initialize the polarization configuration
         pol = d.get("polarization", None)
         dualPolPulseConfig = None
@@ -235,22 +232,71 @@ class SyntheticApertureRadarMode1(Entity):
                     else:
                         raise RuntimeError("Unknown pulse configuration in Dual-polarization specification.")
         else: # assign default polarization
-            polType = PolTypeSAR.SINGLE
+            polType = PolTypeSAR.SINGLE            
+
+        _scan = ScanTech.get(d.get("scanTechnique", None))
+        if _scan is None:
+            _scan = ScanTech.STRIPMAP # default scan technique
+        # Only stripmap and scansar techniques are supported
+        if(_scan == ScanTech.STRIPMAP) or (_scan == ScanTech.SCANSAR):
+            
+            if(_scan == ScanTech.SCANSAR):
+                numSubSwaths = d.get("numSubSwaths",None)                
+                if numSubSwaths is None:
+                    numSubSwaths = 1 # default
+            elif(_scan == ScanTech.STRIPMAP):
+                numSubSwaths = d.get("numSubSwaths",None)               
+                if numSubSwaths is not None:
+                    raise Warning("numSubSwaths parameter should NOT be specified for Stripmap. It shall be ignored.")
+                numSubSwaths = 1 # stripmap is scansar with one subswath
+
+            # calculate instrument FOV based on antenna dimensions
+            D_az_m = d.get("antennaAlongTrackDim", None)
+            D_elv_m = d.get("antennaCrossTrackDim", None)
+            opWavelength =  Constants.speedOfLight/ d.get("operatingFrequency", None)
+            # calculate antenna beamwidth and hence fovs [1] Eqn 41.
+            along_track_fov_deg = numpy.rad2deg(opWavelength/ D_az_m)
+            cross_track_fov_deg = numSubSwaths*numpy.rad2deg(opWavelength/ D_elv_m)
+            fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(along_track_fov_deg)+ ',"crossTrackFieldOfView":' + str(cross_track_fov_deg) + '}' 
+            
+            # initialize "Scene FOV" if required        
+            numStripsInScene = d.get("numStripsInScene", None)
+            alt_km = d.get("altitude",None)
+            if(numStripsInScene):
+                sc_AT_fov_deg = numpy.rad2deg(numStripsInScene * (D_az_m/2) / (alt_km*1e3)) # approximate azimuthal resolution used
+                sc_CT_fov_deg = cross_track_fov_deg
+                sc_fov_json_str = '{ "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":' + str(sc_AT_fov_deg)+ ',"crossTrackFieldOfView":' + str(sc_CT_fov_deg) + '}' 
+                scene_fov = FieldOfView.from_json(sc_fov_json_str)
+            else:
+                sc_fov_json_str = None
+                scene_fov = None
+
+            # initialize field-of-regard
+            if(sc_fov_json_str):
+                fldofreg_str = {**json.loads(sc_fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
+            else:
+                fldofreg_str = {**json.loads(fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
+
+            # initialize the swath configuration
+            fixedSwathSize = None
+            swathConfig = d.get("swathConfig", None)
+            if(swathConfig):
+                swathType = SwathTypeSAR.get(swathConfig["@type"])
+                
+                if(swathType == SwathTypeSAR.FIXED):
+                    fixedSwathSize = swathConfig.get("fixedSwathSize") if swathConfig.get("fixedSwathSize", None) is not None else 10 # default to 10km
+                    if(_scan == ScanTech.SCANSAR):
+                        fixedSwathSize = None
+                        swathConfig = SwathTypeSAR.FULL  
+                        raise Warning("ScanSAR supports only FULL swath configuration. Specified FIXED swath configuration is ignored.")
+                        
+            else: # assign default
+                swathType = SwathTypeSAR.FULL       
+        else:
+            raise RuntimeError("Unknown SAR scan technique specified.")
             
 
-        # initialize the swath configuration
-        fixedSwathSize = None
-        swathConfig = d.get("swathConfig", None)
-        if(swathConfig):
-            swathType = SwathTypeSAR.get(swathConfig["@type"])
-            
-            if(swathType == SwathTypeSAR.FIXED):
-                fixedSwathSize = swathConfig.get("fixedSwathSize") if swathConfig.get("fixedSwathSize", None) is not None else 10 # default to 10km
-        else: # assign default
-            swathType = SwathTypeSAR.FULL
-            
-
-        return SyntheticApertureRadarMode1(
+        return SyntheticApertureRadarModel(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
                         mass = d.get("mass", None),
@@ -280,6 +326,7 @@ class SyntheticApertureRadarMode1(Entity):
                         dualPolPulseSep=dualPolPulseSep,
                         swathType=swathType,
                         fixedSwathSize=fixedSwathSize,
+                        numSubSwaths=numSubSwaths,
                         _id = d.get("@id", None)
                         )
 
@@ -309,9 +356,9 @@ class SyntheticApertureRadarMode1(Entity):
                                     instru_look_angle_from_GP_inc_angle = False):
         
         if(SpacecraftOrbitState):
-            obsv_metrics = SyntheticApertureRadarMode1.calc_typ_data_metrics_impl2(self, SpacecraftOrbitState, TargetCoords, instru_look_angle_from_GP_inc_angle)
+            obsv_metrics = SyntheticApertureRadarModel.calc_typ_data_metrics_impl2(self, SpacecraftOrbitState, TargetCoords, instru_look_angle_from_GP_inc_angle)
         else:
-            obsv_metrics = SyntheticApertureRadarMode1.calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, numpy.deg2rad(incidence_angle_deg), instru_look_angle_from_GP_inc_angle)
+            obsv_metrics = SyntheticApertureRadarModel.calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, numpy.deg2rad(incidence_angle_deg), instru_look_angle_from_GP_inc_angle)
 
         return obsv_metrics
 
@@ -343,21 +390,21 @@ class SyntheticApertureRadarMode1(Entity):
         PRFmax_Hz = self.maximumPRF   
         L_radar = 10.0**(self.radarLosses/10.0) # convert to linear units
         F_N = 10.0**(self.systemNoiseFigure/10.0) # convert to linear units
-        L_atmos = 10.0**(SyntheticApertureRadarMode1.L_atmos_dB/10.0) # convert to linear units
-        L_r = SyntheticApertureRadarMode1.L_r
-        L_a = SyntheticApertureRadarMode1.L_a
-        a_wr = SyntheticApertureRadarMode1.a_wr
-        a_wa = SyntheticApertureRadarMode1.a_wa
+        L_atmos = 10.0**(SyntheticApertureRadarModel.L_atmos_dB/10.0) # convert to linear units
+        L_r = SyntheticApertureRadarModel.L_r
+        L_a = SyntheticApertureRadarModel.L_a
+        a_wr = SyntheticApertureRadarModel.a_wr
+        a_wa = SyntheticApertureRadarModel.a_wa
         T = self.sceneNoiseTemp       
 
         #print(tau_p)
         #print(fc)
         #print(self.polType)
         # Note that the nominal look angle is considered to evaluate the operable PRF.
-        [f_P, W_gr_illum, W_gr_obs] = SyntheticApertureRadarMode1.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, 
+        [f_P, W_gr_obs] = SyntheticApertureRadarModel.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, 
                                                                              instru_look_angle_rad, tau_p, D_az, D_elv, fc,
                                                                              self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
-                                                                             self.swathType, self.fixedSwathSize)
+                                                                             SwathTypeSAR.FULL, None, self.numSubSwaths)
         isCovered = False
         rho_a = None
         rho_y = None
@@ -394,7 +441,9 @@ class SyntheticApertureRadarMode1(Entity):
             rho_y = a_wr*c/(2*B_T*numpy.cos(psi_g))
 
             # [1] equation 69 we get minimum possible azimuth resolution (for strip mapping)
-            rho_a = SyntheticApertureRadarMode1.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az)
+            rho_a = SyntheticApertureRadarModel.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az)
+            # modify in case of scansar
+            rho_a = rho_a*self.numSubSwaths
 
             # check if sigma NEZ nought satisfies uer supplied threshold. Note that lesser is better.
             if self.sigmaNESZthreshold is not None:
@@ -487,7 +536,7 @@ class SyntheticApertureRadarMode1(Entity):
 
         #print("v_sc_kmps", v_sc_kmps)
         #print("v_g_kmps", v_g_kmps)
-        obsv_metrics = SyntheticApertureRadarMode1.calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, incidence_angle_rad, instru_look_angle_from_GP_inc_angle)
+        obsv_metrics = SyntheticApertureRadarModel.calc_typ_data_metrics_impl1(self, alt_km, v_sc_kmps, v_g_kmps, incidence_angle_rad, instru_look_angle_from_GP_inc_angle)
 
         return obsv_metrics
        
@@ -497,7 +546,8 @@ class SyntheticApertureRadarMode1(Entity):
     def find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc_kmps, v_g_kmps, alt_km, 
                                         instru_look_angle_rad, tau_p_ch, D_az, D_elv, fc, 
                                         pol_type, dual_pol_conf, dual_pol_ps, 
-                                        swath_type, fixed_swath_size_km):
+                                        swath_type, fixed_swath_size_km,
+                                        n_subswt):
         """ Function to find the highest possible pulse repetition frequency within the user supplied range of PRFs, which 
             shall allow observation of target. Not all PRFs are valid and a valid PRF has to be chosen so that it meets all
             the below conditions:
@@ -555,11 +605,15 @@ class SyntheticApertureRadarMode1(Entity):
         :param dual_pol_ps: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds.
         :paramtype dual_pol_ps: float
 
-        :param swath_type: SAR polarization type
+        :param swath_type: Desired swath type. For ScanSAR only "FULL" is accepted.
         :paramtype swath_type: :class:`SwathTypeSAR`
 
-        :param fixed_swath_size_km: In case of fixed swath configuration this parameter indicates the size of the fixed swath.
+        :param fixed_swath_size_km: In case of fixed swath configuration this parameter indicates the size of the fixed swath. Not applicable for ScanSAR.
         :paramtype fixed_swath_size_km: float
+
+        :param n_subswt: Number of subswaths
+        :paramtype n_subswt: int
+
         """
         h = alt_km * 1e3
         Re = Constants.radiusOfEarthInKM * 1e3         
@@ -568,16 +622,28 @@ class SyntheticApertureRadarMode1(Entity):
 
         lamb = c/fc        
 
-        # NOTE: While calculating full swath width the instrument look angle is used!!!! Not the Target look angle.
-        theta_elv = lamb/ D_elv # null-to-null (full-beamwidth) illuminating the swath
-        gamma_n_illum = instru_look_angle_rad - 0.5*theta_elv
-        gamma_f_illum = instru_look_angle_rad + 0.5*theta_elv
+        theta_elv = lamb/ D_elv # null-to-null (full-beamwidth) illuminating the (sub)swath
+        
+        if(swath_type == SwathTypeSAR.FULL and n_subswt>1): # condition is true in case of ScanSAR with multiple sub-swaths
+            ''' 
+            Consider the PRF evaluation for the farthest (off-nadir) sub-swath. In practice the different sub-swaths
+            may have different operating PRFs. The PRF is expected to be most constrained for the farthest sub-swath.
+            '''
+            y = instru_look_angle_rad + 0.5*n_subswt * theta_elv 
+            gamma_m = y - 0.5 * theta_elv # modify the look angle to that of the farthest subswath
+
+        else: # condition is reached for Stripmap 
+            gamma_m = instru_look_angle_rad
+
+        # NOTE: While calculating swath width (FULL or FIXED) the instrument look angle is used!!!! Not the Target look angle.
+        gamma_n_illum = gamma_m - 0.5*theta_elv
+        gamma_f_illum = gamma_m + 0.5*theta_elv
         theta_in_illum = numpy.arcsin(numpy.sin(gamma_n_illum)*Rs/Re)
         theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
         alpha_n_illum = theta_in_illum - gamma_n_illum
         alpha_f_illum = theta_if_illum - gamma_f_illum
         alpha_s_illum = alpha_f_illum - alpha_n_illum
-        W_gr_illum = Re*alpha_s_illum  # illuminated swath
+        W_gr_illum = Re*alpha_s_illum  # illuminated (sub)swath
 
         Rn_illum = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_n_illum)) # [2] equation 5.1.3.9 slant-range to near edge of swath
         Rf_illum = numpy.sqrt(Re**2 + Rs**2 - 2*Re*Rs*numpy.cos(alpha_f_illum)) # [2] equation 5.1.3.10 slant-range to far edge of swath
@@ -596,7 +662,6 @@ class SyntheticApertureRadarMode1(Entity):
                 W_gr_obs = W_gr_illum
 
             alpha_s_obs = W_gr_obs/Re
-            gamma_m = instru_look_angle_rad
             theta_im = numpy.arcsin(numpy.sin(gamma_m)*Rs/Re)
             alpha_m = theta_im - gamma_m  # [2] equation 5.1.3.5
             alpha_n_obs = alpha_m - alpha_s_obs/2.0 # [2] equation 5.1.3.7
@@ -636,8 +701,10 @@ class SyntheticApertureRadarMode1(Entity):
         else:
             raise RuntimeError("Unknown swath configuration type.")
         
-        PRFmin = PRFmin_f*v_sc_kmps*1e3/SyntheticApertureRadarMode1.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
-        
+        # PRFmin 
+        PRFmin = PRFmin_f*v_sc_kmps*1e3/SyntheticApertureRadarModel.get_azimuthal_resolution(v_sc_kmps, v_g_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
+        # Note that the PRFmin(stripmap) = PRFmin(scansar) (independent of number of sub-swaths)
+
         #print("PRFmax: ", PRFmax)
         #print("PRFmin: ", PRFmin)
         
@@ -731,4 +798,19 @@ class SyntheticApertureRadarMode1(Entity):
                 f_P = _f_P
                 break
 
-        return [f_P, W_gr_illum, W_gr_obs]        
+        # compute swath-size
+        if(swath_type == SwathTypeSAR.FULL and n_subswt>1): # condition is true in case of ScanSAR mode with multiple sub-swaths
+            # imaged swath consists of multiple sub-swaths
+            swath_bw = n_subswt * theta_elv # in case of scan-sar, the n_subswt > 1
+            gamma_n_illum = instru_look_angle_rad - 0.5*swath_bw
+            gamma_f_illum = instru_look_angle_rad + 0.5*swath_bw
+            theta_in_illum = numpy.arcsin(numpy.sin(gamma_n_illum)*Rs/Re)
+            theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
+            alpha_n_illum = theta_in_illum - gamma_n_illum
+            alpha_f_illum = theta_if_illum - gamma_f_illum
+            alpha_s_illum = alpha_f_illum - alpha_n_illum
+            swath_size = Re*alpha_s_illum  
+        else:
+            swath_size = W_gr_obs
+            
+        return [f_P, swath_size]

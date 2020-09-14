@@ -11,13 +11,7 @@ import copy
 import pandas, csv
 import random
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
-from instrupy.synthetic_aperture_radar.synthetic_aperture_radar_mode1 import SyntheticApertureRadarMode1
-
-class ModeTypeSAR(EnumEntity):
-    """Enumeration of recognized SAR mode types"""
-    STRIPMAP = "STRIPMAP",
-    SCANSAR = "SCANSAR",
-    SPOTLIGHT = "SPOTLIGHT"
+from instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model import SyntheticApertureRadarModel
 
 class SyntheticApertureRadar(Entity):
     """A synthetic aperture radar class. Instrument may support multiple operating modes and operating points which are 
@@ -68,22 +62,15 @@ class SyntheticApertureRadar(Entity):
                     del _data['@id']
                 except:
                     pass
-                    
-                try:
-                    mode_type = ModeTypeSAR.get(_data.get("@type", None))
-                    del _data['@type']
-                except:
-                    mode_type = ModeTypeSAR.STRIPMAP # default assumption is StripMap
 
                 _ssen.update(_data)
-
-                if(mode_type == ModeTypeSAR.STRIPMAP):
-                    ssen_id.append(_ssen_id)
-                    subsensor.append(SyntheticApertureRadarMode1.from_dict(_ssen))
+                subsensor.append(SyntheticApertureRadarModel.from_dict(_ssen))
+                
+                ssen_id.append(_ssen_id)
 
         else:
-            # no mode definition => default single mode of operation (mode1 = Stripmap) is to be considered
-            subsensor = [SyntheticApertureRadarMode1.from_dict(specs)]
+            # no mode definition => default single mode of operation is to be considered
+            subsensor = [SyntheticApertureRadarModel.from_dict(specs)]
             ssen_id = [specs["@id"]]
         
         self.ssen_id = ssen_id
