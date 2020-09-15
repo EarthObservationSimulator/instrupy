@@ -8,11 +8,14 @@
         1. Performance Limits for Synthetic Aperture Radar - second edition SANDIA Report 2006. ----> Main reference.
         2. Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993. ----> Reference for PRF validity calculations, corrections for spaceborne radar.
         3. V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020, pp. 1-20, doi: 10.1109/AERO47225.2020.9172705.
+        Polarimetery concepts:
+        4. *Synthetic Aperture Radar Polarimetry,  Jakob Van Zyl* ----> Reference for compact-pol and AIRSAR implementation for dual-pol.
+        5. *SMAP Handbook* ----> Reference for SMAP implementation of dual-pol.
         ScanSAR concepts
-        3. Tomiyasu, Kiyo. "Conceptual performance of a satellite borne, wide swath synthetic aperture radar." IEEE Transactions on Geoscience and Remote Sensing 2 (1981): 108-116.
-        4. Moore, Richard K., John P. Claassen, and Y. H. Lin. "Scanning spaceborne synthetic aperture radar with integrated radiometer." IEEE Transactions on Aerospace and Electronic Systems 3 (1981): 410-421.
-        5. Currie, A., and Ma A. Brown. "Wide-swath SAR." In IEE Proceedings F (Radar and Signal Processing), vol. 139, no. 2, pp. 122-135. IET Digital Library, 1992.
-        6. Chang, Chi-Yung, Michael Y. Jin, Yun-Ling Lou, and Benjamin Holt. "First SIR-C scansar results." IEEE transactions on geoscience and remote sensing 34, no. 5 (1996): 1278-1281.
+        6. Tomiyasu, Kiyo. "Conceptual performance of a satellite borne, wide swath synthetic aperture radar." IEEE Transactions on Geoscience and Remote Sensing 2 (1981): 108-116.
+        7. Moore, Richard K., John P. Claassen, and Y. H. Lin. "Scanning spaceborne synthetic aperture radar with integrated radiometer." IEEE Transactions on Aerospace and Electronic Systems 3 (1981): 410-421.
+        8. Currie, A., and Ma A. Brown. "Wide-swath SAR." In IEE Proceedings F (Radar and Signal Processing), vol. 139, no. 2, pp. 122-135. IET Digital Library, 1992.
+        9. Chang, Chi-Yung, Michael Y. Jin, Yun-Ling Lou, and Benjamin Holt. "First SIR-C scansar results." IEEE transactions on geoscience and remote sensing 34, no. 5 (1996): 1278-1281.
 
 """
 
@@ -48,6 +51,21 @@ class SyntheticApertureRadarModel(Entity):
     """A synthetic aperture radar class estimating observation data-metrics from Stripmap mode of imaging.       
       
         A full-swath imaging mode is considered, meaning the swath-width is the area illuminated by the 3-dB beamwidth of the antenna.
+
+        :cvar L_r: Reduction in SNR gain due to non-ideal range filtering.
+        :vartype L_r: float
+
+        :cvar L_a: Reduction in SNR gain due to non-ideal azimuth filtering.
+        :vartype L_a: float
+
+        :cvar a_wa:  Azimuth impulse response broadening factor.
+        :vartype a_wa: float
+
+        :cvar a_wr: Range impulse response broadening factor.
+        :vartype a_wr: float
+
+        :cvar L_atmos_dB: 2-way atmospheric loss of electromagnetic energy.
+        :vartype L_atmos_dB: float
 
         :ivar name: Full name of the instrument.
         :vartype name: str
@@ -119,40 +137,28 @@ class SyntheticApertureRadarModel(Entity):
                            antenna port, and perhaps an additional 0.5 dB to 1.5 dB two-way through the radome.
         :vartype radarLosses: float
 
-        :ivar sigmaNESZthreshold: The :math:`\\sigma_{NESZ}` threshold for classification as a valid observation.
-        :vartype sigmaNESZthreshold: float
+        :ivar NESZthreshold: The Noise Equivalent Sigma Zero threshold for classification as a valid observation.
+        :vartype NESZthreshold: float        
 
-        :cvar L_r: Reduction in SNR gain due to non-ideal range filtering.
-        :vartype L_r: float
-
-        :cvar L_a: Reduction in SNR gain due to non-ideal azimuth filtering.
-        :vartype L_a: float
-
-        :cvar a_wa:  Azimuth impulse response broadening factor.
-        :vartype a_wa: float
-
-        :cvar a_wr: Range impulse response broadening factor.
-        :vartype a_wr: float
-
-        :cvar L_atmos_dB: 2-way atmospheric loss of electromagnetic energy.
-        :vartype L_atmos_dB: float
-
-        :cvar polType: SAR polarization type
+        :ivar polType: SAR polarization type
         :vartype polType: :class:`PolTypeSAR`
 
-        :cvar dualPolPulseConfig: In case of SMAP dual-pol configuration, this parameter indicates the pulse configuration.
+        :ivar dualPolPulseConfig: In case of SMAP dual-pol configuration, this parameter indicates the pulse configuration.
         :vartype dualPolPulseConfig: :class:`DualPolPulseConfig`
 
-        :cvar dualPolPulseSep: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds.
+        :ivar dualPolPulseSep: In case of SMAP dual-pol configuration, this parameter indicates the pulse seperation in seconds.
         :vartype dualPolPulseSep: float
 
-        :cvar swathType: SAR polarization type
+        :ivar swathType: SAR polarization type
         :vartype swathType: :class:`SwathTypeSAR`
 
-        :cvar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath.
+        :ivar scanTechnique: Accepted values are "Stripmap" or "ScanSAR".
+        :vartype scanTechnique: str
+
+        :ivar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath.
         :vartype fixedSwathSize: float
 
-        :cvar numSubSwaths: Number of sub-swaths (scans)
+        :ivar numSubSwaths: Number of sub-swaths (scans)
         :vartype numSubSwaths: int
 
         .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NESZ}`
@@ -169,8 +175,9 @@ class SyntheticApertureRadarModel(Entity):
             sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
-            radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, sigmaNESZthreshold = None, 
-            polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, fixedSwathSize = None, numSubSwaths = None, _id=None):
+            radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, NESZthreshold = None, 
+            polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, 
+            scanTechnique = None, fixedSwathSize = None, numSubSwaths = None, _id=None):
         """Initialization
         """          
         self.name = str(name) if name is not None else None
@@ -196,7 +203,7 @@ class SyntheticApertureRadarModel(Entity):
         self.radarLosses = float(radarLosses) if radarLosses is not None else None
         self.sceneNoiseTemp = float(sceneNoiseTemp) if sceneNoiseTemp is not None else float(290) # 290 K is default  
         self.systemNoiseFigure = float(systemNoiseFigure) if systemNoiseFigure is not None else None 
-        self.sigmaNESZthreshold = float(sigmaNESZthreshold) if sigmaNESZthreshold is not None else None 
+        self.NESZthreshold = float(NESZthreshold) if NESZthreshold is not None else None 
         self.polType = PolTypeSAR.get(polType) if polType is not None else None  
         self.dualPolPulseConfig = DualPolPulseConfig.get(dualPolPulseConfig) if dualPolPulseConfig is not None else None  
         self.dualPolPulseSep = float(dualPolPulseSep) if dualPolPulseSep is not None else None  
@@ -326,11 +333,12 @@ class SyntheticApertureRadarModel(Entity):
                         radarLosses = d.get("radarLosses", None),
                         sceneNoiseTemp = d.get("sceneNoiseTemp", None),
                         systemNoiseFigure = d.get("systemNoiseFigure", None),
-                        sigmaNESZthreshold = d.get("sigmaNESZthreshold", None),
+                        NESZthreshold = d.get("NESZthreshold", None),
                         polType=polType,
                         dualPolPulseConfig = dualPolPulseConfig,
                         dualPolPulseSep=dualPolPulseSep,
                         swathType=swathType,
+                        scanTechnique = _scan,
                         fixedSwathSize=fixedSwathSize,
                         numSubSwaths=numSubSwaths,
                         _id = d.get("@id", None)
@@ -452,8 +460,8 @@ class SyntheticApertureRadarModel(Entity):
             rho_a = rho_a*self.numSubSwaths
 
             # check if sigma NEZ nought satisfies uer supplied threshold. Note that lesser is better.
-            if self.sigmaNESZthreshold is not None:
-                if(sigma_N_dB < self.sigmaNESZthreshold):
+            if self.NESZthreshold is not None:
+                if(sigma_N_dB < self.NESZthreshold):
                     isCovered = True
             else:
                 isCovered = True # no user specification => no constraint
@@ -462,7 +470,7 @@ class SyntheticApertureRadarModel(Entity):
         obsv_metrics = {}
         obsv_metrics["Ground Pixel Along-Track Resolution [m]"] = rho_a
         obsv_metrics["Ground Pixel Cross-Track Resolution [m]"] = rho_y
-        obsv_metrics["Sigma NESZ [dB]"] = sigma_N_dB
+        obsv_metrics["NESZ [dB]"] = sigma_N_dB
         obsv_metrics["Incidence angle [deg]"] = numpy.rad2deg(theta_i) if theta_i is not None else numpy.nan
         obsv_metrics["(Nominal) Swath-width [km]"] = W_gr_obs/1e3 if W_gr_obs is not None else numpy.nan        
         obsv_metrics["Coverage [T/F]"] = isCovered

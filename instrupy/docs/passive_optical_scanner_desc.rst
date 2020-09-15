@@ -4,10 +4,8 @@ Passive Optical Scanner Description
 References:
 
 1. James R. Wertz and  Wiley J. Larson  (editors), *Space Mission Analysis and Design*, 3rd edition, chapter 9. 
+2. V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020, pp. 1-20, doi: 10.1109/AERO47225.2020.9172705.
 
-Types of Operating Modes
-==========================
-There are no special types of operating modes (only a single mode type). 
 
 Input JSON format specifications description
 ===============================================

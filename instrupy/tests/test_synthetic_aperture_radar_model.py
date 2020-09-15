@@ -39,7 +39,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"radarLosses": 3.5,' 
                                                   '"sceneNoiseTemp": 290,' 
                                                   '"systemNoiseFigure": 4.3,'
-                                                  '"sigmaNESZthreshold": -15}')
+                                                  '"NESZthreshold": -15}')
 
     # SAR with maneuverability, numStripsInScene, altitude fields and without other optional fields
     seasat = SyntheticApertureRadarModel.from_json(  '{"@type": "Synthetic Aperture Radar",'
@@ -169,8 +169,8 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(self.microxsar.sceneNoiseTemp, float)
         self.assertEqual(self.microxsar.systemNoiseFigure, 4.3)
         self.assertIsInstance(self.microxsar.systemNoiseFigure, float)
-        self.assertEqual(self.microxsar.sigmaNESZthreshold, -15)
-        self.assertIsInstance(self.microxsar.sigmaNESZthreshold, float)
+        self.assertEqual(self.microxsar.NESZthreshold, -15)
+        self.assertIsInstance(self.microxsar.NESZthreshold, float)
         # along-track fov and cross-track fov are calculated from antenna size and initialized in the object
         self.assertAlmostEqual(self.microxsar.fieldOfView._AT_fov_deg, 0.3635, places = 2)
         self.assertAlmostEqual(self.microxsar.fieldOfView._CT_fov_deg, 2.5446, places = 2)
@@ -209,7 +209,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"radarLosses": 3.5,' 
                                                   '"sceneNoiseTemp": 290,' 
                                                   '"systemNoiseFigure": 4.3,'
-                                                  '"sigmaNESZthreshold": -15}')
+                                                  '"NESZthreshold": -15}')
 
         # Check for invalid PRF min, max specification
         with self.assertRaises(Exception):
@@ -236,7 +236,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"radarLosses": 3.5,' 
                                                   '"sceneNoiseTemp": 290,' 
                                                   '"systemNoiseFigure": 4.3,'
-                                                  '"sigmaNESZthreshold": -15}')
+                                                  '"NESZthreshold": -15}')
 
 
         
@@ -435,7 +435,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         obsv_metrics = self.microxsar.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertAlmostEqual(obsv_metrics["Ground Pixel Along-Track Resolution [m]"], 2.118, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["Ground Pixel Cross-Track Resolution [m]"], 4.9492, delta = 0.1)
-        self.assertAlmostEqual(obsv_metrics["Sigma NESZ [dB]"], -13, delta = 0.5)
+        self.assertAlmostEqual(obsv_metrics["NESZ [dB]"], -13, delta = 0.5)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], 28.9855, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["(Nominal) Swath-width [km]"], 37, delta = 1)
         self.assertFalse(obsv_metrics["Coverage [T/F]"])
@@ -457,7 +457,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         print(obsv_metrics)
         self.assertAlmostEqual(obsv_metrics["Ground Pixel Along-Track Resolution [m]"], 25, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["Ground Pixel Cross-Track Resolution [m]"], 25, delta = 0.1)
-        self.assertAlmostEqual(obsv_metrics["Sigma NESZ [dB]"], -25, delta = 0.5)
+        self.assertAlmostEqual(obsv_metrics["NESZ [dB]"], -25, delta = 0.5)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], 23, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["(Nominal) Swath-width [km]"], 37, delta = 1)
         self.assertFalse(obsv_metrics["Coverage [T/F]"])

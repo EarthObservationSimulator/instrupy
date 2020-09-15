@@ -30,22 +30,22 @@ Testing strategies
 .. automodule:: test_public_library
    :members:
 
-:class:`test_basic_sensor`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:class:`test_basic_sensor_model`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: test_basic_sensor
+.. automodule:: test_basic_sensor_model
    :members:
 
-:class:`test_passive_optical_scanner`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:class:`test_passive_optical_scanner_model`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: test_passive_optical_scanner
+.. automodule:: test_passive_optical_scanner_model
    :members:
 
-:class:`test_synthetic_aperture_radar`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:class:`test_synthetic_aperture_radar_model`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: test_synthetic_aperture_radar
+.. automodule:: test_synthetic_aperture_radar_model
    :members:
 
 :class:`test_util`
