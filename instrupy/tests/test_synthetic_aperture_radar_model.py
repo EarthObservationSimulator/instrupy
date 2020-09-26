@@ -413,6 +413,33 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         fc = 9.65e9
         self.assertEqual(self.microxsar.find_valid_highest_possible_PRF(f_Pmin, f_Pmax, v_sc, v_x, alt_km, instru_look_angle_rad, tau_p, D_az, D_elv, fc)[0], 4184)  
 
+    def test_calc_typ_data_metrics_20200915data(self):
+        """ Validate with previous run of the synthetic_aperture_radar_model module. 
+            The test data is stored in a json file as a list of instruments and other params (input), 
+            with the respective resultant metrics (truth data). 
+        """
+        Re = 6378.137e3 # [m]
+        c = 299792458 # m/s
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        with open(dir_path+'/20200915_synthetic_aperture_radar_model_refdata.json', 'r') as f:
+            data = FileUtilityFunctions.from_json(f)["foos"]
+        
+        for _d in data:
+            test_sar = SyntheticApertureRadarModel.from_json(_d)
+            params  = _d["otherSimParams"]
+            metrics = _d["resultantMetrics"]
+            if("incidenceAngle" in params):
+                h = params["altitude"]*1e3
+                orb_speed = numpy.sqrt(3.986004418e14/(Re + h)) # [m/s]
+                inc_deg = params["incidenceAngle"]
+                obsv_metrics = test_sar.calc_typ_data_metrics(alt_km = h*1e-3, v_sc_kmps = orb_speed*1e-3, v_g_kmps = orb_speed*1e-3*(Re/(Re+h)), incidence_angle_deg = inc_deg, 
+                                              instru_look_angle_from_GP_inc_angle = True)
+                self.assertAlmostEqual(obsv_metrics["NESZ [dB]"], metrics["NESZ"], delta = 0.01)
+            else:
+                pass
+
+
     # TODO
     def xtest_calc_typ_data_metrics_1(self):
         """ MicroXSAR typical data-metrics. Truth values taken from the reference (below) are approximately equal to those computed by this

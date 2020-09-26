@@ -1,0 +1,463 @@
+{
+    "foos":
+    [
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 6.61e-6,
+"antennaAlongTrackDim": 7.01,
+"antennaCrossTrackDim": 6.58, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 3.23e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full"
+},
+"polarization": {
+"@type": "single"
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -30.64191493159997,
+"nominalSwathWidth": 65.06684927778677,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 3.2502071687435126,
+"Ground Pixel Cross-Track Resolution [m]": 64.30411999776578,
+"PRF[Hz]": 2385
+}                                                   
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 8e-6,
+"antennaAlongTrackDim": 7.00,
+"antennaCrossTrackDim": 6.60, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.22e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full"
+},
+"polarization": {
+"@type": "single"
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -43.15073857818285,
+"nominalSwathWidth": 64.86906224911696,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 3.2455706392588572,
+"Ground Pixel Cross-Track Resolution [m]": 944.1013981490158,
+"PRF[Hz]": 2384
+}                                                     
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 1.08e-6,
+"antennaAlongTrackDim": 13.21,
+"antennaCrossTrackDim": 3.69, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.45e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full"
+},
+"polarization": {
+"@type": "single"
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -28.9870633908168,
+"nominalSwathWidth": 116.4252705378577,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 6.12485544922993,
+"Ground Pixel Cross-Track Resolution [m]": 461.56068353951883,
+"PRF[Hz]": 1244
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 1.64e-6,
+"antennaAlongTrackDim": 3.98,
+"antennaCrossTrackDim": 11.03, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 1.29e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full",
+"fixedSwathSize": 25
+},
+"polarization": {
+"@type": "dual",
+"pulseConfig": {
+"@type": "SMAP"   
+} 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -30.604437043142383,
+"nominalSwathWidth": 38.77685078097735,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 1.8453387348928931,
+"Ground Pixel Cross-Track Resolution [m]": 161.00954076959962,
+"PRF[Hz]": 4202
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 1.40e-6,
+"antennaAlongTrackDim": 6.97,
+"antennaCrossTrackDim": 6.37, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.76e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full"
+},
+"polarization": {
+"@type": "dual",
+"pulseConfig": {
+"@type": "SMAP"   
+} 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -29.848169708790238,
+"nominalSwathWidth": 67.21896592460185,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 3.231661050804891,
+"Ground Pixel Cross-Track Resolution [m]": 273.2925099905046,
+"PRF[Hz]": 2382
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 1.39e-6,
+"antennaAlongTrackDim": 7.90,
+"antennaCrossTrackDim": 10.83, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.70e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full"
+},
+"polarization": {
+"@type": "dual",
+"pulseConfig": {
+"@type": "AIRSAR"   
+} 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -38.33803595544897,
+"nominalSwathWidth": 39.493770173956946,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 3.6628582928778535,
+"Ground Pixel Cross-Track Resolution [m]": 296.71758227540494,
+"PRF[Hz]": 4203
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 1.00e-6,
+"antennaAlongTrackDim": 13.80,
+"antennaCrossTrackDim": 6.30, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 1.80e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "full"
+},
+"polarization": {
+"@type": "dual",
+"pulseConfig": {
+"@type": "AIRSAR"   
+} 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -30.47924873221188,
+"nominalSwathWidth": 67.96838190198723,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 6.398410688824605,
+"Ground Pixel Cross-Track Resolution [m]": 115.39017088487971,
+"PRF[Hz]": 2382
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 4.98e-6,
+"antennaAlongTrackDim": 10.89,
+"antennaCrossTrackDim": 1.86, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.33e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "fixed",
+"fixedSwathSize": 25
+},
+"polarization": {
+"@type": "single"
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -30.228832439801163,
+"nominalSwathWidth": 25,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 5.049180608789851,
+"Ground Pixel Cross-Track Resolution [m]": 629.4009320993439,
+"PRF[Hz]": 1525
+}                                                     
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 16.57e-6,
+"antennaAlongTrackDim": 11.68,
+"antennaCrossTrackDim": 1.74, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 1.12e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "fixed",
+"fixedSwathSize": 25
+},
+"polarization": {
+"@type": "single"
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -29.85274867582675,
+"nominalSwathWidth": 25,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 5.415466438077636,
+"Ground Pixel Cross-Track Resolution [m]": 185.4484889221281,
+"PRF[Hz]": 1417
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 87.64e-6,
+"antennaAlongTrackDim": 13.60,
+"antennaCrossTrackDim": 1.62, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.11e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "fixed",
+"fixedSwathSize": 25
+},
+"polarization": {
+"@type": "single" 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -47.25844586852645,
+"nominalSwathWidth": 25,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 6.305680099131494,
+"Ground Pixel Cross-Track Resolution [m]": 1888.2027962980317,
+"PRF[Hz]": 1232
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 3.72e-6,
+"antennaAlongTrackDim": 14.58,
+"antennaCrossTrackDim": 3.11, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 3.07e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "fixed",
+"fixedSwathSize": 25
+},
+"polarization": {
+"@type": "dual",
+"pulseConfig": {
+"@type": "AIRSAR"   
+} 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -27.998997901112656,
+"nominalSwathWidth": 25,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 6.760059988627734,
+"Ground Pixel Cross-Track Resolution [m]": 67.65547478592296,
+"PRF[Hz]": 2268
+}                                                    
+},
+{"@type": "Synthetic Aperture Radar",
+"orientation": {
+"convention": "SIDE_LOOK",
+"sideLookAngle": 55.21888
+},
+"pulseWidth": 8.99e-6,
+"antennaAlongTrackDim": 14.50,
+"antennaCrossTrackDim": 3.21, 
+"antennaApertureEfficiency": 0.6, 
+"operatingFrequency": 1.2757e9, 
+"peakTransmitPower": 1000, 
+"chirpBandwidth": 0.70e6,      
+"minimumPRF": 1, 
+"maximumPRF": 20000, 
+"radarLosses": 2, 
+"systemNoiseFigure": 2,
+"swathConfig": {
+"@type": "fixed",
+"fixedSwathSize": 25
+},
+"polarization": {
+"@type": "dual",
+"pulseConfig": {
+"@type": "AIRSAR"   
+} 
+},
+"otherSimParams":{
+"altitude": 500,
+"incidenceAngle": 60
+},
+"resultantMetrics":{
+"coverage": 1,
+"NESZ": -38.49396328189798,
+"nominalSwathWidth": 25,
+"incidenceAngle": 60,
+"Ground Pixel Along-Track Resolution [m]": 6.72296775275049,
+"Ground Pixel Cross-Track Resolution [m]": 296.71758227540494,
+"PRF[Hz]": 2276
+}                                                   
+}
+
+
+]                                                  
+}

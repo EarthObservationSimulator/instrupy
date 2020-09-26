@@ -293,16 +293,18 @@ class SyntheticApertureRadarModel(Entity):
             # initialize the swath configuration
             fixedSwathSize = None
             swathConfig = d.get("swathConfig", None)
+            
             if(swathConfig):
                 swathType = SwathTypeSAR.get(swathConfig["@type"])
                 
                 if(swathType == SwathTypeSAR.FIXED):
+                    
                     fixedSwathSize = swathConfig.get("fixedSwathSize") if swathConfig.get("fixedSwathSize", None) is not None else 10 # default to 10km
                     if(_scan == ScanTech.SCANSAR):
                         fixedSwathSize = None
                         swathConfig = SwathTypeSAR.FULL  
                         warnings.warn("ScanSAR supports only FULL swath configuration. Specified FIXED swath configuration is ignored.")
-                        
+                       
             else: # assign default
                 swathType = SwathTypeSAR.FULL       
         else:
@@ -418,7 +420,7 @@ class SyntheticApertureRadarModel(Entity):
         [f_P, W_gr_obs] = SyntheticApertureRadarModel.find_valid_highest_possible_PRF(PRFmin_Hz, PRFmax_Hz, v_sc_kmps, v_g_kmps, alt_km, 
                                                                              instru_look_angle_rad, tau_p, D_az, D_elv, fc,
                                                                              self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
-                                                                             SwathTypeSAR.FULL, None, self.numSubSwaths)
+                                                                             self.swathType, self.fixedSwathSize, self.numSubSwaths)
         isCovered = False
         rho_a = None
         rho_y = None
@@ -653,7 +655,13 @@ class SyntheticApertureRadarModel(Entity):
         gamma_n_illum = gamma_m - 0.5*theta_elv
         gamma_f_illum = gamma_m + 0.5*theta_elv
         theta_in_illum = numpy.arcsin(numpy.sin(gamma_n_illum)*Rs/Re)
-        theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
+        theta_horizon = numpy.arcsin(Re/Rs)
+        if(abs(numpy.sin(gamma_f_illum)*Rs/Re)<1):
+            theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
+        else:
+            # beyond horizon, hence set to horizon angle
+            theta_if_illum = theta_horizon
+
         alpha_n_illum = theta_in_illum - gamma_n_illum
         alpha_f_illum = theta_if_illum - gamma_f_illum
         alpha_s_illum = alpha_f_illum - alpha_n_illum
@@ -817,7 +825,12 @@ class SyntheticApertureRadarModel(Entity):
             gamma_n_illum = instru_look_angle_rad - 0.5*swath_bw
             gamma_f_illum = instru_look_angle_rad + 0.5*swath_bw
             theta_in_illum = numpy.arcsin(numpy.sin(gamma_n_illum)*Rs/Re)
-            theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
+            theta_horizon = numpy.arcsin(Re/Rs)
+            if(abs(numpy.sin(gamma_f_illum)*Rs/Re)<1):
+                theta_if_illum = numpy.arcsin(numpy.sin(gamma_f_illum)*Rs/Re)
+            else:
+                # beyond horizon, hence set to horizon angle
+                theta_if_illum = theta_horizon
             alpha_n_illum = theta_in_illum - gamma_n_illum
             alpha_f_illum = theta_if_illum - gamma_f_illum
             alpha_s_illum = alpha_f_illum - alpha_n_illum
