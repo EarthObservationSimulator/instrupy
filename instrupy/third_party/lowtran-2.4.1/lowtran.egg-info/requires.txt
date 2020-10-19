@@ -1,0 +1,16 @@
+python-dateutil
+numpy>=1.16
+xarray
+
+[cov]
+pytest-cov
+coveralls
+flake8
+mypy
+
+[plot]
+matplotlib
+seaborn
+
+[tests]
+pytest
