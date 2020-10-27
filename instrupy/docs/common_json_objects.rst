@@ -331,3 +331,26 @@ Example:
         "rollMin": -5,
         "rollMax": 5
    }
+
+5. :code:`"@type":"FieldOfRegard"`
+
+In this option the field of regard (angular region over which the sensor FOV can span) is specified. A :code:`fieldOfRegard` JSON object parameter
+is to be specified for which the format is the same as that the :code:`fieldOfView` JSON object.
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   fieldOfRegard, float, , Field-of-regard
+
+Example:
+
+.. code-block:: javascript
+   
+   "maneuverability":{
+        "@type":"FieldOfRegard",
+        "fieldOfRegard":{
+            "convention": "conical",
+            "fullConeAngle": 60
+        }
+   }
