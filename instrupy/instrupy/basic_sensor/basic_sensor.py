@@ -79,9 +79,7 @@ class BasicSensor(Entity):
     def from_dict(d):
         return BasicSensor(d)
 
-
-    def calc_typ_data_metrics(self, SpacecraftOrbitState = None, TargetCoords = None, ssen_id = None):
-        
+    def calc_typ_data_metrics(self, SpacecraftOrbitState = None, TargetCoords = None, ssen_id = None):        
         if ssen_id is not None:
             _ssen_id_indx = self.ssen_id.index(ssen_id)
             _ssen = self.subsensor[_ssen_id_indx]
@@ -90,3 +88,11 @@ class BasicSensor(Entity):
         
         obsv_metrics = _ssen.calc_typ_data_metrics(SpacecraftOrbitState = SpacecraftOrbitState, TargetCoords = TargetCoords)
         return obsv_metrics
+    
+    def to_dict(self):
+        """ Format the MissionConfig object into a dictionary. A list of dictionaries with each dict element correspondng 
+            to a subsensor is returned. """
+        sensor_dict = []
+        for _ssen in self.subsensor:
+            sensor_dict.append(_ssen.to_dict())
+        return sensor_dict

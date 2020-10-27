@@ -12,7 +12,7 @@ from enum import Enum
 from numbers import Number
 import scipy.constants
 import string
-import lowtran
+#import lowtran #TEMPORARY PLEASE REMOVE
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.
@@ -326,6 +326,19 @@ class FieldOfView(Entity):
             self._yaw180_flag = bool(yaw180_flag) if yaw180_flag is not None else None
 
             super(FieldOfView, self).__init__(_id, "FieldOfView")
+
+        def to_dict(self):
+            if self._geometry==SensorGeometry.CONICAL:
+                fov_dict = {"sensorGeometry": "Conical", "fullConeAngle": self._AT_fov_deg }
+            elif self._geometry==SensorGeometry.RECTANGULAR:
+                fov_dict = {"sensorGeometry": "Rectangular", "alongTrackFieldOfView": self._AT_fov_deg, "crossTrackFieldOfView": self._CT_fov_deg }
+            elif self._geometry==SensorGeometry.CONICAL:
+                fov_dict = {"sensorGeometry": "Custom", 
+                            "customConeAnglesVector": "[" + [str(x) for x in self._coneAngleVec_deg] + "]", 
+                            "customClockAnglesVector": "[" + [str(x) for x in self._clockAngleVec_deg] + "]"
+                           }
+
+            return fov_dict
 
         @classmethod
         def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, yaw180_flag = False, _id = None):

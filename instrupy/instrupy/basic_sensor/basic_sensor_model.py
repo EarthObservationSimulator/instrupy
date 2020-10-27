@@ -82,6 +82,19 @@ class BasicSensorModel(Entity):
                 _id = d.get("@id", None)
                 )
 
+    def to_dict(self):
+        return dict({
+                "name":self.name,
+                "acronym":self.acronym,
+                "mass":self.mass,
+                "volume":self.volume,
+                "power":self.power,
+                "fieldOfView":self.fieldOfView.to_dict(),
+                "dataRate":self.dataRate,
+                "bitsPerPixel": self.bitsPerPixel,
+                "@id": self._id
+                })
+
     def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
         ''' Calculate typical observation data metrics.
 
