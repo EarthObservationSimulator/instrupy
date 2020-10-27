@@ -90,6 +90,7 @@ class BasicSensorModel(Entity):
                 "volume":self.volume,
                 "power":self.power,
                 "fieldOfView":self.fieldOfView.to_dict(),
+                "orientation":self.orientation.to_dict(),
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "@id": self._id

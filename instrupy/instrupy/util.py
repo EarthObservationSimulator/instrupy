@@ -160,7 +160,7 @@ class ManueverType(EnumEntity):
     FIXED = "FIXED"
     CONE = "CONE",
     ROLLONLY = "ROLLONLY",
-    YAW180 = "YAW180"
+    YAW180 = "YAW180",
     YAW180ROLL = "YAW180ROLL" 
 class OrientationConvention(EnumEntity):
     """Enumeration of recognized instrument orientation conventions."""
@@ -253,8 +253,8 @@ class Orientation(Entity):
     def from_dict(d):
         """Parses orientation specifications from a normalized JSON dictionary.
         
-        :return: Parsed python object 
-        :rtype: :class:`instrupy.util.Orientation`
+            :return: Parsed python object 
+            :rtype: :class:`instrupy.util.Orientation`
         """
         _orien = OrientationConvention.get(d.get("convention", None))
         if(_orien == "XYZ"):
@@ -265,6 +265,15 @@ class Orientation(Entity):
             return Orientation.from_sideLookAngle(0, d.get("@id", None))
         else:
             raise Exception("Invalid or no Orientation convention specification")
+    
+    def to_dict(self):
+        """ Return data members of the object as python dictionary. 
+        
+            :return: Orientation object as python dictionary
+            :rtype: dict
+        """
+        orien_dict = {"convention": "XYZ", "xRotation": self.euler_angle1,  "yRotation": self.euler_angle2, "zRotation": self.euler_angle3}
+        return orien_dict
             
 class SensorGeometry(EnumEntity):
     """Enumeration of recognized instrument sensor geometries."""
@@ -328,6 +337,11 @@ class FieldOfView(Entity):
             super(FieldOfView, self).__init__(_id, "FieldOfView")
 
         def to_dict(self):
+            """ Return data members of the object as python dictionary. 
+
+                :return: FieldOfView object as python dictionary
+                :rtype: dict 
+            """
             if self._geometry==SensorGeometry.CONICAL:
                 fov_dict = {"sensorGeometry": "Conical", "fullConeAngle": self._AT_fov_deg }
             elif self._geometry==SensorGeometry.RECTANGULAR:
