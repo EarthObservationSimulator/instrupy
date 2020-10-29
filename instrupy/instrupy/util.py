@@ -344,15 +344,14 @@ class FieldOfView(Entity):
                 :rtype: dict 
             """
             if self._geometry==SensorGeometry.CONICAL:
-                fov_dict = {"sensorGeometry": "Conical", "fullConeAngle": self._AT_fov_deg }
+                fov_dict = {"sensorGeometry": "Conical", "fullConeAngle": self._AT_fov_deg}
             elif self._geometry==SensorGeometry.RECTANGULAR:
-                fov_dict = {"sensorGeometry": "Rectangular", "alongTrackFieldOfView": self._AT_fov_deg, "crossTrackFieldOfView": self._CT_fov_deg }
+                fov_dict = {"sensorGeometry": "Rectangular", "alongTrackFieldOfView": self._AT_fov_deg, "crossTrackFieldOfView": self._CT_fov_deg}
             elif self._geometry==SensorGeometry.CONICAL:
                 fov_dict = {"sensorGeometry": "Custom", 
                             "customConeAnglesVector": "[" + [str(x) for x in self._coneAngleVec_deg] + "]", 
                             "customClockAnglesVector": "[" + [str(x) for x in self._clockAngleVec_deg] + "]"
                            }
-
             return fov_dict
 
         @classmethod
@@ -486,70 +485,67 @@ class FieldOfView(Entity):
                 manuv = d.get("maneuverability")
                 mv_type = ManueverType.get(manuv["@type"])
 
-                if(mv_type != 'FIELDOFREGARD'):
-                    if(mv_type == 'FIXED' or mv_type == 'YAW180'):
-                        pass
-                    elif(mv_type == 'CONE'):
-                        mv_cone = 0.5 * float(manuv["fullConeAngle"])
-                    elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
-                        mv_ct_range = float(manuv["rollMax"]) - float(manuv["rollMin"])
-                    else:
-                        raise Exception('Invalid manuver type.')                                 
-
-                    if(mv_type == 'FIXED'):
-                        fr_geom = fldofview._geometry
-                        fr_at = fldofview._AT_fov_deg
-                        fr_ct = fldofview._CT_fov_deg
-                    
-                    elif(mv_type == 'YAW180'):
-                        fr_geom = fldofview._geometry
-                        fr_at = fldofview._AT_fov_deg
-                        fr_ct = fldofview._CT_fov_deg
-
-                    elif(mv_type == 'CONE'):
-                        if(fldofview._geometry == 'CONICAL'):
-                            fr_geom = 'CONICAL'
-                            fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
-                            fr_ct = fr_at
-
-                        elif(fldofview._geometry == 'RECTANGULAR'):
-                            fr_geom = 'CONICAL'
-                            diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
-                            fr_at = 2*(mv_cone +  diag_half_angle)
-                            fr_ct = fr_at
-
-                        else:
-                            raise Exception('Invalid FOV geometry')    
-
-                    elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
-                        if(fldofview._geometry == 'CONICAL'):
-                            print("Approximating FOR as rectangular shape")
-                            fr_geom = 'RECTANGULAR'
-                            fr_at = 2*(fldofview._coneAngleVec_deg[0])
-                            fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
-
-                        elif(fldofview._geometry == 'RECTANGULAR'):
-                            fr_geom = 'RECTANGULAR'
-                            fr_at = fldofview._AT_fov_deg
-                            fr_ct = mv_ct_range + fldofview._CT_fov_deg
-                        else:
-                            raise Exception('Invalid FOV geometry')
-
-                    if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
-                        fr_yaw180_flag = True
-                    else:
-                        fr_yaw180_flag = False
-
-                    if(fr_geom == 'CONICAL'):
-                        fldofreg = FieldOfView.from_conicalFOV(fr_at, fr_yaw180_flag, d.get("_id", None))
-                    elif(fr_geom == 'RECTANGULAR'):
-                        # Get the cone and clock angles from the rectangular FOV specifications.
-                        fldofreg = FieldOfView.from_rectangularFOV(fr_at, fr_ct, fr_yaw180_flag, d.get("_id", None))
-                    
-                    return fldofreg
+                if(mv_type == 'FIXED' or mv_type == 'YAW180'):
+                    pass
+                elif(mv_type == 'CONE'):
+                    mv_cone = 0.5 * float(manuv["fullConeAngle"])
+                elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
+                    mv_ct_range = float(manuv["rollMax"]) - float(manuv["rollMin"])
                 else:
-                    # A field-of-regard meanuver type has been specified
-                    return FieldOfView.from_dict(manuv["fieldOfRegard"])
+                    raise Exception('Invalid manuver type.')                                 
+
+                if(mv_type == 'FIXED'):
+                    fr_geom = fldofview._geometry
+                    fr_at = fldofview._AT_fov_deg
+                    fr_ct = fldofview._CT_fov_deg
+                
+                elif(mv_type == 'YAW180'):
+                    fr_geom = fldofview._geometry
+                    fr_at = fldofview._AT_fov_deg
+                    fr_ct = fldofview._CT_fov_deg
+
+                elif(mv_type == 'CONE'):
+                    if(fldofview._geometry == 'CONICAL'):
+                        fr_geom = 'CONICAL'
+                        fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
+                        fr_ct = fr_at
+
+                    elif(fldofview._geometry == 'RECTANGULAR'):
+                        fr_geom = 'CONICAL'
+                        diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
+                        fr_at = 2*(mv_cone +  diag_half_angle)
+                        fr_ct = fr_at
+
+                    else:
+                        raise Exception('Invalid FOV geometry')    
+
+                elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
+                    if(fldofview._geometry == 'CONICAL'):
+                        print("Approximating FOR as rectangular shape")
+                        fr_geom = 'RECTANGULAR'
+                        fr_at = 2*(fldofview._coneAngleVec_deg[0])
+                        fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
+
+                    elif(fldofview._geometry == 'RECTANGULAR'):
+                        fr_geom = 'RECTANGULAR'
+                        fr_at = fldofview._AT_fov_deg
+                        fr_ct = mv_ct_range + fldofview._CT_fov_deg
+                    else:
+                        raise Exception('Invalid FOV geometry')
+
+                if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
+                    fr_yaw180_flag = True
+                else:
+                    fr_yaw180_flag = False
+
+                if(fr_geom == 'CONICAL'):
+                    fldofreg = FieldOfView.from_conicalFOV(fr_at, fr_yaw180_flag, d.get("_id", None))
+                elif(fr_geom == 'RECTANGULAR'):
+                    # Get the cone and clock angles from the rectangular FOV specifications.
+                    fldofreg = FieldOfView.from_rectangularFOV(fr_at, fr_ct, fr_yaw180_flag, d.get("_id", None))
+                
+                return fldofreg
+
             else:
                 # no manueverability specified, return just the calculated field-of-view
                 return fldofview
@@ -609,7 +605,101 @@ class FieldOfView(Entity):
             """
             return [self._AT_fov_deg, self._CT_fov_deg]
 
+class Maneuverability(Entity):
+    """ Class holding the manuverability specifications of the instrument. """
+    def __init__(self, manuver_type=None, roll_min=None , roll_max=None, yaw180=None, full_cone_angle=None, _id=None):
 
+        self.manuver_type = ManueverType.get(manuver_type) if manuver_type is not None else ManueverType.FIXED
+        self.roll_min =  roll_min
+        self.roll_max = roll_max
+        self.full_cone_angle = full_cone_angle
+
+        self.yaw180 = (self.manuver_type == ManueverType.YAW180 or self.manuver_type == ManueverType.YAW180ROLL)
+
+        super(Maneuverability, self).__init__(_id, "Maneuverability")
+
+    def from_dict(self, d):
+        """Parses an maneuvarability object from a normalized JSON dictionary."""
+        return Maneuverability(
+                manuver_type = d.get("@type", None),
+                roll_min = d.get("rollMin", None),
+                roll_max = d.get("rollMax", None),
+                full_cone_angle = d.get("fullConeAngle", None),
+                )
+    
+    def calc_field_of_regard(self, fldofview):
+        """ Calculate the field-of-regard.
+
+        :param fldofview:  Field-of-view of the instrument
+        :paramtype fldofview: :class:`instrupy.util.FieldOfView`
+
+        :return: Field-of-Regard
+        :rtype: :class:`instrupy.util.FieldOfView`
+        """
+
+        # Calculate the field-of-regard
+        mv_type = self.manuver_type
+
+        if(mv_type == 'FIXED' or mv_type == 'YAW180'):
+            pass
+        elif(mv_type == 'CONE'):
+            mv_cone = 0.5 * float(self.full_cone_angle)
+        elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
+            mv_ct_range = float(self.roll_max) - float(self.roll_min)
+        else:
+            raise Exception('Invalid manuver type.')                                 
+
+        if(mv_type == 'FIXED'):
+            fr_geom = fldofview._geometry
+            fr_at = fldofview._AT_fov_deg
+            fr_ct = fldofview._CT_fov_deg
+        
+        elif(mv_type == 'YAW180'):
+            fr_geom = fldofview._geometry
+            fr_at = fldofview._AT_fov_deg
+            fr_ct = fldofview._CT_fov_deg
+
+        elif(mv_type == 'CONE'):
+            if(fldofview._geometry == 'CONICAL'):
+                fr_geom = 'CONICAL'
+                fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
+                fr_ct = fr_at
+
+            elif(fldofview._geometry == 'RECTANGULAR'):
+                fr_geom = 'CONICAL'
+                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
+                fr_at = 2*(mv_cone +  diag_half_angle)
+                fr_ct = fr_at
+
+            else:
+                raise Exception('Invalid FOV geometry')    
+
+        elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
+            if(fldofview._geometry == 'CONICAL'):
+                print("Approximating FOR as rectangular shape")
+                fr_geom = 'RECTANGULAR'
+                fr_at = 2*(fldofview._coneAngleVec_deg[0])
+                fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
+
+            elif(fldofview._geometry == 'RECTANGULAR'):
+                fr_geom = 'RECTANGULAR'
+                fr_at = fldofview._AT_fov_deg
+                fr_ct = mv_ct_range + fldofview._CT_fov_deg
+            else:
+                raise Exception('Invalid FOV geometry')
+
+        if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
+            fr_yaw180_flag = True
+        else:
+            fr_yaw180_flag = False
+
+        if(fr_geom == 'CONICAL'):
+            fldofreg = FieldOfView.from_conicalFOV(full_cone_angle_deg = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
+        elif(fr_geom == 'RECTANGULAR'):
+            # Get the cone and clock angles from the rectangular FOV specifications.
+            fldofreg = FieldOfView.from_rectangularFOV(along_track_fov_deg = fr_at, cross_track_fov_deg = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
+        
+        return fldofreg
                 
 class MathUtilityFunctions:
     """ Class aggregating various mathematical computation functions used in the InstruPy package. """

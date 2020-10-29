@@ -55,7 +55,7 @@ class InstrumentCoverageParameters():
         :ivar purely_side_look: Flag to specify if instrument operates in a strictly side-looking viewing geometry.
         :vartype purely_side_look: bool
 
-        :ivar yaw180_flag: Flag applies in case of field-of-regard. If true, it signifies that the field-of-regard includes the field-of-view of payload rotated along nadir by 180 deg. 
+        :ivar yaw180_flag: Flag applies in case of field-of-regard. If true, it signifies that the field-of-regard includes the field-of-view of payload rotated about nadir by 180 deg. 
         :vartype yaw180_flag: bool
         
         """

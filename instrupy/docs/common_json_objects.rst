@@ -274,7 +274,7 @@ Example:
 
 3. :code:`"@type":"RollOnly"`
 
-This option indicates that the payload can be manuevered only along the roll axis (about the satellite velocity vector in Inertial frame).
+This option indicates that the payload can be manuevered only about the satellite-roll axis (about the satellite velocity vector in Inertial frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
 At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
 The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.
@@ -298,7 +298,7 @@ Example:
 
 4. :code:`"@type":"Yaw180"`
 
-This option allows for a 180 deg manuver option about the yaw axis. 
+This option allows for a 180 deg manuver option about the satellite-yaw axis. 
 
 Example:
 

@@ -34,8 +34,8 @@ class BasicSensorModel(Entity):
         :ivar fieldOfView: Field of view specification of instrument. 
         :vartype fieldOfView: :class:`instrupy.util.FieldOfView`   
 
-        :ivar fieldOfRegard: Field of view calculated taking into account manueverability of the payload.
-        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
+        :ivar fieldOfRegard: Field of regard calculated taking into account FOV and manueverability of the payload.
+        :vartype fieldOfRegard: :class:`instrupy.util.fieldOfView`  
        
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
@@ -83,6 +83,7 @@ class BasicSensorModel(Entity):
                 )
 
     def to_dict(self):
+        manuverability_dict = {"@type": "FieldOfRegard", "fieldOfRegard": self.fieldOfRegard.to_dict()}
         return dict({
                 "name":self.name,
                 "acronym":self.acronym,
@@ -91,6 +92,7 @@ class BasicSensorModel(Entity):
                 "power":self.power,
                 "fieldOfView":self.fieldOfView.to_dict(),
                 "orientation":self.orientation.to_dict(),
+                "manuverability":manuverability_dict,
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "@id": self._id
