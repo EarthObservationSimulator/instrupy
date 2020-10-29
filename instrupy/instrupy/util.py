@@ -12,7 +12,7 @@ from enum import Enum
 from numbers import Number
 import scipy.constants
 import string
-#import lowtran #TEMPORARY PLEASE REMOVE
+import lowtran #TEMPORARY PLEASE REMOVE
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.
@@ -161,8 +161,8 @@ class ManueverType(EnumEntity):
     CONE = "CONE",
     ROLLONLY = "ROLLONLY",
     YAW180 = "YAW180",
-    YAW180ROLL = "YAW180ROLL",
-    FIELDOFREGARD = "FIELDOFREGARD" 
+    YAW180ROLL = "YAW180ROLL"
+
 class OrientationConvention(EnumEntity):
     """Enumeration of recognized instrument orientation conventions."""
     XYZ = "XYZ"
@@ -459,13 +459,12 @@ class FieldOfView(Entity):
 
         @staticmethod
         def from_dict(d):
-            """Parses field-of-view specifications from a normalized JSON dictionary. If manueverability is included, the 
-               parsed object corresponds to the field-of-regard. 
+            """Parses field-of-view specifications from a normalized JSON dictionary.
     
-               :param d: Dictionary with the instrument field-of-view and maneverability (optional) specifications.
+               :param d: Dictionary with the instrument field-of-view specifications.
                :paramtype d: dict
 
-               :return: Field-of-view/ Field-of-regard object 
+               :return: Field-of-view
                :rtype: :class:`instrupy.util.FieldOfView`
 
             """          
@@ -480,75 +479,7 @@ class FieldOfView(Entity):
             else:
                 raise Exception("Invalid Sensor FOV specified")
 
-            if(d.get("maneuverability", None)):
-                # Calculate the field-of-regard
-                manuv = d.get("maneuverability")
-                mv_type = ManueverType.get(manuv["@type"])
-
-                if(mv_type == 'FIXED' or mv_type == 'YAW180'):
-                    pass
-                elif(mv_type == 'CONE'):
-                    mv_cone = 0.5 * float(manuv["fullConeAngle"])
-                elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
-                    mv_ct_range = float(manuv["rollMax"]) - float(manuv["rollMin"])
-                else:
-                    raise Exception('Invalid manuver type.')                                 
-
-                if(mv_type == 'FIXED'):
-                    fr_geom = fldofview._geometry
-                    fr_at = fldofview._AT_fov_deg
-                    fr_ct = fldofview._CT_fov_deg
-                
-                elif(mv_type == 'YAW180'):
-                    fr_geom = fldofview._geometry
-                    fr_at = fldofview._AT_fov_deg
-                    fr_ct = fldofview._CT_fov_deg
-
-                elif(mv_type == 'CONE'):
-                    if(fldofview._geometry == 'CONICAL'):
-                        fr_geom = 'CONICAL'
-                        fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
-                        fr_ct = fr_at
-
-                    elif(fldofview._geometry == 'RECTANGULAR'):
-                        fr_geom = 'CONICAL'
-                        diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
-                        fr_at = 2*(mv_cone +  diag_half_angle)
-                        fr_ct = fr_at
-
-                    else:
-                        raise Exception('Invalid FOV geometry')    
-
-                elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
-                    if(fldofview._geometry == 'CONICAL'):
-                        print("Approximating FOR as rectangular shape")
-                        fr_geom = 'RECTANGULAR'
-                        fr_at = 2*(fldofview._coneAngleVec_deg[0])
-                        fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
-
-                    elif(fldofview._geometry == 'RECTANGULAR'):
-                        fr_geom = 'RECTANGULAR'
-                        fr_at = fldofview._AT_fov_deg
-                        fr_ct = mv_ct_range + fldofview._CT_fov_deg
-                    else:
-                        raise Exception('Invalid FOV geometry')
-
-                if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
-                    fr_yaw180_flag = True
-                else:
-                    fr_yaw180_flag = False
-
-                if(fr_geom == 'CONICAL'):
-                    fldofreg = FieldOfView.from_conicalFOV(fr_at, fr_yaw180_flag, d.get("_id", None))
-                elif(fr_geom == 'RECTANGULAR'):
-                    # Get the cone and clock angles from the rectangular FOV specifications.
-                    fldofreg = FieldOfView.from_rectangularFOV(fr_at, fr_ct, fr_yaw180_flag, d.get("_id", None))
-                
-                return fldofreg
-
-            else:
-                # no manueverability specified, return just the calculated field-of-view
-                return fldofview
+            return fldofview
         
         def get_cone_clock_fov_specs(self):
             """ Function to the get the cone and clock angle vectors from the resepective FieldOfView object.
@@ -609,16 +540,17 @@ class Maneuverability(Entity):
     """ Class holding the manuverability specifications of the instrument. """
     def __init__(self, manuver_type=None, roll_min=None , roll_max=None, yaw180=None, full_cone_angle=None, _id=None):
 
-        self.manuver_type = ManueverType.get(manuver_type) if manuver_type is not None else ManueverType.FIXED
-        self.roll_min =  roll_min
-        self.roll_max = roll_max
-        self.full_cone_angle = full_cone_angle
+        self.manuver_type = ManueverType.get(manuver_type) if manuver_type is not None else None
+        self.roll_min =  float(roll_min) if roll_min is not None else None
+        self.roll_max = float(roll_max) if roll_min is not None else None
+        self.full_cone_angle = float(full_cone_angle) if full_cone_angle is not None else None
 
         self.yaw180 = (self.manuver_type == ManueverType.YAW180 or self.manuver_type == ManueverType.YAW180ROLL)
 
         super(Maneuverability, self).__init__(_id, "Maneuverability")
 
-    def from_dict(self, d):
+    @staticmethod
+    def from_dict(d):
         """Parses an maneuvarability object from a normalized JSON dictionary."""
         return Maneuverability(
                 manuver_type = d.get("@type", None),
@@ -626,6 +558,20 @@ class Maneuverability(Entity):
                 roll_max = d.get("rollMax", None),
                 full_cone_angle = d.get("fullConeAngle", None),
                 )
+
+    def to_dict(self):
+        if self.manuver_type == ManueverType.FIXED:
+            manuv_dict= dict({ "@type", "FIXED"})
+        elif self.manuver_type == ManueverType.CONE:
+            manuv_dict= dict({"@type", "CONE", "fullConeAngle", self.full_cone_angle})
+        elif self.manuver_type == ManueverType.ROLLONLY:
+            manuv_dict= dict({"@type", "ROLLONLY", "rollMin", self.roll_min, "rollMax", self.roll_max})
+        elif self.manuver_type == ManueverType.YAW180:
+            manuv_dict= dict({"@type", "YAW180"})
+        elif self.manuver_type == ManueverType.YAW180ROLL:
+            manuv_dict= dict({"@type", "YAW180ROLL", "rollMin", self.roll_min, "rollMax", self.roll_max})
+        
+        return manuv_dict
     
     def calc_field_of_regard(self, fldofview):
         """ Calculate the field-of-regard.
@@ -869,9 +815,6 @@ class MathUtilityFunctions:
             raise Exception("Encountered division by zero in vector normalization function.")
         return v / norm
 
-            
-        
-    
     @staticmethod
     def angle_between_vectors(vector1, vector2):
         """ Find angle between two input vectors in radians. Use the dot-product relationship to obtain the angle.

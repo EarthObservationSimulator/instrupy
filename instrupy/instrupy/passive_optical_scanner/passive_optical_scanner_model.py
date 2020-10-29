@@ -13,7 +13,7 @@ import numpy
 import copy
 import pandas, csv
 import sys
-from instrupy.util import Entity, EnumEntity, OrientationConvention, Orientation, SensorGeometry, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions
+from instrupy.util import Entity, EnumEntity, OrientationConvention, Orientation, SensorGeometry, FieldOfView, Maneuverability, MathUtilityFunctions, Constants, FileUtilityFunctions
 
 class ScanTech(EnumEntity):
     """Enumeration of recognized passive optical scanner scanning techniques."""
@@ -52,8 +52,8 @@ class PassiveOpticalScannerModel(Entity):
        :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the instrument. A scene is made of multiple concatenated strips.
        :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView`  
 
-       :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload.
-       :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
+       :ivar maneuver: Maneuvarability specification of the instrument
+       :vartype maneuver: :class:`instrupy.util.Maneuverability`    
        
        :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
        :vartype dataRate: float  
@@ -78,9 +78,9 @@ class PassiveOpticalScannerModel(Entity):
 
        :ivar bandwidth: Bandwidth of operation (m)
 
-                        .. note:: It is assumed that the detector element supports the entire bandwidth with same quantum efficiency for all wavelengths.
-                                  Assumption maybe reasonable for narrow-bandwidths.
-       
+                    .. note:: It is assumed that the detector element supports the entire bandwidth with same quantum efficiency for all wavelengths.
+                                Assumption maybe reasonable for narrow-bandwidths.
+    
        :vartype bandwidth: float
 
        :ivar quantumEff: Quantum efficiency of the detector element (:math:`0 < QE < 1`)
@@ -113,13 +113,16 @@ class PassiveOpticalScannerModel(Entity):
        :ivar considerAtmosLoss: Flag to specify that atmos loss is to be consdered. 
        :vartype considerAtmosLoss: bool
 
+       :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload.
+       :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`
+
        .. todo:: Accommodate input of specific detectivity D* for infrared detectors
    
     """
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation = None,
-            fieldOfView=None, sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, scanTechnique = None,
+            fieldOfView=None, sceneFieldOfView = None, maneuver = None, dataRate=None, scanTechnique = None,
             numberDetectorRowsAT=None, numberDetectorColsCT=None, apertureDia = None,
             Fnum = None, focalLength = None, 
             operatingWavelength = None, bandwidth = None, quantumEff = None, 
@@ -137,7 +140,7 @@ class PassiveOpticalScannerModel(Entity):
         self.orientation = copy.deepcopy(orientation) if orientation is not None else Orientation(0,0,0,1,2,3)
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
-        self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
+        self.maneuver = copy.deepcopy(maneuver) if maneuver is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None    
         self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None   
         self.numberDetectorRowsAT = int(numberDetectorRowsAT) if numberDetectorRowsAT is not None else None
@@ -156,6 +159,8 @@ class PassiveOpticalScannerModel(Entity):
         self.snrThreshold = float(snrThreshold) if snrThreshold is not None else None
         self.maxDetectorExposureTime = float(maxDetectorExposureTime) if maxDetectorExposureTime is not None else None    
         self.considerAtmosLoss = bool(considerAtmosLoss) if considerAtmosLoss is not None else False # Set to False by default
+
+        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.sceneFieldOfView) if self.sceneFieldOfView is not None else self.maneuver.calc_field_of_regard(self.fieldOfView)
 
         super(PassiveOpticalScannerModel,self).__init__(_id, "Passive Optical Scanner")
 
@@ -218,12 +223,6 @@ class PassiveOpticalScannerModel(Entity):
                     sc_fov_json_str = None
                     scene_fov = None
 
-                # initialize field-of-regard
-                if(sc_fov_json_str):
-                    fldofreg_str = {**json.loads(sc_fov_json_str),  **{"maneuverability": d.get("maneuverability", None)}}
-                else:
-                    fldofreg_str = {**fov_json_str, **{"maneuverability": d.get("maneuverability", None)}}
-
                 return PassiveOpticalScannerModel(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
@@ -232,7 +231,7 @@ class PassiveOpticalScannerModel(Entity):
                         power = d.get("power", None),
                         orientation = Orientation.from_json(d.get("orientation", None)),
                         fieldOfView = FieldOfView.from_json(d.get("fieldOfView", None)),
-                        fieldOfRegard= FieldOfView.from_json(fldofreg_str),
+                        maneuver= Maneuverability.from_json(d.get("maneuverability", dict({"@type": "FIXED"}))),
                         sceneFieldOfView = scene_fov,
                         dataRate = d.get("dataRate", None),
                         operatingWavelength = d.get("operatingWavelength", None),

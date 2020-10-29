@@ -8,7 +8,7 @@ import json
 import numpy
 import copy
 import pandas, csv
-from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry
+from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry, Maneuverability
 
 class BasicSensorModel(Entity):
     """A basic sensor class. 
@@ -34,20 +34,23 @@ class BasicSensorModel(Entity):
         :ivar fieldOfView: Field of view specification of instrument. 
         :vartype fieldOfView: :class:`instrupy.util.FieldOfView`   
 
-        :ivar fieldOfRegard: Field of regard calculated taking into account FOV and manueverability of the payload.
-        :vartype fieldOfRegard: :class:`instrupy.util.fieldOfView`  
+        :ivar maneuver: Maneuvarability specification of the instrument
+        :vartype maneuver: :class:`instrupy.util.Maneuverability`  
        
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
 
         :ivar bitsPerPixel: Bits encoded per pixel of image
         :vartype bitsPerPixel: int
+
+        :ivar fieldOfRegard: Field of regard calculated taking into account FOV and manueverability of the payload.
+        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
    
     """
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, fieldOfRegard=None, dataRate=None, bitsPerPixel = None, _id=None):
+            fieldOfView=None, maneuver=None, dataRate=None, bitsPerPixel = None, _id=None):
         """Initialization
 
         """
@@ -58,9 +61,11 @@ class BasicSensorModel(Entity):
         self.power = float(power) if power is not None else None
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
-        self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
+        self.maneuver = copy.deepcopy(maneuver) if maneuver is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None
-        self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None            
+        self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None        
+        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfView)
+        
         super(BasicSensorModel,self).__init__(_id, "Basic Sensor")
 
     @staticmethod
@@ -68,6 +73,7 @@ class BasicSensorModel(Entity):
         """Parses an instrument from a normalized JSON dictionary."""
         default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
         default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
+        default_manuv = dict({"@type": "FIXED"}) #  default maneuverability = Nadir pointing
         return BasicSensorModel(
                 name = d.get("name", None),
                 acronym = d.get("acronym", None),
@@ -76,14 +82,13 @@ class BasicSensorModel(Entity):
                 power = d.get("power", None),
                 orientation = Orientation.from_json(d.get("orientation", default_orien)),
                 fieldOfView =  FieldOfView.from_json(d.get("fieldOfView", default_fov)),
-                fieldOfRegard= FieldOfView.from_json({**d.get("fieldOfView", default_fov) , **{"maneuverability": d.get("maneuverability", None)}}),
+                maneuver =  Maneuverability.from_json(d.get("maneuverability", default_manuv)),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
                 _id = d.get("@id", None)
                 )
 
     def to_dict(self):
-        manuverability_dict = {"@type": "FieldOfRegard", "fieldOfRegard": self.fieldOfRegard.to_dict()}
         return dict({
                 "name":self.name,
                 "acronym":self.acronym,
@@ -92,7 +97,7 @@ class BasicSensorModel(Entity):
                 "power":self.power,
                 "fieldOfView":self.fieldOfView.to_dict(),
                 "orientation":self.orientation.to_dict(),
-                "manuverability":manuverability_dict,
+                "manuverability":self.maneuver.to_dict(),
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "@id": self._id

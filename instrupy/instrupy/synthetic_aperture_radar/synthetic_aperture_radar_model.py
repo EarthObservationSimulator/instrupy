@@ -24,7 +24,7 @@ import numpy
 import copy
 import pandas, csv
 import warnings
-from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
+from instrupy.util import Entity, Orientation, FieldOfView, Maneuverability, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
 
 class ScanTech(EnumEntity):
     """Enumeration of recognized SAR scanning techniques"""
@@ -91,8 +91,8 @@ class SyntheticApertureRadarModel(Entity):
         :ivar sceneFieldOfView: Field of view corresponding to a "scene" captured by the SAR. A scene is made of multiple concatenated strips.
         :vartype sceneFieldOfView: :class:`instrupy.util.FieldOfView` 
 
-        :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload.
-        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView` 
+        :ivar maneuver: Maneuvarability specification of the instrument
+        :vartype maneuver: :class:`instrupy.util.Maneuverability`  
 
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
@@ -161,6 +161,9 @@ class SyntheticApertureRadarModel(Entity):
         :ivar numSubSwaths: Number of sub-swaths (scans)
         :vartype numSubSwaths: int
 
+        :ivar fieldOfRegard: Field of view calculated taking into account manuverability of the payload.
+        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView` 
+
         .. note:: The actual pulse-repetition frequency is taken as the highest PRF within allowed range of PRFs. The highest PRF is chosen since it allows greater :math:`\\sigma_{NESZ}`
           
     """
@@ -172,7 +175,7 @@ class SyntheticApertureRadarModel(Entity):
     
 
     def __init__(self, name=None, acronym=None, mass=None,volume=None, power=None,  orientation=None, fieldOfView = None,
-            sceneFieldOfView = None, fieldOfRegard = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
+            sceneFieldOfView = None, maneuver = None, dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaAlongTrackDim= None, 
             antennaCrossTrackDim = None, antennaApertureEfficiency = None, operatingFrequency = None, 
             peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
             radarLosses = None, sceneNoiseTemp = None, systemNoiseFigure = None, NESZthreshold = None, 
@@ -188,7 +191,7 @@ class SyntheticApertureRadarModel(Entity):
         self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
         self.sceneFieldOfView = copy.deepcopy(sceneFieldOfView) if sceneFieldOfView is not None else None
-        self.fieldOfRegard = copy.deepcopy(fieldOfRegard) if fieldOfRegard is not None else None
+        self.maneuver = copy.deepcopy(maneuver) if maneuver is not None else None
         self.dataRate = float(dataRate) if dataRate is not None else None          
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.pulseWidth = float(pulseWidth) if pulseWidth is not None else None
@@ -210,6 +213,9 @@ class SyntheticApertureRadarModel(Entity):
         self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
         self.numSubSwaths = float(numSubSwaths) if numSubSwaths is not None else None  
+        
+        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.sceneFieldOfView) if self.sceneFieldOfView is not None else self.maneuver.calc_field_of_regard(self.fieldOfView)
+
         super(SyntheticApertureRadarModel,self).__init__(_id, "Synthetic Aperture Radar")
         
     @staticmethod
@@ -284,12 +290,6 @@ class SyntheticApertureRadarModel(Entity):
                 sc_fov_json_str = None
                 scene_fov = None
 
-            # initialize field-of-regard
-            if(sc_fov_json_str):
-                fldofreg_str = {**json.loads(sc_fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
-            else:
-                fldofreg_str = {**json.loads(fov_json_str) , **{"maneuverability": d.get("maneuverability", None)}}
-
             # initialize the swath configuration
             fixedSwathSize = None
             swathConfig = d.get("swathConfig", None)
@@ -310,7 +310,6 @@ class SyntheticApertureRadarModel(Entity):
         else:
             raise RuntimeError("Unknown SAR scan technique specified.")
             
-
         return SyntheticApertureRadarModel(
                         name = d.get("name", None),
                         acronym = d.get("acronym", None),
@@ -320,7 +319,7 @@ class SyntheticApertureRadarModel(Entity):
                         orientation = Orientation.from_json(d.get("orientation", None)),
                         fieldOfView = FieldOfView.from_json(fov_json_str),
                         sceneFieldOfView = scene_fov,
-                        fieldOfRegard= FieldOfView.from_json(fldofreg_str),
+                        maneuver =  Maneuverability.from_json(d.get("maneuverability", dict({"@type": "FIXED"}))),
                         dataRate = d.get("dataRate", None),
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         pulseWidth = d.get("pulseWidth", None),
