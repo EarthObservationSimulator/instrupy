@@ -171,6 +171,8 @@ class BasicSensorModel(Entity):
         # assign sign to look-angle. positive sign => look is in opposite direction of the orbit-plane (i.e. the negative of the orbit plane normal vector) and vice-versa
         neg_orbit_normal = numpy.cross(SpacecraftPosition_vel_kmps, -1*SpacecraftPosition_km)
         sgn = numpy.sign(numpy.dot(range_vector_km, neg_orbit_normal))
+        if(sgn==0):
+            sgn = 1
 
         # For a basic-sensor, coverage is true for all access-events
         isCovered = True 
