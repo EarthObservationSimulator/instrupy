@@ -144,6 +144,7 @@ class BasicSensorModel(Entity):
 
         # Spacecraft position in Cartesian coordinates ECI-frame
         SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
+        SpacecraftPosition_vel_kmps = numpy.array([SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]])  
 
         alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
 
@@ -167,12 +168,16 @@ class BasicSensorModel(Entity):
         else:
             solar_zenith_deg = numpy.nan
 
+        # assign sign to look-angle. positive sign => look is in opposite direction of the orbit-plane (i.e. the negative of the orbit plane normal vector) and vice-versa
+        neg_orbit_normal = numpy.cross(SpacecraftPosition_vel_kmps, -1*SpacecraftPosition_km)
+        sgn = numpy.sign(numpy.dot(range_vector_km, neg_orbit_normal))
+
         # For a basic-sensor, coverage is true for all access-events
         isCovered = True 
     
         obsv_metrics = {}
         obsv_metrics["Observation Range [km]"] = range_km
-        obsv_metrics["Look angle [deg]"] = look_angle_deg
+        obsv_metrics["Look angle [deg]"] = sgn*look_angle_deg
         obsv_metrics["Incidence angle [deg]"] = incidence_angle_deg
         obsv_metrics["Solar Zenith [deg]"] = solar_zenith_deg
         obsv_metrics["Coverage [T/F]"] = isCovered

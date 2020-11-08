@@ -32,7 +32,7 @@ Output observation data metrics calculation
      
     Coverage [T/F], string ,, Indicates if observation was possible during the access event *(Always True)*. 
     Incidence angle [deg], float,  degrees, Incidence-angle at target point calculated assuming spherical Earth.
-    Look angle [deg], float,  degrees, Look-angle to the target point calculated assuming spherical Earth.
+    Look angle [deg], float,  degrees, Look-angle to the target point calculated assuming spherical Earth. Positive sign => look is in opposite direction of the orbit-plane (i.e. the negative of the orbit plane normal vector) and vice-versa.
     Observation Range [km], float, kilometers, Distance from satellite to ground-point during the observation. 
     Solar Zenith [deg], float, degrees, Solar-zenith-angle during observation
 
