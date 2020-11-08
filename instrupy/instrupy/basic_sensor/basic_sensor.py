@@ -78,6 +78,9 @@ class BasicSensor(Entity):
     @staticmethod
     def from_dict(d):
         return BasicSensor(d)
+    
+    def get_id(self):
+        return self.instru_id
 
     def calc_typ_data_metrics(self, SpacecraftOrbitState = None, TargetCoords = None, ssen_id = None):        
         if ssen_id is not None:

@@ -90,6 +90,7 @@ class BasicSensorModel(Entity):
 
     def to_dict(self):
         return dict({
+                "@type": "BasicSensor",
                 "name":self.name,
                 "acronym":self.acronym,
                 "mass":self.mass,

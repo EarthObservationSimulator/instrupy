@@ -161,6 +161,12 @@ class Instrument(Entity):
         """ Parses a instrument from a normalized JSON dictionary. """
         return Instrument(d)
 
+    def to_dict(self):
+        return self._sensor.to_dict()
+    
+    def get_id(self):
+        return self._sensor.get_id()
+
     def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords, subsensor_id = None):   
         """ Calculate the typical observation data-metrics.
         
@@ -285,10 +291,10 @@ class Instrument(Entity):
                                             _ics["Orientation"]["eulerAngle1"], _ics["Orientation"]["eulerAngle2"], _ics["Orientation"]["eulerAngle3"],
                                             _ics["purely_side_look"], _ics["fieldOfRegard"]["yaw180_flag"]
                                             )           
-        print("Instrument + subsensor ID is: ", _ics["@id"])
-        print("fieldOfRegard is: ", _ics["fieldOfRegard"])
-        print("Orientation:", _ics["Orientation"])
-        print("purely_side_look:", _ics["purely_side_look"])
+        #print("Instrument + subsensor ID is: ", _ics["@id"])
+        #print("fieldOfRegard is: ", _ics["fieldOfRegard"])
+        #print("Orientation:", _ics["Orientation"])
+        #print("purely_side_look:", _ics["purely_side_look"])
         return [ics_fldofview, ics_fldofreg]       
 
 ################################################### Legacy functions #################################################################    
