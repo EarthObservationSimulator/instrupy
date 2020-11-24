@@ -167,6 +167,9 @@ class Instrument(Entity):
     def get_id(self):
         return self._sensor.get_id()
 
+    def get_type(self):
+        return self._sensor.get_type()
+
     def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords, subsensor_id = None):   
         """ Calculate the typical observation data-metrics.
         
