@@ -12,7 +12,7 @@ from enum import Enum
 from numbers import Number
 import scipy.constants
 import string
-import lowtran #TEMPORARY PLEASE REMOVE
+#import lowtran #TEMPORARY: PLEASE REMOVE if commented
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.
@@ -154,6 +154,24 @@ class Constants(object):
     SunBlackBodyTemperature = 6000.0 # Sun black body temperature in Kelvin
     SolarRadius = 6.95700e8 # Solar radius
 
+class SyntheticDataConfiguration(Entity):
+    def __init__(self, sourceFilePaths=None, environVar=None):
+        self.sourceFilePaths = sourceFilePaths if sourceFilePaths is not None else list()
+        self.environVar = environVar if environVar is not None else None
+    
+    @staticmethod
+    def from_dict(d):
+        return SyntheticDataConfiguration(sourceFilePaths = d.get("sourceFilePaths", None), 
+                                          environVar      = d.get("environVar", None))
+
+    def to_dict(self):
+        """ Return data members of the object as python dictionary. 
+        
+            :return: SyntheticDataConfiguration object as python dictionary
+            :rtype: dict
+        """
+        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, "environVar": self.environVar}
+        return syndataconf_dict
 
 class ManueverType(EnumEntity):
     """Enumeration of recognized manuvever types"""
@@ -561,15 +579,15 @@ class Maneuverability(Entity):
 
     def to_dict(self):
         if self.manuver_type == ManueverType.FIXED:
-            manuv_dict= dict({ "@type", "FIXED"})
+            manuv_dict= dict({ "@type": "FIXED"})
         elif self.manuver_type == ManueverType.CONE:
-            manuv_dict= dict({"@type", "CONE", "fullConeAngle", self.full_cone_angle})
+            manuv_dict= dict({"@type": "CONE", "fullConeAngle": self.full_cone_angle})
         elif self.manuver_type == ManueverType.ROLLONLY:
-            manuv_dict= dict({"@type", "ROLLONLY", "rollMin", self.roll_min, "rollMax", self.roll_max})
+            manuv_dict= dict({"@type": "ROLLONLY", "rollMin": self.roll_min, "rollMax": self.roll_max})
         elif self.manuver_type == ManueverType.YAW180:
-            manuv_dict= dict({"@type", "YAW180"})
+            manuv_dict= dict({"@type": "YAW180"})
         elif self.manuver_type == ManueverType.YAW180ROLL:
-            manuv_dict= dict({"@type", "YAW180ROLL", "rollMin", self.roll_min, "rollMax", self.roll_max})
+            manuv_dict= dict({"@type": "YAW180ROLL", "rollMin": self.roll_min, "rollMax": self.roll_max})
         
         return manuv_dict
     
@@ -798,6 +816,29 @@ class MathUtilityFunctions:
         return [X,Y,Z]
         
    
+    @staticmethod
+    def eci2geo(ecicoord, JDtime):
+        """ *Convert Earth-centered inertial coords to geographic spherical coordinates.*    
+             https://idlastro.gsfc.nasa.gov/ftp/pro/astro/eci2geo.pro
+       
+        """
+        [X,Y,Z] = ecicoord
+        theta = np.arctan2(Y,X)
+        
+        gst = MathUtilityFunctions.JD2GMST(JDtime)        
+        angle_sid=gst*2.0*np.pi/24.0 # sidereal angle
+        lon = np.mod((theta - angle_sid),2*np.pi) 
+
+        r=np.sqrt(X*X + Y*Y)
+        lat=np.arctan2(Z,r)                         
+        
+        alt=r/np.cos(lat) - Constants.radiusOfEarthInKM
+
+        lat = np.rad2deg(lat)
+        lon = np.rad2deg(lon)
+                
+        return [lat,lon,alt]
+
     @staticmethod
     def normalize(v):
         """ Normalize a input vector.

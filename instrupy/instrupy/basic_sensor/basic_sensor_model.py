@@ -8,7 +8,7 @@ import json
 import numpy
 import copy
 import pandas, csv
-from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry, Maneuverability
+from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry, Maneuverability, SyntheticDataConfiguration
 
 class BasicSensorModel(Entity):
     """A basic sensor class. 
@@ -50,7 +50,8 @@ class BasicSensorModel(Entity):
 
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
-            fieldOfView=None, maneuver=None, dataRate=None, bitsPerPixel = None, _id=None):
+            fieldOfView=None, maneuver=None, dataRate=None, 
+            syntheticDataConfig=None, bitsPerPixel = None, _id=None):
         """Initialization
 
         """
@@ -65,7 +66,8 @@ class BasicSensorModel(Entity):
         self.dataRate = float(dataRate) if dataRate is not None else None
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None        
         self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfView)
-        
+        self.syntheticDataConfig = copy.deepcopy(syntheticDataConfig) if syntheticDataConfig is not None else None
+
         super(BasicSensorModel,self).__init__(_id, "Basic Sensor")
 
     @staticmethod
@@ -74,6 +76,7 @@ class BasicSensorModel(Entity):
         default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
         default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
         default_manuv = dict({"@type": "FIXED"}) #  default maneuverability = Nadir pointing
+        default_synobsconf = dict({"sourceFilePaths": None, "environVar": None})
         return BasicSensorModel(
                 name = d.get("name", None),
                 acronym = d.get("acronym", None),
@@ -85,6 +88,7 @@ class BasicSensorModel(Entity):
                 maneuver =  Maneuverability.from_json(d.get("maneuverability", default_manuv)),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
+                syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", default_synobsconf)),
                 _id = d.get("@id", None)
                 )
 
@@ -101,6 +105,7 @@ class BasicSensorModel(Entity):
                 "manuverability":self.maneuver.to_dict(),
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
+                "syntheticDataConfig": self.syntheticDataConfig.to_dict(),
                 "@id": self._id
                 })
 
