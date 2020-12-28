@@ -12,7 +12,17 @@ from enum import Enum
 from numbers import Number
 import scipy.constants
 import string
-#import lowtran #TEMPORARY: PLEASE REMOVE if commented
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import shapely
+import cartopy.geodesic
+import math
+import json
+
+from math import radians, cos, sin, asin, sqrt
+import lowtran #TEMPORARY: PLEASE REMOVE if commented
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.
@@ -155,14 +165,16 @@ class Constants(object):
     SolarRadius = 6.95700e8 # Solar radius
 
 class SyntheticDataConfiguration(Entity):
-    def __init__(self, sourceFilePaths=None, environVar=None):
+    def __init__(self, sourceFilePaths=None, environVar=None, interplMethod=None):
         self.sourceFilePaths = sourceFilePaths if sourceFilePaths is not None else list()
-        self.environVar = environVar if environVar is not None else None
+        self.environVar = environVar if environVar is not None else None 
+        self.interplMethod = interplMethod if interplMethod is not None else None
     
     @staticmethod
     def from_dict(d):
         return SyntheticDataConfiguration(sourceFilePaths = d.get("sourceFilePaths", None), 
-                                          environVar      = d.get("environVar", None))
+                                          environVar      = d.get("environVar", None),
+                                          interplMethod    = d.get("interplMethod", None))
 
     def to_dict(self):
         """ Return data members of the object as python dictionary. 
@@ -170,7 +182,7 @@ class SyntheticDataConfiguration(Entity):
             :return: SyntheticDataConfiguration object as python dictionary
             :rtype: dict
         """
-        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, "environVar": self.environVar}
+        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, "environVar": self.environVar, "interplMethod": self.interplMethod}
         return syndataconf_dict
 
 class ManueverType(EnumEntity):
@@ -285,6 +297,9 @@ class Orientation(Entity):
         else:
             raise Exception("Invalid or no Orientation convention specification")
     
+    def get_orien_as_list(self):
+        return [self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3]
+
     def to_dict(self):
         """ Return data members of the object as python dictionary. 
         
@@ -1159,3 +1174,6 @@ class FileUtilityFunctions:
             return map(lambda e: FileUtilityFunctions.from_json(e), json_doc)
         # otherwise use class method to initialize from normalized dictionary
         return json_doc 
+
+
+

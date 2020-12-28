@@ -9,6 +9,14 @@ import numpy
 import copy
 import pandas, csv
 from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry, Maneuverability, SyntheticDataConfiguration
+from netCDF4 import Dataset
+import cartopy.crs as ccrs
+import numpy as np
+import scipy.interpolate
+import metpy.interpolate
+import astropy.time
+import logging
+logger = logging.getLogger(__name__)
 
 class BasicSensorModel(Entity):
     """A basic sensor class. 
@@ -51,7 +59,8 @@ class BasicSensorModel(Entity):
     def __init__(self, name=None, acronym=None, mass=None,
             volume=None, power=None,  orientation=None,
             fieldOfView=None, maneuver=None, dataRate=None, 
-            syntheticDataConfig=None, bitsPerPixel = None, _id=None):
+            syntheticDataConfig=None, bitsPerPixel=None, 
+            numberDetectorRows=None, numberDetectorCols=None, _id=None):
         """Initialization
 
         """
@@ -67,6 +76,8 @@ class BasicSensorModel(Entity):
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None        
         self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfView)
         self.syntheticDataConfig = copy.deepcopy(syntheticDataConfig) if syntheticDataConfig is not None else None
+        self.numberDetectorRows = int(numberDetectorRows) if numberDetectorRows is not None else 4
+        self.numberDetectorCols = int(numberDetectorCols) if numberDetectorCols is not None else 4
 
         super(BasicSensorModel,self).__init__(_id, "Basic Sensor")
 
@@ -76,7 +87,7 @@ class BasicSensorModel(Entity):
         default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
         default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
         default_manuv = dict({"@type": "FIXED"}) #  default maneuverability = Nadir pointing
-        default_synobsconf = dict({"sourceFilePaths": None, "environVar": None})
+        default_synobsconf = dict({"sourceFilePaths": None, "environVar": None, "interplMethod":None})
         return BasicSensorModel(
                 name = d.get("name", None),
                 acronym = d.get("acronym", None),
@@ -89,6 +100,8 @@ class BasicSensorModel(Entity):
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
                 syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", default_synobsconf)),
+                numberDetectorRows = d.get("numberDetectorRows", None),
+                numberDetectorCols = d.get("numberDetectorCols", None),
                 _id = d.get("@id", None)
                 )
 
@@ -106,6 +119,8 @@ class BasicSensorModel(Entity):
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "syntheticDataConfig": self.syntheticDataConfig.to_dict(),
+                "numberDetectorRows": self.numberDetectorRows,
+                "numberDetectorCols": self.numberDetectorCols,
                 "@id": self._id
                 })
 
@@ -190,4 +205,79 @@ class BasicSensorModel(Entity):
         obsv_metrics["Coverage [T/F]"] = isCovered
 
         return obsv_metrics
+    
+    def synthesize_observation(self, time_JDUT1, pixel_center_pos):        
+
+        source_fps = self.syntheticDataConfig.sourceFilePaths
+        envvar = self.syntheticDataConfig.environVar
+        interpl_method = self.syntheticDataConfig.interplMethod
+        
+        # get the source data file closest to the input time
+        dataset_i = 0
+        forecast_time_hrs = []
+        for _src_fp in source_fps:
+            dataset  = Dataset(_src_fp, "r", format="NETCDF4")
+            _initial_time = dataset[envvar].initial_time
+            _forecast_time = dataset[envvar].forecast_time
+            _forecast_time_units = dataset[envvar].forecast_time_units
+            if(_forecast_time_units != 'hours'):
+                raise Exception('Forecast time units must be of hours')            
+            forecast_time_hrs.append(_forecast_time)
+            dataset_i = dataset_i + 1
+        
+        # extract the time in UTC from the string (example string is: 12/11/2020 (12:00))
+        t = astropy.time.Time.strptime(_initial_time, '%m/%d/%Y (%H:%M)')
+        initial_time_JDUT1 = astropy.time.Time(t, scale='utc').jd # TODO UTC / UT1?
+
+        required_forecast_time_hrs = (time_JDUT1 - initial_time_JDUT1)*24
+        # find dataset closest to the required forecast time
+        idx = (np.abs(forecast_time_hrs - required_forecast_time_hrs)).argmin()
+
+        dataset  = Dataset(source_fps[idx], "r", format="NETCDF4")
+        lons = dataset.variables['lon_0'][:]
+        lats = dataset.variables['lat_0'][:]
+        var = dataset.variables[envvar][:]
+
+        #print(lons)
+        #print(lats)
+        #print(temperature)
+
+        # interpolate the variable data to the pixel center positions       
+        if interpl_method == 'scipy.interpolate.linear':
+            f = scipy.interpolate.interp2d( lons, lats, var, kind='cubic')
+            interpl_data = []
+            for _pix_p in pixel_center_pos:
+                lon = _pix_p['lon[deg]']
+                lat = _pix_p['lat[deg]']
+                interpl_data.append(f(lon, lat)[0]) # [0] is needed to convert from the single element np.array to float
+            logger.info("Inaccuracy around longitude=0 deg")
+            
+
+        elif interpl_method == 'metpy.interpolate.linear':
+            (X,Y) = np.meshgrid(lons, lats)
+            X = X.reshape((np.prod(X.shape),))
+            Y = Y.reshape((np.prod(Y.shape),))
+            coords = np.dstack((X,Y))[0]
+            temperature = temperature.flatten()
+            
+            interpl_data = metpy.interpolate.interpolate_to_points(coords, temperature, pixel_center_pos, interp_type='linear', 
+                                                    minimum_neighbors=3, gamma=0.25, kappa_star=5.052, 
+                                                    search_radius=None, rbf_func='linear', rbf_smooth=0)
+
+
+        #print(result)
+
+        '''
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.coastlines()
+
+        plt.contourf(lons, lats, temperature,60, transform=ccrs.PlateCarree(), cmap=get_cmap("jet"))
+        plt.colorbar(ax=ax, shrink=.98)
+        plt.show()
+        '''
+        dataset.close()
+
+        # return the interpoalted variable data
+        return [pixel_center_pos, interpl_data, envvar]
+
 

@@ -169,6 +169,15 @@ class Instrument(Entity):
 
     def get_type(self):
         return self._sensor.get_type()
+    
+    def get_fov(self, subsensor_id = None):       
+        return self._sensor.get_fov(subsensor_id)
+    
+    def get_pixel_config(self, subsensor_id = None):
+        return self._sensor.get_pixel_config(subsensor_id)
+
+    def synthesize_observation(self, time_JDUT1, pixel_center_pos, interpl_method='scipy.interpolate.linear', subsensor_id = None):        
+        return self._sensor.synthesize_observation(time_JDUT1=time_JDUT1, pixel_center_pos=pixel_center_pos, ssen_id=subsensor_id)  
 
     def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords, subsensor_id = None):   
         """ Calculate the typical observation data-metrics.
@@ -298,7 +307,9 @@ class Instrument(Entity):
         #print("fieldOfRegard is: ", _ics["fieldOfRegard"])
         #print("Orientation:", _ics["Orientation"])
         #print("purely_side_look:", _ics["purely_side_look"])
-        return [ics_fldofview, ics_fldofreg]       
+        return [ics_fldofview, ics_fldofreg]   
+
+      
 
 ################################################### Legacy functions #################################################################    
     def generate_level0_data_metrics(self, POI_filepath, AccessInfo_filepath, Result_filepath):

@@ -102,3 +102,41 @@ class BasicSensor(Entity):
         for _ssen in self.subsensor:
             sensor_dict.append(_ssen.to_dict())
         return sensor_dict
+
+    def get_fov(self, ssen_id = None):
+        if ssen_id is not None:
+            _ssen_id_indx = self.ssen_id.index(ssen_id)
+            _ssen = self.subsensor[_ssen_id_indx]
+        else:
+            _ssen = self.subsensor[0]
+        
+        return _ssen.fieldOfView
+
+    def get_orien(self, ssen_id = None):
+        if ssen_id is not None:
+            _ssen_id_indx = self.ssen_id.index(ssen_id)
+            _ssen = self.subsensor[_ssen_id_indx]
+        else:
+            _ssen = self.subsensor[0]
+        
+        return _ssen.orientation
+    
+    def get_pixel_config(self, ssen_id = None):
+        if ssen_id is not None:
+            _ssen_id_indx = self.ssen_id.index(ssen_id)
+            _ssen = self.subsensor[_ssen_id_indx]
+        else:
+            _ssen = self.subsensor[0]
+        
+        return [_ssen.numberDetectorRows, _ssen.numberDetectorCols]
+    
+    def synthesize_observation(self, time_JDUT1, pixel_center_pos, ssen_id):
+
+        if ssen_id is not None:
+            _ssen_id_indx = self.ssen_id.index(ssen_id)
+            _ssen = self.subsensor[_ssen_id_indx]
+        else:
+            _ssen = self.subsensor[0]
+        
+        return _ssen.synthesize_observation(time_JDUT1=time_JDUT1, pixel_center_pos=pixel_center_pos)
+
