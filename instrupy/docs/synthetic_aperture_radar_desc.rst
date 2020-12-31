@@ -166,7 +166,7 @@ between the pulses of the two orthogonal polarizations. If not specified a defau
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   pulseSeperation, float, seconds, Seperation between orthogonal polarized pulses. Default: 0.5*pulse-width.
+   pulseSeperation, float, seconds, Separation between orthogonal polarized pulses. Default: 0.5*pulse-width.
 
 Example:
 
