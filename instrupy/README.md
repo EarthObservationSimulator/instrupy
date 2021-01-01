@@ -28,7 +28,7 @@ Find the documentation in: `instruments/instrupy/docs/_build/html/user_json_desc
 
 ## License and Copyright
 
-Copyright 2020 Bay Area Environmental Research Institute
+Copyright 2021 Bay Area Environmental Research Institute
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
