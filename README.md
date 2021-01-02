@@ -11,7 +11,7 @@ For a detailed description see the following articles:
 
 ## Install
 
-Requires: `python 3.8`, `gfortran`, `pip`
+Requires: `python 3.8`, `gfortran`, `pip`, `lowtran`
 
 1. Navigate to the `instruments/instrupy/` directory and run `make`. 
 2. Run tests using the `make runtest` command and get the *OK* message.
