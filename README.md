@@ -13,10 +13,10 @@ For a detailed description see the following articles:
 
 Requires: `python 3.8`, `gfortran`, `pip`, `lowtran`
 
-1. Navigate to the `instruments/instrupy/` directory and run `make`. 
+1. Run `make` from the root repo directory.
 2. Run tests using the `make runtest` command and get the *OK* message.
 
-Find the documentation in: `instruments/instrupy/docs/_build/html/user_json_desc.html`
+Find the documentation in: `instrupy/docs/_build/html/user_json_desc.html`
 
 ## Examples
 
