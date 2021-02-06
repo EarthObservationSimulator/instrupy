@@ -85,7 +85,8 @@ Tne entire illumintated swath by the main-lobe of the antenna is considered. No 
 2. :code:`"@type":"Fixed"` 
 
 A fixed swath size (less than the swath illuminated by the main-lobe) is considered. The swath size to be used is to be
-input by the user. Deafult is 10km.
+input by the user. Deafult is 10km. If the specified fixed-swath size is more then the illuminated swath size, the illuminated
+swath size shall be considered.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
