@@ -193,95 +193,50 @@ class ManueverType(EnumEntity):
     YAW180 = "YAW180",
     YAW180ROLL = "YAW180ROLL"
 
-class ReferenceFrame(EnumEntity):
-    """ Enumeration of recognized reference frames.
-    
-        :cvar EARTH_CENTERED_INERTIAL: Earth Centered Inertial reference frame.
-        
-                                        This is an Earth equator inertial reference frame identical to EarthMJ2000Eq coordinate system used in GMAT.
-                                        The nominal x-axis points along the line formed by the intersection of the Earth’s 
-                                        mean equatorial plane and the mean ecliptic plane (at the J2000 epoch), in the direction
-                                        of Aries. The z-axis is normal to the Earth’s mean equator at the J2000 epoch and the 
-                                        y-axis completes the right-handed system. The mean planes of the ecliptic and equator, 
-                                        at the J2000 epoch, are computed using IAU-1976/FK5 theory with 1980 update for nutation.
-
-        :vartype EARTH_CENTERED_INERTIAL: str
-
-        :cvar EARTH_FIXED: Earth Fixed reference frame.
-
-                            The Earth Fixed reference frame is referenced to the Earth's equator and the prime meridian 
-                            and is computed using IAU-1976/FK5 theory. This system is identical to the EarthFixed coordinate
-                            system used in GMAT.
-
-        :vartype EARTH_FIXED: str
-
-        :cvar NADIR_POINTING: Nadir-pointing reference frame.
-
-                            The axis of the Nadir-pointing reference frame are defined as follows:
-
-                            * :math:`\\bf X_{np}` axis: :math:`-({\\bf Z_{np}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in EARTH_FIXED frame)
-                                    
-                            * :math:`\\bf Y_{np}` axis: :math:`({\\bf Z_{np}} \\times {\\bf X_{np}})`
-                                    
-                            * :math:`\\bf Z_{np}` axis: Aligned to Nadir vector (i.e. the negative of the position vector of satellite in EARTH_FIXED frame)
-
-                            .. figure:: nadirframe.png
-                                :scale: 100 %
-                                :align: center
-
-                            .. todo:: Verify the claim about position vector and velocity vector in EARTH_FIXED frame.
-
-        :vartype NADIR_POINTING: str
-
-        :cvar SC_BODY_FIXED: Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus. 
-        :vartype SC_BODY_FIXED: str
-
-    """
-    EARTH_CENTERED_INERTIAL = "EARTH_CENTERED_INERTIAL"
-    EARTH_FIXED = "EARTH_FIXED"
-    NADIR_POINTING = "NADIR_POINTING"
-    SC_BODY_FIXED = "SC_BODY_FIXED"
+class OrientationConvention(EnumEntity):
+    """Enumeration of recognized instrument orientation conventions."""
+    XYZ = "XYZ"
+    NADIR = "NADIR"
+    SIDE_LOOK = "SIDE_LOOK"
 
 class Orientation(Entity):
-    """ Class to store and handle orientation. Orientation is parameterized as intrinsic rotations specified by Euler angles and sequence 
-        with respect to the user-specified reference frame. The definition of the Euler angle rotation is identical to the 
-        one used in the orbitpy->propcov->extern->gmatutil->util->AttitudeUtil, AttitudeConversionUtility C++ classes.
+    """ Class to handle instrument orientation.
+        Orientation is maintained internally via three rotation angles in the following order, xRotation -> yRotation -> zRotation, (intrinsic) with respect to "**Nadir-frame**" (A GMAT defined term). 
 
-        A Euler sequence = 123 implies the following rotation: R = R3.R2.R1, where Ri is the rotation matrix about the ith axis. 
-        A positive angle corresponds to an anti-clockwise rotation about the respective axis.
-        Each rotation matrix rotates the coordinate system (not the vector). 
-        See:
- 
-         * https://mathworld.wolfram.com/RotationMatrix.html
+        At zero rotation, the instrument is aligned to the satellite body-frame which in turn is aligned to the Nadir-frame nominally. 
+        Thus the instrument orientation with respect to the satellite body-frame is the same as it’s orientation with respect to the 
+        Nadir-frame in the scenario that the satellite body-frame is aligned to the Nadir-frame. It is also assumed that the instrument
+        imaging axis is along the instrument z-axis.
+
+        **Nadir-frame:**
+        * :math:`\\bf X_{nadir}` axis: :math:`-({\\bf Z_{nadir}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in EarthFixed frame)
+        * :math:`\\bf Y_{nadir}` axis: :math:`({\\bf Z_{nadir}} \\times {\\bf X_{nadir}})`
+        * :math:`\\bf Z_{nadir}` axis: Aligned to Nadir vector (position vector of satellite in EarthFixed frame)
+
+        It is also assumed that the instrument imaging axis is along the instrument z-axis.
      
-        :ivar ref_frame: Reference frame. Default in "NADIR_POINTING".
-        :vartype ref_frame: str
-
-        :ivar euler_angle1: (deg) Rotation angle corresponding to the first rotation. Default is 0.
+        :ivar euler_angle1: (deg) Rotation about X-axis
         :vartype euler_angle1: float
 
-        :ivar euler_angle2: (deg) Rotation angle corresponding to the second rotation. Default is 0.
+        :ivar euler_angle2: (deg) Rotation about Y-axis
         :vartype euler_angle2: float
 
-        :ivar euler_angle3: (deg) Rotation angle corresponding to the third rotation. Default is 0.
+        :ivar euler_angle3: (deg) Rotation about Z-axis
         :vartype euler_angle3: float
 
-        :ivar euler_seq1: Axis-number corresponding to the first rotation. Default is 1.
+        :ivar euler_seq1: Axis number to be rotated the first time.
         :vartype euler_angle1: int
 
-        :ivar euler_seq2: Axis-number corresponding to the second rotation. Default is 2.
+        :ivar euler_seq2: Axis number to be rotated the second time.
         :vartype euler_angle2: int
 
-        :ivar euler_seq3: Axis-number corresponding to the third rotation. Default is 3.
+        :ivar euler_seq3: Axis number to be rotated the third time.
         :vartype euler_angle3: int
 
-        :ivar _id: Unique identifier.
-        :vartype _id: str
+        .. todo:: Add support to rotations specified by other Euler sequences (currently only 1,2,3 is supported.).
     
-    """    
-    def __init__(self, ref_frame="NADIR_POINTING", euler_angle1=0, euler_angle2=0, euler_angle3=0, euler_seq1=int(1), euler_seq2=int(2), euler_seq3=int(3), _id=None):
-        
-        self.ref_frame = ReferenceFrame.get(ref_frame)
+    """
+    def __init__(self, euler_angle1, euler_angle2, euler_angle3, euler_seq1 = int(1), euler_seq2 = int(2), euler_seq3 = int(3), _id = None):
         self.euler_angle1 = float(euler_angle1)%360 
         self.euler_angle2 = float(euler_angle2)%360 
         self.euler_angle3 = float(euler_angle3)%360
@@ -290,127 +245,69 @@ class Orientation(Entity):
         self.euler_seq3 = euler_seq3
         super(Orientation, self).__init__(_id, "Orientation")
     
-    class Convention(EnumEntity):
-        """ Enumeration of recognized orientation conventions. The rotations below can be specified with respect to 
-            any of the reference frames given in :class:`instrupy.util.ReferenceFrame`.
-
-            :cvar XYZ: Rotations about the X, Y and Z axis in the order 123.
-            :vartype XYZ: str
-
-            :cvar REF_FRAME_ALIGNED: Aligned with respective to the underlying reference frame. Identity rotation matrix. 
-            :vartype REF_FRAME_ALIGNED: str
-
-            :cvar SIDE_LOOK: Rotation about the Y axis only. 
-            :vartype SIDE_LOOK: str
-
-            :cvar EULER: Rotation according to the specified Euler angles and sequence.
-            :vartype EULER: str
-
-        """
-        XYZ = "XYZ"
-        REF_FRAME_ALIGNED = "REF_FRAME_ALIGNED"
-        SIDE_LOOK = "SIDE_LOOK"
-        EULER = "EULER"
-
     @classmethod
-    def from_sideLookAngle(cls, ref_frame="NADIR_POINTING", side_look_angle=0, _id=None):
-        """ Return :class:`Orientation` object constructed from the side-look angle. 
+    def from_sideLookAngle(cls, side_look_angle_deg, _id = None):
+        ''' Translate side-look-angle user input parameter to internal instrument orientation specs.
         
-        :param ref_frame: Reference frame. Default in "NADIR_POINTING".
-        :paramtype ref_frame: str
+        :param side_look_angle_deg: Side look angle, also commonly called as nadir/ off-nadir angle in degrees. A positive angle corresponds to anti-clockwise rotation applied around the instrument y-axis.
+        :paramtype side_look_angle_deg: float
 
-        :param side_look_angle: (deg) Side look angle. A positive angle corresponds to anti-clockwise rotation applied around the y-axis. Default is 0.
-        :paramtype side_look_angle: float
-
-        :param _id: Unique identifier.
+        :param _id: Unique identifier
         :paramtype _id: str
 
-        :return: Corresponding `Orientation` object.
+        :return: Corresponding `Orientation` object
         :rtype: :class:`instrupy.util.Orientation`
 
-        """
-        return Orientation(0.0, side_look_angle, 0.0, 1,2,3,_id)
+        '''
+        return Orientation(0.0, side_look_angle_deg, 0.0, 1,2,3,_id)
     
     @classmethod
-    def from_XYZ_rotations(cls, ref_frame="NADIR_POINTING", x_rot=0, y_rot=0, z_rot=0, _id = None):
-        """ Return :class:`Orientation` object by the user-specified XYZ rotation angles with  
-            the sequence=123.
+    def from_XYZ_rotations(cls,  xRotation, yRotation, zRotation, _id = None):
+        ''' Translate XYZ user input parameter to internal instrument orientation specs. 
+            Orientation is specified via three rotation angles, xRotation -> yRotation -> zRotation..
 
-        :param ref_frame: Reference frame. Default in "NADIR_POINTING".
-        :paramtype ref_frame: str
+        .. note:: This orientation specification convention input to this function is same as the GMAT-OC orientation convention specification.   
+        
+        :ivar x_rot_deg: (deg) Rotation about X-axis
+        :vartype x_rot_deg: float
 
-        :ivar x_rot: (deg) Rotation about X-axis. Default is 0.
-        :vartype x_rot: float
+        :ivar y_rot_deg: (deg) Rotation about Y-axis
+        :vartype y_rot_deg: float
 
-        :ivar y_rot: (deg) Rotation about Y-axis. Default is 0.
-        :vartype y_rot: float
+        :ivar z_rot_deg: (deg) Rotation about Z-axis
+        :vartype z_rot_deg: float`
 
-        :ivar z_rot: (deg) Rotation about Z-axis. Default is 0.
-        :vartype z_rot: float`
-
-        :param _id: Unique identifier.
-        :paramtype _id: str
-
-        """
-        return Orientation(x_rot, y_rot, z_rot, 1,2,3,_id)       
+        '''
+        return Orientation(xRotation, yRotation, zRotation, 1,2,3,_id)       
         
     @staticmethod
     def from_dict(d):
-        """Parses orientation specifications from a dictionary.
+        """Parses orientation specifications from a normalized JSON dictionary.
         
-            :return: Parsed python object. 
+            :return: Parsed python object 
             :rtype: :class:`instrupy.util.Orientation`
         """
-        orien_conv = Orientation.Convention.get(d.get("convention", None))
-        ref_frame = ReferenceFrame.get(d.get("referenceFrame", None))
-        if(orien_conv == "XYZ"):
-            return Orientation.from_XYZ_rotations(ref_frame=ref_frame, x_rot=d.get("xRotation", None), y_rot=d.get("yRotation", None), z_rot=d.get("zRotation", None), _id = d.get("@id", None))
-        elif(orien_conv == "SIDE_LOOK"):
-            return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=d.get("sideLookAngle", None), _id=d.get("@id", None))
-        elif(orien_conv == "REF_FRAME_ALIGNED"):
-            return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=0, _id=d.get("@id", None))
-        elif(orien_conv == "EULER"):
-            return Orientation(ref_frame=ref_frame, euler_angle1=d.get("eulerAngle1", None), euler_angle2=d.get("eulerAngle2", None), 
-                               euler_angle3=d.get("eulerAngle3", None), euler_seq1=d.get("eulerSeq1", None), euler_seq2=d.get("eulerSeq2", None),
-                               euler_seq3=d.get("eulerSeq3", None), _id=d.get("@id", None))
+        _orien = OrientationConvention.get(d.get("convention", None))
+        if(_orien == "XYZ"):
+            return Orientation.from_XYZ_rotations(xRotation = d.get("xRotation", None), yRotation = d.get("yRotation", None), zRotation = d.get("zRotation", None), _id = d.get("@id", None))
+        elif(_orien == "SIDE_LOOK"):
+            return Orientation.from_sideLookAngle(d.get("sideLookAngle", None), d.get("@id", None))
+        elif(_orien == "NADIR"):
+            return Orientation.from_sideLookAngle(0, d.get("@id", None))
         else:
             raise Exception("Invalid or no Orientation convention specification")
     
-    def to_list(self):
-        """ Return data members of the instance as list,
-        
-            :return: Orientation object data attributes as list.
-            :rtype: list
-        """
-        return [self.ref_frame, self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3]
+    def get_orien_as_list(self):
+        return [self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3]
 
     def to_dict(self):
-        """ Return data members of the instance as python dictionary. 
+        """ Return data members of the object as python dictionary. 
         
-            :return: Orientation object data attributes as python dictionary.
+            :return: Orientation object as python dictionary
             :rtype: dict
         """
-        orien_dict = {
-                      "referenceFrame": self.ref_frame, 
-                      "convention": "Euler", 
-                      "eulerAngle1": self.euler_angle1,  
-                      "eulerAngle2": self.euler_angle2, 
-                      "eulerAngle3": self.euler_angle3,
-                      "eulerSeq1": self.euler_seq1, 
-                      "eulerSeq2": self.euler_seq2, 
-                      "eulerSeq3": self.euler_seq3
-                     }
+        orien_dict = {"convention": "XYZ", "xRotation": self.euler_angle1,  "yRotation": self.euler_angle2, "zRotation": self.euler_angle3}
         return orien_dict
-    
-    def __repr__(self):
-        if isinstance(self._id, str):
-            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={}, \
-                                euler_seq1={},euler_seq2={},euler_seq3={},_id='{}')".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
-                                                                                            self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
-        else:
-            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={}, \
-                                euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
-                                                                                          self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
             
 class SensorGeometry(EnumEntity):
     """Enumeration of recognized instrument sensor geometries."""
