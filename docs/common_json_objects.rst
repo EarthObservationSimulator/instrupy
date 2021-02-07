@@ -68,59 +68,65 @@ has a side looking geometry (both the side) at 25 deg conical FOV.
 
 :code:`orientation` JSON object format
 ========================================
-At zero rotation, the instrument is aligned to the satellite body-frame which in turn is aligned to the Nadir-frame nominally. 
-Thus the instrument orientation with respect to the satellite body-frame is the same as it's orientation with respect to the Nadir-frame 
-in the scenario that the satellite body-frame is aligned to the Nadir-frame. It is also assumed that the instrument imaging axis is
-along the instrument z-axis.
+Orientation is parameterized as intrinsic rotations specified by Euler angles and sequence with respect to 
+an user-specified reference frame. The definition of the Euler angle rotation is identical to the 
+one used in the orbitpy->propcov->extern->gmatutil->util->AttitudeUtil, AttitudeConversionUtility C++ classes. 
 
+A Euler sequence = 123 implies the following rotation: R = R3.R2.R1, where Ri is the rotation matrix about the ith axis.
+A positive angle corresponds to an anti-clockwise rotation about the respective axis. Each rotation matrix rotates the 
+coordinate system (not the vector).
+See:
 
-The definition of Nadir-frame is as follows:
+* https://mathworld.wolfram.com/RotationMatrix.html
 
-*Nadir-frame*
-
-* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in EarthFixed frame)
-* :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})`
-* :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in EarthFixed frame)
-
-The first subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
+The first subfield of the :code:`orientation` JSON object is the :code:`referenceFrame` subfield. 
+See :ref:`reference_frames_desc` for description about the reference frames.
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   convention, string,, "Accepted values are *NADIR*, *SIDE_LOOK* or *XYZ*."
+   referenceFrame, string,, "Accepted values are *EARTH_CENTERED_INERTIAL*, *EARTH_FIXED*, *NADIR_POINTING* or *SC_BODY_FIXED*."
+
+The second subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
+
+   convention, string,, "Accepted values are *REF_FRAME_ALIGNED*, *SIDE_LOOK*, *XYZ* or *EULER*."
 
 According to the specified :code:`convention`, other subfields materialize as follows:
 
-1. :code:`"convention": "NADIR"`
+1. :code:`"convention": "REF_FRAME_ALIGNED"`
 
-If the orientation is aligned to the Nadir-frame:
+Aligned with respective to the underlying reference frame.
 
 Example:
 
 .. code-block:: python
 
                "orientation": {
-                                "convention": "NADIR"
+                                "referenceFrame": "NADIR_POINTING",
+                                "convention": "REF_FRAME_ALIGNED"
                               }
 
 2. :code:`"convention": "SIDE_LOOK"`
 
-If the orientation is to be specified via a side-look-angle, the following subfields apply:
+If the orientation is to be specified via a side-look-angle (which corresponds to rotation about the y-axis only), the following subfields apply:
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   sideLookAngle, number, degrees, Commonly called as nadir/ off-nadir angle. 
-
-.. note:: A positive SIDE_LOOK corresponds to anti-clockwise rotation applied around the Nadir frame y-axis.
+   sideLookAngle, float, degrees, Side-look angle
 
 Example:
 
 .. code-block:: python
 
                "orientation": {
+                                "referenceFrame": "NADIR_POINTING",
                                 "convention": "SIDE_LOOK",
                                 "sideLookAngle":10
                               }
@@ -128,8 +134,7 @@ Example:
  
 3. :code:`"convention": "XYZ"`
 
-Here the orientation is to be specified via set of three rotation angles about the instrument primary axis (which is first aligned to the
-Nadir-frame in nominal case). 
+Here the orientation is to be specified via set of three rotation angles about the X, Y and Z axis.
 The order of (intrinsic) rotations is: (1) rotation about instrument X-axis, (2) rotation about instrument Y-axis and last 
 (3) rotation about instrument Z-axis.
 
@@ -137,19 +142,50 @@ The order of (intrinsic) rotations is: (1) rotation about instrument X-axis, (2)
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   xRotation, number, degrees, rotation about instrument X-axis
-   yRotation, number, degrees, rotation about instrument Y-axis
-   zRotation, number, degrees, rotation about instrument Z-axis
+   xRotation, float, degrees, rotation about instrument X-axis
+   yRotation, float, degrees, rotation about instrument Y-axis
+   zRotation, float, degrees, rotation about instrument Z-axis
 
 Example:
 
 .. code-block:: python
 
                "orientation": {
+                                "referenceFrame": "NADIR_POINTING",
                                 "convention": "XYZ",
                                 "xRotation":10,
                                 "yRotation":20,
                                 "zRotation":0
+                              }
+
+4. :code:`"convention": "EULER"`
+
+Here the orientation is to be specified via set of Euler angles and sequence.
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
+
+   eulerAngle1, float, degrees, Rotation angle corresponding to the first rotation.
+   eulerAngle2, float, degrees, Rotation angle corresponding to the second rotation.
+   eulerAngle3, float, degrees, Rotation angle corresponding to the third rotation.
+   eulerSeq1, int, Axis-number corresponding to the first rotation.
+   eulerSeq2, int, Axis-number corresponding to the second rotation.
+   eulerSeq3, int, Axis-number corresponding to the third rotation.
+
+Example:
+
+.. code-block:: python
+
+               "orientation": {
+                                "referenceFrame": "NADIR_POINTING",
+                                "convention": "EULER",
+                                "eulerAngle1":10,
+                                "eulerAngle2":20,
+                                "eulerAngle3":0,
+                                "eulerSeq1": 3,
+                                "eulerSeq2": 1,
+                                "eulerSeq3": 3
                               }
 
 .. _fieldOfView_json_obj:
