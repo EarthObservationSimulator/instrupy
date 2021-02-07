@@ -1,6 +1,48 @@
 Miscellaneous
 *************
 
+.. _reference_frames_desc:
+
+Reference Frames
+====================
+
+There are four reference frames of interest:
+
+Earth Centered Inertial:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This is an Earth equator inertial reference frame identical to EarthMJ2000Eq used in GMAT.
+The nominal x-axis points along the line formed by the intersection of the Earth’s 
+mean equatorial plane and the mean ecliptic plane (at the J2000 epoch), in the direction
+of Aries. The z-axis is normal to the Earth’s mean equator at the J2000 epoch and the 
+y-axis completes the right-handed system. The mean planes of the ecliptic and equator, 
+at the J2000 epoch, are computed using IAU-1976/FK5 theory with 1980 update for nutation.
+
+Earth Fixed:
+^^^^^^^^^^^^^^^^^^
+The Earth Fixed reference frame is referenced to the Earth's equator and the prime meridian 
+and is computed using IAU-1976/FK5 theory. This system is identical to the EarthFixed
+used in GMAT.
+
+Nadir-pointing:
+^^^^^^^^^^^^^^^^^
+The axis of the Nadir-pointing reference frame are defined as follows:
+
+* :math:`\bf X_{np}` axis: :math:`-({\bf Z_{np}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in EARTH_FIXED frame)
+        
+* :math:`\bf Y_{np}` axis: :math:`({\bf Z_{np}} \times {\bf X_{np}})`
+        
+* :math:`\bf Z_{np}` axis: Aligned to Nadir vector (i.e. the negative of the position vector of satellite in EARTH_FIXED frame)
+
+.. figure:: nadirframe.png
+    :scale: 100 %
+    :align: center
+
+.. todo:: Verify the claim about position vector and velocity vector in EARTH_FIXED frame.
+
+Spacecraft Body Fixed:
+^^^^^^^^^^^^^^^^^^^^^^^
+Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus.
+
 .. _satellite_to_target_viewing_geometry:
 
 Satellite to Target viewing geometry
