@@ -130,80 +130,223 @@ class TestConstants(unittest.TestCase):
 
 class TestOrientation(unittest.TestCase):
 
-    def test_from_json_basic(self):
-
+    def test_from_json_basic(self):        
+        # Test valid nominal case
+        o = Orientation.from_json(
+                '{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10, "@id": 123}')
+        self.assertEqual(o._type, "Orientation")
+        self.assertEqual(o._id, 123)
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("SC_BODY_FIXED"))
+        self.assertEqual(o.euler_angle2, 10)
+        # No reference frame specification
+        o = Orientation.from_json(
+                '{"convention": "SIDE_LOOK","sideLookAngle":10, "@id": 123}')
+        self.assertEqual(o._type, "Orientation")
+        self.assertEqual(o._id, 123)
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("NADIR_POINTING"))
+        self.assertEqual(o.euler_angle2, 10)        
         # Test for wrong convention specification
         with self.assertRaises(Exception):
             Orientation.from_json(
-                '{"convention": "SIDE_LOOK1","sideLookAngle":10}')
+                '{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK1","sideLookAngle":10}')
         with self.assertRaises(Exception):
             Orientation.from_json(
-                '{"convention": "XXZ","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
-
+                '{"referenceFrame": "NADIR_POINTING", "convention": "XXZ","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
         # Test for case-insensitivity
         o = Orientation.from_json(
-            '{"convention": "SIDE_look","sideLookAngle":10}')
+            '{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_look","sideLookAngle":10}')
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
         self.assertEqual(o.euler_angle2, 10)
+        # Test wraping of angle values to [0, 360]deg range.
         o = Orientation.from_json(
-            '{"convention": "XYz","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
+            '{"referenceFrame": "NADIR_POINTING", "convention": "XYz","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
         self.assertEqual(o.euler_angle2, 360-10.4)
 
-    def test_from_json_sideLookAngle_convention(self):
+    def test_from_json_SIDELOOKANGLE_convention(self):
         # Test for positive angle less than 360 deg
         o = Orientation.from_json(
-            '{"convention": "SIDE_LOOK","sideLookAngle":10}')
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("SC_BODY_FIXED"))
         self.assertEqual(o.euler_angle1, 0)
         self.assertEqual(o.euler_angle2, 10)
         self.assertEqual(o.euler_angle3, 0)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
-
         # Test for negative angle
         o = Orientation.from_json(
-            '{"convention": "SIDE_LOOK","sideLookAngle":-10}')
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":-10}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("SC_BODY_FIXED"))
         self.assertEqual(o.euler_angle1, 0)
         self.assertEqual(o.euler_angle2, 350)
         self.assertEqual(o.euler_angle3, 0)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
-
         # Test for positive angle greater than 360 deg
         o = Orientation.from_json(
-            '{"convention": "SIDE_LOOK","sideLookAngle":380}')
+            '{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK","sideLookAngle":380}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("NADIR_POINTING"))
+        self.assertEqual(o.euler_angle1, 0)
         self.assertEqual(o.euler_angle2, 20)
-
+        self.assertEqual(o.euler_angle3, 0)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
+        self.assertEqual(o._type, "Orientation")
+        self.assertIsNone(o._id)
         # Test for negative angle less than -360 deg
         o = Orientation.from_json(
             '{"convention": "SIDE_LOOK","sideLookAngle":-380}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("NADIR_POINTING"))
+        self.assertEqual(o.euler_angle1, 0)
         self.assertEqual(o.euler_angle2, 340)
-
+        self.assertEqual(o.euler_angle3, 0)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
+        self.assertEqual(o._type, "Orientation")
+        self.assertIsNone(o._id)
         # Test for no convention specification
         with self.assertRaises(Exception):
             Orientation.from_json('{"sideLookAngle":-30}')
 
-    def test_from_json_XYZ_rotations_convention(self):
-
+    def test_from_json_XYZ_convention(self):
         # Test for positive, negative angles
         o = Orientation.from_json(
-            '{"convention": "XYZ","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation":10,"yRotation":-10.4,"zRotation":20.78}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("EARTH_CENTERED_INERTIAL"))
         self.assertEqual(o.euler_angle1, 10)
         self.assertEqual(o.euler_angle2, 349.6)
         self.assertEqual(o.euler_angle3, 20.78)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
-
         # Test for positive angles greater than 360 deg, negative angles lesser than -360 deg
         o = Orientation.from_json(
-            '{"convention": "XYZ","xRotation":410,"yRotation":1045.8,"zRotation":-458}')
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation":410,"yRotation":1045.8,"zRotation":-458}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("EARTH_CENTERED_INERTIAL"))
         self.assertEqual(o.euler_angle1, 50)
         self.assertAlmostEqual(o.euler_angle2, 325.8)
         self.assertEqual(o.euler_angle3, 262)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
         self.assertEqual(o._type, "Orientation")
         self.assertIsNone(o._id)
+    
+    def test_from_json_REF_FRAME_ALIGNED_convention(self):
+        o = Orientation.from_json(
+            '{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("NADIR_POINTING"))
+        self.assertEqual(o.euler_angle1, 0)
+        self.assertEqual(o.euler_angle2, 0)
+        self.assertEqual(o.euler_angle3, 0)
+        self.assertEqual(o.euler_seq1, 1)
+        self.assertEqual(o.euler_seq2, 2)
+        self.assertEqual(o.euler_seq3, 3)
+        self.assertEqual(o._type, "Orientation")
+        self.assertIsNone(o._id)
+
+        o = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("SC_BODY_FIXED"))
+        self.assertEqual(o.euler_angle1, 0)
+        self.assertEqual(o.euler_angle2, 0)
+        self.assertEqual(o.euler_angle3, 0)
+        self.assertEqual(o._type, "Orientation")
+        self.assertIsNone(o._id)
+
+    def test_from_json_EULER_convention(self):
+        o = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":400,"eulerAngle2":1345.8, \
+              "eulerAngle3":-458,"eulerSeq1":3, "eulerSeq2":1, "eulerSeq3":3}')
+        self.assertEqual(o.ref_frame, ReferenceFrame.get("SC_BODY_FIXED"))
+        self.assertEqual(o.euler_angle1, 40)
+        self.assertAlmostEqual(o.euler_angle2, 265.8)
+        self.assertEqual(o.euler_angle3, 262)
+        self.assertEqual(o.euler_seq1, 3)
+        self.assertEqual(o.euler_seq2, 1)
+        self.assertEqual(o.euler_seq3, 3)
+        self.assertEqual(o._type, "Orientation")
+        self.assertIsNone(o._id)
+
+    def test_to_dict(self):
+        # SIDE_LOOK convention
+        o = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10}')
+        d = o.to_dict()
+        self.assertEqual(d["referenceFrame"], "SC_BODY_FIXED")
+        self.assertEqual(d["convention"], "EULER")
+        self.assertEqual(d["eulerAngle1"], 0)
+        self.assertAlmostEqual(d["eulerAngle2"], 10)
+        self.assertEqual(d["eulerAngle3"], 0)
+        self.assertEqual(d["eulerSeq1"], 1)
+        self.assertEqual(d["eulerSeq2"], 2)
+        self.assertEqual(d["eulerSeq3"], 3)
+        self.assertIsNone(d["@id"])
+        # XYZ convention
+        o = Orientation.from_json(
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation":-10,"yRotation":-78.2,"zRotation":-20.5}')
+        d = o.to_dict()
+        self.assertEqual(d["referenceFrame"], "EARTH_CENTERED_INERTIAL")
+        self.assertEqual(d["convention"], "EULER")
+        self.assertEqual(d["eulerAngle1"], 350)
+        self.assertAlmostEqual(d["eulerAngle2"], 281.8)
+        self.assertEqual(d["eulerAngle3"], 339.5)
+        self.assertEqual(d["eulerSeq1"], 1)
+        self.assertEqual(d["eulerSeq2"], 2)
+        self.assertEqual(d["eulerSeq3"], 3)
+        self.assertIsNone(d["@id"])
+        # REF_FRAME_ALIGNED convention
+        o = Orientation.from_json(
+            '{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        d = o.to_dict()
+        self.assertEqual(d["referenceFrame"], "NADIR_POINTING")
+        self.assertEqual(d["convention"], "EULER")
+        self.assertEqual(d["eulerAngle1"], 0)
+        self.assertAlmostEqual(d["eulerAngle2"], 0)
+        self.assertEqual(d["eulerAngle3"], 0)
+        self.assertEqual(d["eulerSeq1"], 1)
+        self.assertEqual(d["eulerSeq2"], 2)
+        self.assertEqual(d["eulerSeq3"], 3)
+        self.assertEqual(d["@id"], "123")
+        # EULER convention
+        o = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":400,"eulerAngle2":1345.8, \
+              "eulerAngle3":-458,"eulerSeq1":3, "eulerSeq2":1, "eulerSeq3":3, "@id":123}')
+        d = o.to_dict()
+        self.assertEqual(d["referenceFrame"], "SC_BODY_FIXED")
+        self.assertEqual(d["convention"], "EULER")
+        self.assertEqual(d["eulerAngle1"], 40)
+        self.assertAlmostEqual(d["eulerAngle2"], 265.8)
+        self.assertEqual(d["eulerAngle3"], 262)
+        self.assertEqual(d["eulerSeq1"], 3)
+        self.assertEqual(d["eulerSeq2"], 1)
+        self.assertEqual(d["eulerSeq3"], 3)
+        self.assertEqual(d["@id"], 123)
+                
+    def test___repr__(self):
+        # _id = None
+        o = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":400,"eulerAngle2":20, \
+              "eulerAngle3":-458,"eulerSeq1":3, "eulerSeq2":1, "eulerSeq3":3}')
+        self.assertEqual(o.__repr__(), "Orientation(ref_frame='SC_BODY_FIXED',euler_angle1=40.0,euler_angle2=20.0,euler_angle3=262.0,euler_seq1=3,euler_seq2=1,euler_seq3=3,_id=None)")
+        # _id = 123 (integer)
+        o = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id": 123}')
+        self.assertEqual(o.__repr__(), "Orientation(ref_frame='NADIR_POINTING',euler_angle1=0.0,euler_angle2=0.0,euler_angle3=0.0,euler_seq1=1,euler_seq2=2,euler_seq3=3,_id=123)")
+        # _id = 123 (string)
+        o = Orientation.from_json('{"convention": "SIDE_LOOK","sideLookAngle":-380,"@id":"123"}')
+        self.assertEqual(o.__repr__(), "Orientation(ref_frame='NADIR_POINTING',euler_angle1=0.0,euler_angle2=340.0,euler_angle3=0.0,euler_seq1=1,euler_seq2=2,euler_seq3=3,_id='123')")
 
 
 class TestFieldOfView(unittest.TestCase):

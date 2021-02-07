@@ -22,7 +22,7 @@ import math
 import json
 
 from math import radians, cos, sin, asin, sqrt
-import lowtran #TEMPORARY: PLEASE REMOVE if commented
+#import lowtran #TEMPORARY: PLEASE REMOVE if commented
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.
@@ -329,7 +329,7 @@ class Orientation(Entity):
         :rtype: :class:`instrupy.util.Orientation`
 
         """
-        return Orientation(0.0, side_look_angle, 0.0, 1,2,3,_id)
+        return Orientation(ref_frame, 0.0, side_look_angle, 0.0, 1,2,3,_id)
     
     @classmethod
     def from_XYZ_rotations(cls, ref_frame="NADIR_POINTING", x_rot=0, y_rot=0, z_rot=0, _id = None):
@@ -352,7 +352,7 @@ class Orientation(Entity):
         :paramtype _id: str
 
         """
-        return Orientation(x_rot, y_rot, z_rot, 1,2,3,_id)       
+        return Orientation(ref_frame, x_rot, y_rot, z_rot, 1,2,3,_id)       
         
     @staticmethod
     def from_dict(d):
@@ -362,7 +362,7 @@ class Orientation(Entity):
             :rtype: :class:`instrupy.util.Orientation`
         """
         orien_conv = Orientation.Convention.get(d.get("convention", None))
-        ref_frame = ReferenceFrame.get(d.get("referenceFrame", None))
+        ref_frame = ReferenceFrame.get(d.get("referenceFrame", "NADIR_POINTING")) # default reference frame is NADIR_POINTING
         if(orien_conv == "XYZ"):
             return Orientation.from_XYZ_rotations(ref_frame=ref_frame, x_rot=d.get("xRotation", None), y_rot=d.get("yRotation", None), z_rot=d.get("zRotation", None), _id = d.get("@id", None))
         elif(orien_conv == "SIDE_LOOK"):
@@ -381,6 +381,8 @@ class Orientation(Entity):
         
             :return: Orientation object data attributes as list.
             :rtype: list
+
+            .. todo:: Remove this function
         """
         return [self.ref_frame, self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3]
 
@@ -392,24 +394,23 @@ class Orientation(Entity):
         """
         orien_dict = {
                       "referenceFrame": self.ref_frame, 
-                      "convention": "Euler", 
+                      "convention": "EULER", 
                       "eulerAngle1": self.euler_angle1,  
                       "eulerAngle2": self.euler_angle2, 
                       "eulerAngle3": self.euler_angle3,
                       "eulerSeq1": self.euler_seq1, 
                       "eulerSeq2": self.euler_seq2, 
-                      "eulerSeq3": self.euler_seq3
+                      "eulerSeq3": self.euler_seq3,
+                      "@id": self._id
                      }
         return orien_dict
     
     def __repr__(self):
         if isinstance(self._id, str):
-            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={}, \
-                                euler_seq1={},euler_seq2={},euler_seq3={},_id='{}')".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
+            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id='{}')".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
                                                                                             self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
         else:
-            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={}, \
-                                euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
+            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
                                                                                           self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
             
 class SensorGeometry(EnumEntity):
