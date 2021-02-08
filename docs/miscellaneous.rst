@@ -45,6 +45,21 @@ Spacecraft Body Fixed reference frame. The axis of this coordinate system are al
 
 .. _satellite_to_target_viewing_geometry:
 
+
+Clock, Cone angle definitions in the description of sensor FOV:
+=================================================================
+If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the cone angle for the point is:
+
+:math:`\pi/2 - \sin^{-1}zP`.
+
+The clock angle for the point is:
+
+:math:`atan2(yP,xP)`.
+
+.. figure:: cone_clock_angle.png
+    :scale: 100 %
+    :align: center
+
 Satellite to Target viewing geometry
 =============================================
 

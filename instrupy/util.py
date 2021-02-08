@@ -362,7 +362,7 @@ class Orientation(Entity):
             :rtype: :class:`instrupy.util.Orientation`
         """
         orien_conv = Orientation.Convention.get(d.get("convention", None))
-        ref_frame = ReferenceFrame.get(d.get("referenceFrame", "NADIR_POINTING")) # default reference frame is NADIR_POINTING
+        ref_frame = ReferenceFrame.get(d.get("referenceFrame", "NADIR_POINTING")).value # default reference frame is NADIR_POINTING
         if(orien_conv == "XYZ"):
             return Orientation.from_XYZ_rotations(ref_frame=ref_frame, x_rot=d.get("xRotation", None), y_rot=d.get("yRotation", None), z_rot=d.get("zRotation", None), _id = d.get("@id", None))
         elif(orien_conv == "SIDE_LOOK"):
@@ -393,7 +393,7 @@ class Orientation(Entity):
             :rtype: dict
         """
         orien_dict = {
-                      "referenceFrame": self.ref_frame, 
+                      "referenceFrame": self.ref_frame.value, 
                       "convention": "EULER", 
                       "eulerAngle1": self.euler_angle1,  
                       "eulerAngle2": self.euler_angle2, 
@@ -413,64 +413,72 @@ class Orientation(Entity):
             return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
                                                                                           self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
             
-class SensorGeometry(EnumEntity):
-    """Enumeration of recognized instrument sensor geometries."""
-    CONICAL = "CONICAL",
-    RECTANGULAR = "RECTANGULAR",
-    CUSTOM = "CUSTOM"
-
 class FieldOfView(Entity):
-        """ Class to handle instrument field-of-view, field-of-regard specifications.
-        The Sensor FOV is maintained internally via vector of cone and clock angles. This is the same definition as that of :class:`CustomSensor` class definition in the GMAT-OC code.
+        """ Class to handle field-of-view (FOV) (or field-of-regard (FOR)). The FOV is maintained internally via array of cone and clock angles. 
+            This is the same definition as that of the orbitpy->propcov->lib->propcov-cpp CustomSensor C++ class.
+
+            .. figure:: cone_clock_angle.png
+                :scale: 100 %
+                :align: center
        
-        :ivar _geometry: Geometry of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
-        :vartype _geometry: str
+        :ivar shape: Shape of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
+        :vartype shape: str
 
-        :ivar _coneAngleVec_deg: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+        :ivar cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
-        :vartype _coneAngleVec_deg: list, float
+        :vartype cone_angle_vec: list, float
 
-        :ivar _clockAngleVec_deg: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis.  if (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+        :ivar clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
                                   describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
-        :vartype _clockAngleVec_deg: list, float
+        :vartype clock_angle_vec: list, float
 
-        :ivar _AT_fov_deg: Along track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
-        :vartype _AT_fov_deg: float
+        :ivar angle_height: (deg) FOV angular width (about sensor X axis) (only for CONICAL or RECTANGULAR fov shapes). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
+        :vartype angle_height: float
 
-        :ivar _CT_fov_deg: Cross track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
-        :vartype _CT_fov_deg: float
+        :ivar angle_width: (deg) FOV angular height (about sensor Y axis)  (only for CONICAL or RECTANGULAR fov shapes). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
+        :vartype angle_width: float
 
-        :ivar yaw180_flag: Flag applies in case of field-of-regard. If true, it signifies that the field-of-regard includes the field-of-view of payload rotated about the yaw axis by 180 deg. 
-        :vartype yaw180_flag: bool
+        :param _id: Unique identifier.
+        :paramtype _id: str
 
-        .. note:: :code:`coneAnglesVec_deg[0]` ties to :code:`clockAnglesVec_deg[0]`, and so on. Except for the case of *CONICAL* FOV, in which we 
-                  have just one :code:`clockAnglesVec_deg[0] = 1/2 full_cone_angle_deg` and no corresponding clock angle. 
+        .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CONICAL* shaped FOV, in which we 
+                  have only one cone angle (:code:`cone_angle_vec[0] = 1/2 full_cone_angle`) and no corresponding clock angle. 
+
         """
-        def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, 
-                     AT_fov_deg = None, CT_fov_deg = None, yaw180_flag = None, _id = None):                       
-
-            if(coneAnglesVec_deg is not None):
-                if(isinstance(coneAnglesVec_deg, list)):
-                    self._coneAngleVec_deg = list(map(float, coneAnglesVec_deg))
-                    self._coneAngleVec_deg = [x%360 for x in self._coneAngleVec_deg]
-                else:
-                    self._coneAngleVec_deg = [float(coneAnglesVec_deg)%360]
-            else:
-                self._coneAngleVec_deg = None
+        class Shape(EnumEntity):
+            """Enumeration of recognized FieldOfView shapes."""
+            CONICAL = "CONICAL"
+            RECTANGULAR = "RECTANGULAR"
+            CUSTOM = "CUSTOM"
             
-            if(clockAnglesVec_deg is not None):
-                if(isinstance(clockAnglesVec_deg, list)):
-                    self._clockAngleVec_deg = list(map(float, clockAnglesVec_deg))
-                    self._clockAngleVec_deg = [x%360 for x in self._clockAngleVec_deg]
+        def __init__(self, shape=None, cone_angle_vec=None, clock_angle_vec=None, _id=None):   
+            if(cone_angle_vec is not None):
+                if(isinstance(cone_angle_vec, list)):
+                    self.cone_angle_vec = list(map(float, cone_angle_vec))
+                    self.cone_angle_vec = [x%360 for x in self.cone_angle_vec]
                 else:
-                    self._clockAngleVec_deg = [float(clockAnglesVec_deg)%360]
+                    self.cone_angle_vec = [float(cone_angle_vec)%360]
             else:
-                self._clockAngleVec_deg = None
+                self.cone_angle_vec = None
+            
+            if(clock_angle_vec is not None):
+                if(isinstance(clock_angle_vec, list)):
+                    self.clock_angle_vec = list(map(float, clock_angle_vec))
+                    self.clock_angle_vec = [x%360 for x in self.clock_angle_vec]
+                else:
+                    self.clock_angle_vec = [float(clock_angle_vec)%360]
+            else:
+                self.clock_angle_vec = None
 
-            self._geometry = geometry if geometry is not None else None
-            self._AT_fov_deg = AT_fov_deg if AT_fov_deg is not None else None
-            self._CT_fov_deg = CT_fov_deg if CT_fov_deg is not None else None
-            self._yaw180_flag = bool(yaw180_flag) if yaw180_flag is not None else None
+            self.shape = FieldOfView.Shape.get(shape) if shape is not None else None
+            if(self.shape is FieldOfView.Shape.CONICAL):
+                self.angle_height = 2 * self.cone_angle_vec[0]
+                self.angle_width = self.angle_height
+            elif(self.shape is FieldOfView.Shape.RECTANGULAR):
+                [self.angle_height, self.angle_width] = FieldOfView.get_rectangular_fov_specs_from_custom_fov_specs(self.cone_angle_vec, self.clock_angle_vec)
+            else:
+                self.angle_height = None
+                self.angle_width = None
 
             super(FieldOfView, self).__init__(_id, "FieldOfView")
 
@@ -480,54 +488,64 @@ class FieldOfView(Entity):
                 :return: FieldOfView object as python dictionary
                 :rtype: dict 
             """
-            if self._geometry==SensorGeometry.CONICAL:
-                fov_dict = {"sensorGeometry": "Conical", "fullConeAngle": self._AT_fov_deg}
-            elif self._geometry==SensorGeometry.RECTANGULAR:
-                fov_dict = {"sensorGeometry": "Rectangular", "alongTrackFieldOfView": self._AT_fov_deg, "crossTrackFieldOfView": self._CT_fov_deg}
-            elif self._geometry==SensorGeometry.CONICAL:
-                fov_dict = {"sensorGeometry": "Custom", 
-                            "customConeAnglesVector": "[" + [str(x) for x in self._coneAngleVec_deg] + "]", 
-                            "customClockAnglesVector": "[" + [str(x) for x in self._clockAngleVec_deg] + "]"
+            if self.shape==FieldOfView.Shape.CONICAL:
+                fov_dict = {"shape": "Conical", "fullConeAngle": self.angle_height}
+            elif self.shape==FieldOfView.Shape.RECTANGULAR:
+                fov_dict = {"shape": "Rectangular", "angleHeight": self.angle_height, "angleWidth": self.angle_width}
+            elif self.shape==FieldOfView.Shape.CUSTOM:
+                fov_dict = {"shape": "Custom", 
+                            "customConeAnglesVector": "[" + [str(x) for x in self.cone_angle_vec] + "]", 
+                            "customClockAnglesVector": "[" + [str(x) for x in self.clock_angle_vec] + "]"
                            }
             return fov_dict
 
         @classmethod
-        def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, yaw180_flag = False, _id = None):
-            """  Return corresponding :class:`instrupy.util.FieldOfView` object.
+        def from_customFOV(cls, cone_angle_vec=None, clock_angle_vec=None, _id=None):
+            """  Return corresponding :class:`instrupy.util.FieldOfView` object from user specified cone and clock angles.
 
-                .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
-                          values in :code:`customConeAnglesVector` should be just one (corresponding to CONICAL Sensor) and no values in 
-                          :code:`customClockAnglesVector`.
+                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+                                 cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
+                :paramtype cone_angle_vec: list, float
+
+                :param clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+                                        describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                :paramtype clock_angle_vec: list, float
+
+                :param _id: Unique identifier.
+                :paramtype _id: str
+
+                .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CONICAL* shaped FOV, in which we 
+                    have only one cone angle (:code:`cone_angle_vec[0] = 1/2 full_cone_angle`) and no corresponding clock angle. 
             
             """
-            if(coneAnglesVec_deg):
-                if(not isinstance(coneAnglesVec_deg, list)):
-                    coneAnglesVec_deg = [coneAnglesVec_deg]
+            if(cone_angle_vec):
+                if(not isinstance(cone_angle_vec, list)):
+                    cone_angle_vec = [cone_angle_vec]
             else:
                 raise Exception("No cone angle vector specified!")
             
-            if(clockAnglesVec_deg):
-                if(not isinstance(clockAnglesVec_deg, list)):
-                    clockAnglesVec_deg = [clockAnglesVec_deg]
+            if(clock_angle_vec):
+                if(not isinstance(clock_angle_vec, list)):
+                    clock_angle_vec = [clock_angle_vec]
 
-            if(any(coneAnglesVec_deg) < 0 or any(coneAnglesVec_deg) > 90):
+            if(any(cone_angle_vec) < 0 or any(cone_angle_vec) > 90):
                 raise Exception("CUSTOM cone angles specification must be in the range 0 deg to 90 deg.")
 
-            if(len(coneAnglesVec_deg) == 1 and (clockAnglesVec_deg is not None)):
+            if(len(cone_angle_vec) == 1 and (clock_angle_vec is not None)):
                 raise Exception("With only one cone angle specified, there should be no clock angles specified.")
                 
-            if(not(len(coneAnglesVec_deg) == 1 and (clockAnglesVec_deg is None))):
-                if(len(coneAnglesVec_deg) != len(clockAnglesVec_deg)):
+            if(not(len(cone_angle_vec) == 1 and (clock_angle_vec is None))):
+                if(len(cone_angle_vec) != len(clock_angle_vec)):
                     raise Exception("With more than one cone angle specified, the length of cone angle vector should be the same as length of the clock angle vector.")
                 
-            return FieldOfView("CUSTOM", coneAnglesVec_deg, clockAnglesVec_deg, None, _id)
+            return FieldOfView("CUSTOM", cone_angle_vec, clock_angle_vec, _id)
 
         @classmethod
-        def from_conicalFOV(cls, full_cone_angle_deg = None, yaw180_flag = False, _id = None):
-            ''' Convert user-given conical sensor specifications to cone, clock angles and return corresponding :class:`instrupy.util.FieldOfView` object.
+        def from_conicalFOV(cls, full_cone_angle=None, _id=None):
+            """ Convert user-given conical sensor specifications to cone, clock angles and return corresponding :class:`instrupy.util.FieldOfView` object.
             
-            :param full_cone_angle_deg: Full conical angle of the Cone Sensor in degrees.
-            :paramtype full_cone_angle_deg: float
+            :param full_cone_angle: (deg) Full conical angle of the Conical fov.
+            :paramtype full_cone_angle: float
 
             :param _id: Unique identifier
             :paramtype _id: str
@@ -535,64 +553,56 @@ class FieldOfView(Entity):
             :return: Corresponding `FieldOfView` object
             :rtype: :class:`instrupy.util.FieldOfView`
 
-            '''
-            if full_cone_angle_deg is None:
-                raise Exception("Please specify full-cone-angle of the CONICAL fov instrument.")
+            """
+            if full_cone_angle is None:
+                raise Exception("Please specify full-cone-angle of the CONICAL fov.")
 
-            if(full_cone_angle_deg < 0 or full_cone_angle_deg > 180):
-                raise Exception("Specified full-cone angle of CONICAL sensor must be within the range 0 deg to 180 deg")
+            if(full_cone_angle < 0 or full_cone_angle > 180):
+                raise Exception("Specified full-cone angle of CONICAL fov must be within the range 0 deg to 180 deg")
 
-            return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, full_cone_angle_deg, full_cone_angle_deg, yaw180_flag, _id)
+            return FieldOfView("CONICAL", 0.5*full_cone_angle, None, _id)
 
         @classmethod
-        def from_rectangularFOV(cls, along_track_fov_deg = None, cross_track_fov_deg = None, yaw180_flag = False, _id = None):
-            ''' Convert the along-track (full) fov and cross-track (full) fov specs to clock, cone angles and return corresponding :class:`instrupy.util.FieldOfView` object.
-                Along-track fov **must** be less than cross-track fov.
+        def from_rectangularFOV(cls, angle_height=None, angle_width=None, _id=None):
+            """ Convert the angle_height (full) fov and angle_width (full) rectangular fov specs to clock, cone angles and return corresponding :class:`instrupy.util.FieldOfView` object.
 
-            :param along_track_fov_deg: Along track field-of-view (full) in degrees
-            :paramtype along_track_fov_deg: float
+            :param angle_height: (deg) FOV angular width (about sensor X axis). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :paramtype angle_height: float
 
-            :param cross_track_fov_deg: Cross track field-of-view (full) in degrees
-            :paramtype cross_track_fov_deg: float
+            :param angle_width: (deg) FOV angular height (about sensor Y axis). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :paramtype angle_width: float
             
             :param _id: Unique identifier
             :paramtype _id: str
 
             :return: Corresponding `FieldOfView` object
-            :rtype: :class:`instrupy.util.FieldOfView`
+            :rtype: :class:`instrupy.util.FieldOfView`                      
 
-            .. seealso:: The :class:`CustomSensor` class definition in GMAT-OC code. 
-
-            .. warning:: The along-track FOV and cross-track FOV specs are assigned assuming the instrument is in nominal orientation, i.e. the instrument is
-                         aligned to the satellite body frame, and further the satellite is aligned to nadir-frame.
-                         If the instrument is rotated about the satellite body frame (by specifying the non-zero orientation angles in the instrument json specs file), the actual along-track
-                         and cross-track fovs maybe different.                         
-
-            '''
-            if(along_track_fov_deg is None or cross_track_fov_deg is None):
-                raise Exception("Please specify the along-track and cross-track fovs for the rectangular fov instrument.")
+            """
+            if(angle_height is None or angle_width is None):
+                raise Exception("Please specify the angle_height and angle_width for the RECTANGULAR fov.")
             
-            if(along_track_fov_deg < 0 or along_track_fov_deg > 180 or cross_track_fov_deg < 0 or cross_track_fov_deg > 180):
-                raise Exception("Specified along-track and cross-track fovs of RECTANGULAR sensor must be within the range 0 deg to 180 deg")       
+            if(angle_height < 0 or angle_height > 180 or angle_width < 0 or angle_width > 180):
+                raise Exception("Specified angle_height and angle_width of the RECTANGULAR fov must be within the range 0 deg to 180 deg")       
             
-            alongTrackFieldOfView = np.deg2rad(along_track_fov_deg)
-            crossTrackFieldOfView = np.deg2rad(cross_track_fov_deg)
+            angle_height = np.deg2rad(angle_height)
+            angle_width = np.deg2rad(angle_width)
 
-            cosCone = np.cos(alongTrackFieldOfView/2.0)*np.cos(crossTrackFieldOfView/2.0)
+            cosCone = np.cos(angle_height/2.0)*np.cos(angle_width/2.0)
             cone = np.arccos(cosCone)
 
-            sinClock =  np.sin(alongTrackFieldOfView/2.0) / np.sin(cone)
+            sinClock =  np.sin(angle_height/2.0) / np.sin(cone)
 
             clock = np.arcsin(sinClock)
 
-            cone_deg = np.rad2deg(cone)
-            clock_deg = np.rad2deg(clock)
+            cone = np.rad2deg(cone)
+            clock = np.rad2deg(clock)
 
-            coneAngles_deg = [cone_deg, cone_deg, cone_deg, cone_deg]
+            cone_angle_vec = [cone, cone, cone, cone]
 
-            clockAngles_deg = [clock_deg, 180.0 - clock_deg, 180.0 + clock_deg, -clock_deg]
+            clock_angle_vec = [clock, 180.0-clock, 180.0+clock, -clock]
 
-            return FieldOfView("RECTANGULAR", coneAngles_deg, clockAngles_deg,along_track_fov_deg, cross_track_fov_deg, yaw180_flag, _id)
+            return FieldOfView("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)
 
         @staticmethod
         def from_dict(d):
@@ -605,76 +615,81 @@ class FieldOfView(Entity):
                :rtype: :class:`instrupy.util.FieldOfView`
 
             """          
-            # calulate the field-of-view
-            _geo = SensorGeometry.get(d.get("sensorGeometry", None))
-            if(_geo == "CONICAL"):
-                fldofview = FieldOfView.from_conicalFOV(d.get("fullConeAngle", None), False, d.get("_id", None))
-            elif(_geo == "RECTANGULAR"):
-                fldofview = FieldOfView.from_rectangularFOV(d.get("alongTrackFieldOfView", None), d.get("crossTrackFieldOfView", None), False, d.get("_id", None))
-            elif(_geo == "CUSTOM"):
-                fldofview = FieldOfView.from_customFOV(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None), False, d.get("_id", None))  
+            shape = FieldOfView.Shape.get(d.get("shape", None))
+
+            if(shape == "CONICAL"):
+                fldofview = FieldOfView.from_conicalFOV(d.get("fullConeAngle", None), d.get("_id", None))
+            elif(shape == "RECTANGULAR"):
+                fldofview = FieldOfView.from_rectangularFOV(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("_id", None))
+            elif(shape == "CUSTOM"):
+                fldofview = FieldOfView.from_customFOV(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("_id", None))  
             else:
-                raise Exception("Invalid Sensor FOV specified")
+                raise Exception("Invalid FOV shape specified.")
 
             return fldofview
         
         def get_cone_clock_fov_specs(self):
-            """ Function to the get the cone and clock angle vectors from the resepective FieldOfView object.
+            """ Function to the get the cone and clock angle vectors from the respective FieldOfView object.
 
                 :return: Cone, Clock angles in degrees
                 :rtype: list, float
 
             """
-            return [self._coneAngleVec_deg, self._clockAngleVec_deg]
+            return [self.cone_angle_vec, self.clock_angle_vec]
 
-        def get_rectangular_fov_specs_from_custom_fov_specs(self):
-            """ Function to get the rectangular fov specifications (along-track, cross-track fovs in degrees), from the sensor initialized
-                clock, cone angles.           
+        @staticmethod
+        def get_rectangular_fov_specs_from_custom_fov_specs(cone_angle_vec, clock_angle_vec):
+            """ Function to get the rectangular fov specifications (angle_height and angle_width), from custom clock, cone angle vectors.           
 
-                :return: Along-track and cross-track fovs in degrees
-                :rtype: :class:`numpy.array`, float
+                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+                                 cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`. 
+                :paramtype cone_angle_vec: list, float
+
+                :param clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+                                        describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                :paramtype clock_angle_vec: list, float
+
+                :return: angle_height and angle_width in degrees
+                :rtype: list, float
       
                 .. todo:: Make sure selected clock angle is from first quadrant. 
             """
             # Check if the instance does correspond to an rectangular fov.
             # Length of cone angle vector and clock angle vector must be 4.
-            if(len(self._coneAngleVec_deg) != 4):
+            if(len(cone_angle_vec)!= 4) or (len(clock_angle_vec)!= 4):
                 raise Exception("This FieldOfView instance does not correspond to a rectangular fov.")
 
             # Check that all elements in the cone angle vector are the same value.
-            if(len(set(self._coneAngleVec_deg))!= 1):
+            if(len(set(cone_angle_vec))!= 1):
                 raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
 
-            # The elements of the clock angle vector fold the following relationship: [theta, 180-theta, 180+theta, 360-theta]
-            # Check for this relationship
-            if(self._clockAngleVec_deg is not None):
-                if(not math.isclose(self._clockAngleVec_deg[3],(360-self._clockAngleVec_deg[0])) or not math.isclose(self._clockAngleVec_deg[1], (180 - self._clockAngleVec_deg[0])) or not math.isclose(self._clockAngleVec_deg[2], (180 + self._clockAngleVec_deg[0]))):
-                    raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
-            else:
+            # The elements of the clock angle vector satisfy the following relationship: [theta, 180-theta, 180+theta, 360-theta]
+            # in case of rectangular fov. Check for this relationship.
+            if(not math.isclose(clock_angle_vec[3],(360-clock_angle_vec[0])) or not math.isclose(clock_angle_vec[1], (180 - clock_angle_vec[0])) or not math.isclose(clock_angle_vec[2], (180 + clock_angle_vec[0]))):
                 raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
             
-            theta = np.deg2rad(self._coneAngleVec_deg[0])
-            omega = np.deg2rad(self._clockAngleVec_deg[0])
+            theta = np.deg2rad(cone_angle_vec[0])
+            omega = np.deg2rad(clock_angle_vec[0])
 
             alpha = np.arcsin(np.sin(theta)*np.sin(omega))
             beta = np.arccos(np.cos(theta)/np.cos(alpha))
 
-            alTrFov_deg = 2*np.rad2deg(alpha)
-            crTrFov_deg = 2*np.rad2deg(beta)
+            angle_height = 2*np.rad2deg(alpha)
+            angle_width = 2*np.rad2deg(beta)
 
-            return np.array([alTrFov_deg, crTrFov_deg]) 
+            return [angle_height, angle_width]
 
-        def get_ATCT_fov(self):
-            """ Get the along-track and cross-track FOVs. Valid only for CONICAL and 
-                RECTANGULAR FOV geometry.
+        def get_fov_height_and_width(self):
+            """ Get the angle_height and angle_width. Valid only for CONICAL and 
+                RECTANGULAR FOV shapes.
 
-                :return: Along-track and cross-track fovs in degrees
+                :return: angle_height and angle_width in degrees
                 :rtype: list, float
             """
-            return [self._AT_fov_deg, self._CT_fov_deg]
+            return [self.angle_height, self.angle_width]
 
 class Maneuverability(Entity):
-    """ Class holding the manuverability specifications of the instrument. """
+    """ Class holding the manueverability specifications of the instrument. """
     def __init__(self, manuver_type=None, roll_min=None , roll_max=None, yaw180=None, full_cone_angle=None, _id=None):
 
         self.manuver_type = ManueverType.get(manuver_type) if manuver_type is not None else None
@@ -733,24 +748,24 @@ class Maneuverability(Entity):
             raise Exception('Invalid manuver type.')                                 
 
         if(mv_type == 'FIXED'):
-            fr_geom = fldofview._geometry
-            fr_at = fldofview._AT_fov_deg
-            fr_ct = fldofview._CT_fov_deg
+            fr_geom = fldofview.shape
+            fr_at = fldofview.angle_height
+            fr_ct = fldofview.angle_width
         
         elif(mv_type == 'YAW180'):
-            fr_geom = fldofview._geometry
-            fr_at = fldofview._AT_fov_deg
-            fr_ct = fldofview._CT_fov_deg
+            fr_geom = fldofview.shape
+            fr_at = fldofview.angle_height
+            fr_ct = fldofview.angle_width
 
         elif(mv_type == 'CONE'):
-            if(fldofview._geometry == 'CONICAL'):
+            if(fldofview.shape == 'CONICAL'):
                 fr_geom = 'CONICAL'
-                fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
+                fr_at =2*(mv_cone + fldofview.cone_angle_vec[0])
                 fr_ct = fr_at
 
-            elif(fldofview._geometry == 'RECTANGULAR'):
+            elif(fldofview.shape == 'RECTANGULAR'):
                 fr_geom = 'CONICAL'
-                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
+                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview.angle_height))*np.cos(np.deg2rad(0.5*fldofview.angle_width))))
                 fr_at = 2*(mv_cone +  diag_half_angle)
                 fr_ct = fr_at
 
@@ -758,16 +773,16 @@ class Maneuverability(Entity):
                 raise Exception('Invalid FOV geometry')    
 
         elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
-            if(fldofview._geometry == 'CONICAL'):
+            if(fldofview.shape == 'CONICAL'):
                 print("Approximating FOR as rectangular shape")
                 fr_geom = 'RECTANGULAR'
-                fr_at = 2*(fldofview._coneAngleVec_deg[0])
-                fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
+                fr_at = 2*(fldofview.cone_angle_vec[0])
+                fr_ct = 2*(0.5*mv_ct_range + fldofview.cone_angle_vec[0])
 
-            elif(fldofview._geometry == 'RECTANGULAR'):
+            elif(fldofview.shape == 'RECTANGULAR'):
                 fr_geom = 'RECTANGULAR'
-                fr_at = fldofview._AT_fov_deg
-                fr_ct = mv_ct_range + fldofview._CT_fov_deg
+                fr_at = fldofview.angle_height
+                fr_ct = mv_ct_range + fldofview.angle_width
             else:
                 raise Exception('Invalid FOV geometry')
 
@@ -777,10 +792,10 @@ class Maneuverability(Entity):
             fr_yaw180_flag = False
 
         if(fr_geom == 'CONICAL'):
-            fldofreg = FieldOfView.from_conicalFOV(full_cone_angle_deg = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
+            fldofreg = FieldOfView.from_conicalFOV(full_cone_angle = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
         elif(fr_geom == 'RECTANGULAR'):
             # Get the cone and clock angles from the rectangular FOV specifications.
-            fldofreg = FieldOfView.from_rectangularFOV(along_track_fov_deg = fr_at, cross_track_fov_deg = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
+            fldofreg = FieldOfView.from_rectangularFOV(angle_height = fr_at, angle_width = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
         
         return fldofreg
                 

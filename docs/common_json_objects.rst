@@ -192,49 +192,48 @@ Example:
 
 :code:`fieldOfView` JSON object format
 ========================================
-The :code:`fieldOfView` can be specified in three ways, according to the parameter :code:`sensorGeometry` definition.
+The :code:`fieldOfView` can be specified in three ways, according to the parameter :code:`shape` definition.
 
-1. :code:`"sensorGeometry": "CONICAL"`
+1. :code:`"shape": "CONICAL"`
 
     .. csv-table:: Input parameter description 
         :header: Parameter, Type,Description
         :widths: 10,10,10,40
 
-        fullConeAngle, number, degrees, Full cone angle of the instrument FOV. 
+        fullConeAngle, number, degrees, Full cone angle of the FOV. 
 
     Example:
 
     .. code-block:: python
 
                 "fieldOfView": {
-                                    "sensorGeometry": "CONICAL",
+                                    "shape": "CONICAL",
                                     "fullConeAngle":10
                                 }
 
-2. :code:`"sensorGeometry": "RECTANGULAR"`
+2. :code:`"shape": "RECTANGULAR"`
 
     .. csv-table:: Input parameter description 
         :header: Parameter, Type, Units, Description
         :widths: 10,10,10,40
 
-        alongTrackFieldOfView, number, degrees, (full) along-track fov. 
-        crossTrackFieldOfView, number, degrees, (full) cross-track fov.
+        angleHeight, number, degrees, Angular height (about sensor X-axis)
+        angleWidth, number, degrees, Angular width (about sensor Y-axis)
+    
+    angleHeight and angleWith correspond to the along-track and cross-track FOVs respectively in case the sensor-frame is
+    aligned to the NADIR_POINTING frame.
 
     Example:
 
     .. code-block:: python
 
                 "fieldOfView": {
-                                    "sensorGeometry": "RECTANGULAR",
-                                    "alongTrackFieldOfView":10,
-                                    "crossTrackFieldOfView":30
+                                    "shape": "RECTANGULAR",
+                                    "angleHeight":10,
+                                    "angleWidth":30
                                 }
 
-    .. warning:: The along-track FOV and cross-track FOV specs are assigned assuming the instrument is in nominal orientation, i.e. the instrument is aligned to nadir-frame.
-                 If the instrument is rotated about the satellite body frame (by specifying non-zero orientation angles in the instrument json specs file), the actual along-track
-                 and cross-track fovs simulated maybe different.
-
-3. :code:`"sensorGeometry": "CUSTOM"`
+3. :code:`"shape": "CUSTOM"`
 
     In this case the field-of-view is specified in terms of clock ,cone angles. The definition of the clock, cone angles is the 
     same as used in Orbit and Coverage module, i.e.
@@ -249,7 +248,7 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
         :header: Parameter, Type, Units, Description
         :widths: 10,10,10,40
 
-        customConeAnglesVector, string, degrees, array of cone angle (angle from Nadir vector) values separated by commas
+        customConeAnglesVector, string, degrees, array of cone angle values separated by commas
         customClockAnglesVector, string, degrees, array of clock values separated by commas
 
     .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
@@ -261,7 +260,7 @@ Example:
 .. code-block:: python
 
                "fieldOfView": {
-                                "sensorGeometry": "CUSTOM",
+                                "shape": "CUSTOM",
                                 "customConeAnglesVector": [10,10,10,10],
                                 "customClockAnglesVector": [30, 120, 180, 280]
                               }
