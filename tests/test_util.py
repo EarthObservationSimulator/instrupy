@@ -107,27 +107,6 @@ class TestEntity(unittest.TestCase):
         o = Entity.from_json('{"@id": "123"}')
         self.assertEqual(o._id, "123")
 
-class TestConstants(unittest.TestCase):
-    def test_radiusOfEarthInKM(self):
-        self.assertEqual(Constants.radiusOfEarthInKM, 6378.137)
-
-    def test_speedOfLight(self):
-        self.assertEqual(Constants.speedOfLight, 299792458)
-
-    def test_Boltzmann(self):
-        self.assertEqual(Constants.Boltzmann, 1.380649e-23)
-
-    def test_angularSpeedofEarthInRADpS(self):
-        self.assertAlmostEqual(
-            Constants.angularSpeedofEarthInRADpS, 2*numpy.pi / 86400.0, places=5)
-
-    def test_Planck(self):
-        self.assertEqual(Constants.Planck, 6.62607015e-34)
-
-    def test_SunBlackBodyTemperature(self):
-        self.assertEqual(Constants.SunBlackBodyTemperature, 6000)
-
-
 class TestOrientation(unittest.TestCase):
 
     def test_from_json_basic(self):        
@@ -348,164 +327,212 @@ class TestOrientation(unittest.TestCase):
         o = Orientation.from_json('{"convention": "SIDE_LOOK","sideLookAngle":-380,"@id":"123"}')
         self.assertEqual(o.__repr__(), "Orientation(ref_frame='NADIR_POINTING',euler_angle1=0.0,euler_angle2=340.0,euler_angle3=0.0,euler_seq1=1,euler_seq2=2,euler_seq3=3,_id='123')")
 
+class TestSphericalGeometry(unittest.TestCase):
 
-class TestFieldOfView(unittest.TestCase):
-
-    def test_from_json_customFOV_geometry(self):
-
-        # Test for typical cases
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [10, 10, 10, 10])
-        self.assertEqual(o._clockAngleVec_deg, [30, 60, 180, 220])
-
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "Custom", "customConeAnglesVector": [10] }')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [10])
-        self.assertIsNone(o._clockAngleVec_deg)
-
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "CusTOM", "customConeAnglesVector": 10}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [10])
-        self.assertIsNone(o._clockAngleVec_deg)
-
-        # Test for cone angle specs out of range
-        with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "customConeAnglesVector": [10,-10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
-        with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "customConeAnglesVector": [10] , "customClockAnglesVector": [30]}')
-        with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "customConeAnglesVector": 10 , "customClockAnglesVector": 30}')
-        with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "customConeAnglesVector": [10,10,100] , "customClockAnglesVector": [30,60,180,220]}')
-
-    def test_from_json_conicalFOV_geometry(self):
-
+    def test_from_json_custom_specs(self):
         # Test for typical case
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "CONICAL", "fullConeAngle": 30.56}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [15.28])
-        self.assertIsNone(o._clockAngleVec_deg)
+        o = SphericalGeometry.from_json(
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.CUSTOM)
+        self.assertEqual(o.cone_angle_vec, [10, 10, 10, 10])
+        self.assertEqual(o.clock_angle_vec, [30, 60, 180, 220])
+        self.assertIsNone(o.angle_height)
+        self.assertIsNone(o.angle_width)
+        self.assertIsNone(o._id)
 
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "Conical", "fullConeAngle": 15.4242}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [7.7121])
-        self.assertIsNone(o._clockAngleVec_deg)
+        o = SphericalGeometry.from_json(
+            '{"shape": "Custom", "customConeAnglesVector": [10], "@id": 123}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.CUSTOM)
+        self.assertEqual(o.cone_angle_vec, [10])
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertIsNone(o.angle_height)
+        self.assertIsNone(o.angle_width)
+        self.assertEqual(o._id, 123)
 
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "CoNiCAL", "fullConeAngle": 25}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [12.5])
-        self.assertIsNone(o._clockAngleVec_deg)
+        o = SphericalGeometry.from_json(
+            '{"shape": "CusTOM", "customConeAnglesVector": 10, "@id": "123"}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.CUSTOM)
+        self.assertEqual(o.cone_angle_vec, [10])
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertIsNone(o.angle_height)
+        self.assertIsNone(o.angle_width)
+        self.assertEqual(o._id, "123")
 
+        # test Exception is raised for invalid cone, clock angle inputs
+        with self.assertRaises(Exception):
+            SphericalGeometry.from_json(
+                '{"shape": "CUSTOM", "customConeAnglesVector": [10] , "customClockAnglesVector": [30]}')
+        with self.assertRaises(Exception):
+            SphericalGeometry.from_json(
+                '{"shape": "CUSTOM", "customConeAnglesVector": 10 , "customClockAnglesVector": 30}')
+        with self.assertRaises(Exception):
+            SphericalGeometry.from_json(
+                '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,100] , "customClockAnglesVector": [30,60,180,220]}')
+
+    def test_from_json_circular_specs(self):
+        # Test for typical case
+        o = SphericalGeometry.from_json(
+            '{"shape": "CIRCULAR", "diameter": 30.56}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.CIRCULAR)
+        self.assertEqual(o.cone_angle_vec, [15.28])
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertEqual(o.angle_height, 30.56)
+        self.assertEqual(o.angle_width, 30.56)
+        self.assertIsNone(o._id)        
+
+        o = SphericalGeometry.from_json(
+            '{"shape": "Circular", "diameter": 15.4242, "@id":123}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.CIRCULAR)
+        self.assertEqual(o.cone_angle_vec, [7.7121])
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertEqual(o.angle_height, 15.4242)
+        self.assertEqual(o.angle_width, 15.4242)
+        self.assertEqual(o._id, 123)
+
+        o = SphericalGeometry.from_json(
+            '{"shape": "CirCuLar", "diameter": 25, "@id":"123"}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.CIRCULAR)
+        self.assertEqual(o.cone_angle_vec, [12.5])
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertIsNone(o.clock_angle_vec)
+        self.assertEqual(o.angle_height, 25)
+        self.assertEqual(o.angle_width, 25)
+        self.assertEqual(o._id, "123")
         # Test for incomplete specification
         with self.assertRaises(Exception):
-            FieldOfView.from_json('{"sensorGeometry": "CONICAL"}')
-
+            SphericalGeometry.from_json('{"shape": "CIRCULAR"}')
         # Test for full cone angle more than 180 deg
         with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "fullConeAngle": 230}')
-
+            SphericalGeometry.from_json(
+                '{"shape": "CIRCULAR", "diameter": 230}')
         # Test for full cone angle less than 0 deg
         with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "fullConeAngle": -10}')
+            SphericalGeometry.from_json(
+                '{"shape": "CIRCULAR", "diameter": -10}')        
 
-    def test_from_json_rectangularFOV_geometry(self):
-
+    def test_from_json_rectangular_specs(self):
         # Test for typical cases
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 10 , "crossTrackFieldOfView": 30}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [
+        o = SphericalGeometry.from_json(
+            '{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertAlmostEqual(o.cone_angle_vec, [
                          15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
-        self.assertEqual(o._clockAngleVec_deg, [
+        self.assertAlmostEqual(o.clock_angle_vec, [
                          18.6768081421232, 161.3231918578768, 198.6768081421232, 341.3231918578768])
+        self.assertEqual(o.angle_height, 10)
+        self.assertAlmostEqual(o.angle_width, 30)
+        self.assertIsNone(o._id)
 
         # Square FOV => Clock angle almost(?) 45 deg
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 15 , "crossTrackFieldOfView": 15}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertEqual(o._coneAngleVec_deg, [
+        o = SphericalGeometry.from_json(
+            '{"shape": "RECTANGULAR", "angleHeight": 15 , "angleWidth": 15, "@id": 123}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertAlmostEqual(o.cone_angle_vec, [
                          10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208])
-        self.assertEqual(o._clockAngleVec_deg, [
+        self.assertAlmostEqual(o.clock_angle_vec, [
                          45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
+        self.assertAlmostEqual(o.angle_height, 15)
+        self.assertAlmostEqual(o.angle_width, 15)
+        self.assertEqual(o._id, 123)
 
         # Test a edge case when the along-track fov is very small.
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 0.1 , "crossTrackFieldOfView": 50}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(o._coneAngleVec_deg[0], 25, 2)
-        self.assertAlmostEqual(o._clockAngleVec_deg[0], 0, delta=0.2)
-        self.assertAlmostEqual(o._clockAngleVec_deg[1], 180, delta=0.2)
-        self.assertAlmostEqual(o._clockAngleVec_deg[2], 180, delta=0.2)
-        self.assertAlmostEqual(o._clockAngleVec_deg[3], 360, delta=0.2)
+        o = SphericalGeometry.from_json(
+            '{"shape": "RECTANGULAR", "angleHeight": 0.1 , "angleWidth": 50, "@id": "123"}')
+        self.assertIsInstance(o, SphericalGeometry)
+        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertAlmostEqual(o.cone_angle_vec[0], 25, 2)
+        self.assertAlmostEqual(o.clock_angle_vec[0], 0, delta=0.2)
+        self.assertAlmostEqual(o.clock_angle_vec[1], 180, delta=0.2)
+        self.assertAlmostEqual(o.clock_angle_vec[2], 180, delta=0.2)
+        self.assertAlmostEqual(o.clock_angle_vec[3], 360, delta=0.2)
+        self.assertEqual(o.angle_height, 0.1)
+        self.assertAlmostEqual(o.angle_width, 50)
+        self.assertEqual(o._id, "123")
 
         # Test case with incomplete specification
         with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 60 }')
-
+            SphericalGeometry.from_json(
+                '{"shape": "RECTANGULAR", "angleHeight": 60 }')
         # Test for out-of-range specification
         with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 30 , "crossTrackFieldOfView": 210}')
+            SphericalGeometry.from_json(
+                '{"shape": "RECTANGULAR", "angleHeight": 30 , "angleWidth": 210}')
         with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": -10 , "crossTrackFieldOfView": 5}')
+            SphericalGeometry.from_json(
+                '{"shape": "RECTANGULAR", "angleHeight": -10 , "angleWidth": 5}')
         with self.assertRaises(Exception):
-            FieldOfView.from_json(
-                '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": -1110 , "crossTrackFieldOfView": 50}')
+            SphericalGeometry.from_json(
+                '{"shape": "RECTANGULAR", "angleHeight": -1110 , "angleWidth": 50}')
 
-    def test_get_rectangular_fov_specs_from_custom_fov_specs(self):
-
-        # Test for typical cases
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 15 , "crossTrackFieldOfView": 15}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(
-            o.get_rectangular_fov_specs_from_custom_fov_specs()[0], 15)
-        self.assertAlmostEqual(
-            o.get_rectangular_fov_specs_from_custom_fov_specs()[1], 15)
-
+    def test_get_rect_poly_specs_from_cone_clock_angles(self):        
+        # Square case
+        o = SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight": 15 , "angleWidth": 15}')
+        [angle_height, angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(o.cone_angle_vec, o.clock_angle_vec)
+        self.assertAlmostEqual(angle_height, 15)
+        self.assertAlmostEqual(angle_width, 15)
+        
         # Test edge case with small along-track fov
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView": 0.1 , "crossTrackFieldOfView": 30}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(
-            o.get_rectangular_fov_specs_from_custom_fov_specs()[0], 0.1)
-        self.assertAlmostEqual(
-            o.get_rectangular_fov_specs_from_custom_fov_specs()[1], 30)
+        o = SphericalGeometry.from_json(
+            '{"shape": "RECTANGULAR", "angleHeight": 0.1 , "angleWidth": 30}')
+        self.assertIsInstance(o, SphericalGeometry)
+        [angle_height, angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(o.cone_angle_vec, o.clock_angle_vec)
+        self.assertAlmostEqual(angle_height, 0.1)
+        self.assertAlmostEqual(angle_width, 30)
 
-        # Test with instance being initialized using the "CUSTOM" sensorGeometry specification.
+        o = SphericalGeometry.from_json(
+            '{"shape": "CUSTOM", "customConeAnglesVector": [30,30,30,30] , "customClockAnglesVector": [20,160,200,-20]}')
+        [angle_height, angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(o.cone_angle_vec, o.clock_angle_vec)
+        self.assertAlmostEqual(angle_height, 19.693103879668154)
+        self.assertAlmostEqual(angle_width, 56.96247656267892)
 
-        o = FieldOfView.from_json(
-            '{"sensorGeometry": "CUSTOM", "customConeAnglesVector": [30,30,30,30] , "customClockAnglesVector": [20,160,200,-20]}')
-        self.assertIsInstance(o, FieldOfView)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[
-                               0], 19.693103879668154)
-        self.assertAlmostEqual(o.get_rectangular_fov_specs_from_custom_fov_specs()[
-                               1], 56.96247656267892)
-
-        # Check for cases when the FIeldOFView instance does not correspond to a rectangular fov
+        # Check for cases when the input cone, clock do not correspond to a rectangular fov
         with self.assertRaises(Exception):
-            o = FieldOfView.from_json(
-                '{"sensorGeometry": "CONICAL", "fullConeAngle": 20}')
-            o.get_rectangular_fov_specs_from_custom_fov_specs()
+            o.get_rect_poly_specs_from_cone_clock_angles([20], None)
         with self.assertRaises(Exception):
-            o = FieldOfView.from_json(
-                '{"sensorGeometry": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
-            o.get_rectangular_fov_specs_from_custom_fov_specs()
+            o.get_rect_poly_specs_from_cone_clock_angles([10,10,10,10], [30,60,180,220])
+        with self.assertRaises(Exception):
+            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208],
+                                                         [45.246138033024906, 134.75386196697508, 125.24613803302492, 314.7538619669751])
+        with self.assertRaises(Exception):
+            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208], 
+                                                         [45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
+        with self.assertRaises(Exception):
+            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 20.591411134810208, 10.591411134810208, 10.591411134810208], 
+                                                         [45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
+
+
+'''
+class TestConstants(unittest.TestCase):
+    def test_radiusOfEarthInKM(self):
+        self.assertEqual(Constants.radiusOfEarthInKM, 6378.137)
+
+    def test_speedOfLight(self):
+        self.assertEqual(Constants.speedOfLight, 299792458)
+
+    def test_Boltzmann(self):
+        self.assertEqual(Constants.Boltzmann, 1.380649e-23)
+
+    def test_angularSpeedofEarthInRADpS(self):
+        self.assertAlmostEqual(
+            Constants.angularSpeedofEarthInRADpS, 2*numpy.pi / 86400.0, places=5)
+
+    def test_Planck(self):
+        self.assertEqual(Constants.Planck, 6.62607015e-34)
+
+    def test_SunBlackBodyTemperature(self):
+        self.assertEqual(Constants.SunBlackBodyTemperature, 6000)
+
+
+
 
 
 class TestMathUtilityFunctions(unittest.TestCase):
@@ -678,8 +705,8 @@ class TestMathUtilityFunctions(unittest.TestCase):
         self.assertAlmostEqual(sample[2], truth[2], places=3)
 
     def test_compute_sun_zenith(self):
-        ''' Truth data from https://www.esrl.noaa.gov/gmd/grad/solcalc/
-        '''
+        """ Truth data from https://www.esrl.noaa.gov/gmd/grad/solcalc/
+        """
 
         time_JDUT1 = 2452343.38982663  # 2002/03/09 21:21:21.021
         pos_km = MathUtilityFunctions.geo2eci([0.0,  0.0, 0.0], time_JDUT1)
@@ -948,3 +975,4 @@ class TestFileUtilityFunctions(unittest.TestCase):
         self.assertEqual(o["nutrition"],  {
                          'Fat': 0, 'Sodium': 2, 'Protein': 0})
         self.assertEqual(o["nutrition"]["Fat"],  0)
+'''

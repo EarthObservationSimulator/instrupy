@@ -633,11 +633,11 @@ class SphericalGeometry(Entity):
             shape = SphericalGeometry.Shape.get(d.get("shape", None))
 
             if(shape == "CIRCULAR"):
-                sph_geom_dict = SphericalGeometry.from_circular_specs(d.get("diameter", None), d.get("_id", None))
+                sph_geom_dict = SphericalGeometry.from_circular_specs(d.get("diameter", None), d.get("@id", None))
             elif(shape == "RECTANGULAR"):
-                sph_geom_dict = SphericalGeometry.from_rectangular_specs(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("_id", None))
+                sph_geom_dict = SphericalGeometry.from_rectangular_specs(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("@id", None))
             elif(shape == "CUSTOM"):
-                sph_geom_dict = SphericalGeometry.from_custom_specs(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("_id", None))  
+                sph_geom_dict = SphericalGeometry.from_custom_specs(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("@id", None))  
             else:
                 raise Exception("Invalid spherical geometry shape specified.")
 
