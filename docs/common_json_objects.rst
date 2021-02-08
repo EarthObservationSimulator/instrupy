@@ -23,8 +23,8 @@ The parameters outside the mode block are used as the common parameters for all 
 within a mode list entry are specific to the particular sub-sensor.
 
 Example: The example below is that of a *Basic Sensor* type instrument with two modes. The common parameters for both the modes
-are outside the :code:`mode` block. The `NadirObservationMode` has a nadir viewing geometry with a 35 deg Conical FOV. The `SideObservationMode`
-has a side looking geometry (both the side) at 25 deg conical FOV.
+are outside the :code:`mode` block. The `NadirObservationMode` has a nadir viewing geometry with a 35 deg Circular FOV. The `SideObservationMode`
+has a side looking geometry (both the side) at 25 deg circular FOV.
  
 .. code-block:: python
 
@@ -39,8 +39,8 @@ has a side looking geometry (both the side) at 25 deg conical FOV.
                   "mode":[{
                         "@id": "NadirObservationMode"
                         "fieldOfView": {
-                              "sensorGeometry": "CONICAL",
-                              "fullConeAngle": 35
+                              "sensorGeometry": "CIRCULAR",
+                              "diameter": 35
                         },
                         "orientation": {
                               "convention": "NADIR"
@@ -49,8 +49,8 @@ has a side looking geometry (both the side) at 25 deg conical FOV.
                   {
                         "@id": "SideObservationMode"
                         "fieldOfView": {
-                           "sensorGeometry": "CONICAL",
-                           "fullConeAngle": 25
+                           "sensorGeometry": "CIRCULAR",
+                           "diameter": 25
                         },
                         "orientation": {
                            "convention": "SIDE_LOOK",
@@ -192,23 +192,24 @@ Example:
 
 :code:`fieldOfView` JSON object format
 ========================================
-The :code:`fieldOfView` can be specified in three ways, according to the parameter :code:`shape` definition.
+The :code:`fieldOfView` is characterized by the key :code:`shape` definition. Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR`
+and :code:`CUSTOM`.
 
-1. :code:`"shape": "CONICAL"`
+1. :code:`"shape": "CIRCULAR"`
 
     .. csv-table:: Input parameter description 
         :header: Parameter, Type,Description
         :widths: 10,10,10,40
 
-        fullConeAngle, number, degrees, Full cone angle of the FOV. 
+        diameter, number, degrees, Diameter (2 times the cone angle)
 
     Example:
 
     .. code-block:: python
 
                 "fieldOfView": {
-                                    "shape": "CONICAL",
-                                    "fullConeAngle":10
+                                    "shape": "CIRCULAR",
+                                    "diameter":10
                                 }
 
 2. :code:`"shape": "RECTANGULAR"`
@@ -235,7 +236,7 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
 
 3. :code:`"shape": "CUSTOM"`
 
-    In this case the field-of-view is specified in terms of clock ,cone angles. The definition of the clock, cone angles is the 
+    In this case the field-of-view is specified in terms of clock, cone angles. The definition of the clock, cone angles is the 
     same as used in Orbit and Coverage module, i.e.
 
     Cone angles are angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
@@ -385,7 +386,7 @@ Example:
    "maneuverability":{
         "@type":"FieldOfRegard",
         "fieldOfRegard":{
-            "convention": "conical",
+            "convention": "CIRCULAR",
             "fullConeAngle": 60
         }
    }

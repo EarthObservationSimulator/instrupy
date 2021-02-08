@@ -294,17 +294,17 @@ class Orientation(Entity):
         """ Enumeration of recognized orientation conventions. The rotations below can be specified with respect to 
             any of the reference frames given in :class:`instrupy.util.ReferenceFrame`.
 
-            :cvar XYZ: Rotations about the X, Y and Z axis in the order 123.
-            :vartype XYZ: str
+        :cvar XYZ: Rotations about the X, Y and Z axis in the order 123.
+        :vartype XYZ: str
 
-            :cvar REF_FRAME_ALIGNED: Aligned with respective to the underlying reference frame. Identity rotation matrix. 
-            :vartype REF_FRAME_ALIGNED: str
+        :cvar REF_FRAME_ALIGNED: Aligned with respective to the underlying reference frame. Identity rotation matrix. 
+        :vartype REF_FRAME_ALIGNED: str
 
-            :cvar SIDE_LOOK: Rotation about the Y axis only. 
-            :vartype SIDE_LOOK: str
+        :cvar SIDE_LOOK: Rotation about the Y axis only. 
+        :vartype SIDE_LOOK: str
 
-            :cvar EULER: Rotation according to the specified Euler angles and sequence.
-            :vartype EULER: str
+        :cvar EULER: Rotation according to the specified Euler angles and sequence.
+        :vartype EULER: str
 
         """
         XYZ = "XYZ"
@@ -413,41 +413,56 @@ class Orientation(Entity):
             return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
                                                                                           self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
             
-class FieldOfView(Entity):
-        """ Class to handle field-of-view (FOV) (or field-of-regard (FOR)). The FOV is maintained internally via array of cone and clock angles. 
-            This is the same definition as that of the orbitpy->propcov->lib->propcov-cpp CustomSensor C++ class.
+class SphericalGeometry(Entity):
+        """ Class to handle spherical geometries (spherical polygons and circles) which are used to characterize the sensor 
+            field-of-view (FOV) / scene FOV.
+
+            The spherical polygon/circle is maintained internally via vector of cone and clock angles defined in the sensor frame. This is the same 
+            definition as that in the orbitpy->propcov->lib->propcov-cpp CustomSensor C++ class. 
 
             .. figure:: cone_clock_angle.png
                 :scale: 100 %
                 :align: center
        
-        :ivar shape: Shape of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
+        :ivar shape: Shape of the spherical geometry. Accepted values are "CIRCULAR", "RECTANGULAR" or "CUSTOM".
         :vartype shape: str
 
-        :ivar cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+        :ivar cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis (pointing axis). If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on unit sphere, then the 
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
         :vartype cone_angle_vec: list, float
 
         :ivar clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
-                                  describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                                  describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
         :vartype clock_angle_vec: list, float
 
-        :ivar angle_height: (deg) FOV angular width (about sensor X axis) (only for CONICAL or RECTANGULAR fov shapes). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
+        :ivar angle_height: (deg) Spherical geometry angular width (about sensor X axis) (only for CIRCULAR or RECTANGULAR shapes). Corresponds to along-track angular width if sensor frame is aligned to NADIR_POINTING frame.
         :vartype angle_height: float
 
-        :ivar angle_width: (deg) FOV angular height (about sensor Y axis)  (only for CONICAL or RECTANGULAR fov shapes). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
+        :ivar angle_width: (deg) Spherical geometry angular height (about sensor Y axis)  (only for CIRCULAR or RECTANGULAR shapes). Corresponds to cross-track angular width if sensor frame is aligned to NADIR_POINTING frame.
         :vartype angle_width: float
 
         :param _id: Unique identifier.
         :paramtype _id: str
 
-        .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CONICAL* shaped FOV, in which we 
+        .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shape, in which we 
                   have only one cone angle (:code:`cone_angle_vec[0] = 1/2 full_cone_angle`) and no corresponding clock angle. 
 
         """
         class Shape(EnumEntity):
-            """Enumeration of recognized FieldOfView shapes."""
-            CONICAL = "CONICAL"
+            """Enumeration of recognized SphericalGeometry shapes.
+            
+            :cvar CIRCULAR: Circular shape definition, characterized by the radius of the circle around the Z-axis.
+            :vartype CIRCULAR: str
+
+            :cvar RECTANGULAR: Rectangular polygon definition, characterized by angular width (about Y-axis) and angular height (about X-axis). 
+            :vartype RECTANGULAR: str
+
+            :cvar CUSTOM: Custom polygon definition, where an arbitrary number of cone, clock angles
+                          denoting the vertices of the polygon can be specified. 
+            :vartype CUSTOM: str
+            
+            """
+            CIRCULAR = "CIRCULAR"
             RECTANGULAR = "RECTANGULAR"
             CUSTOM = "CUSTOM"
             
@@ -470,51 +485,51 @@ class FieldOfView(Entity):
             else:
                 self.clock_angle_vec = None
 
-            self.shape = FieldOfView.Shape.get(shape) if shape is not None else None
-            if(self.shape is FieldOfView.Shape.CONICAL):
+            self.shape = SphericalGeometry.Shape.get(shape) if shape is not None else None
+            if(self.shape is SphericalGeometry.Shape.CIRCULAR):
                 self.angle_height = 2 * self.cone_angle_vec[0]
                 self.angle_width = self.angle_height
-            elif(self.shape is FieldOfView.Shape.RECTANGULAR):
-                [self.angle_height, self.angle_width] = FieldOfView.get_rectangular_fov_specs_from_custom_fov_specs(self.cone_angle_vec, self.clock_angle_vec)
+            elif(self.shape is SphericalGeometry.Shape.RECTANGULAR):
+                [self.angle_height, self.angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(self.cone_angle_vec, self.clock_angle_vec)
             else:
                 self.angle_height = None
                 self.angle_width = None
 
-            super(FieldOfView, self).__init__(_id, "FieldOfView")
+            super(SphericalGeometry, self).__init__(_id, "SphericalGeometry")
 
         def to_dict(self):
             """ Return data members of the object as python dictionary. 
 
-                :return: FieldOfView object as python dictionary
+                :return: SphericalGeometry object as python dictionary
                 :rtype: dict 
             """
-            if self.shape==FieldOfView.Shape.CONICAL:
-                fov_dict = {"shape": "Conical", "fullConeAngle": self.angle_height}
-            elif self.shape==FieldOfView.Shape.RECTANGULAR:
-                fov_dict = {"shape": "Rectangular", "angleHeight": self.angle_height, "angleWidth": self.angle_width}
-            elif self.shape==FieldOfView.Shape.CUSTOM:
-                fov_dict = {"shape": "Custom", 
+            if self.shape==SphericalGeometry.Shape.CIRCULAR:
+                sph_geom_dict = {"shape": "Conical", "diameter": self.angle_height}
+            elif self.shape==SphericalGeometry.Shape.RECTANGULAR:
+                sph_geom_dict = {"shape": "Rectangular", "angleHeight": self.angle_height, "angleWidth": self.angle_width}
+            elif self.shape==SphericalGeometry.Shape.CUSTOM:
+                sph_geom_dict = {"shape": "Custom", 
                             "customConeAnglesVector": "[" + [str(x) for x in self.cone_angle_vec] + "]", 
                             "customClockAnglesVector": "[" + [str(x) for x in self.clock_angle_vec] + "]"
                            }
-            return fov_dict
+            return sph_geom_dict
 
         @classmethod
-        def from_customFOV(cls, cone_angle_vec=None, clock_angle_vec=None, _id=None):
-            """  Return corresponding :class:`instrupy.util.FieldOfView` object from user specified cone and clock angles.
+        def from_custom_specs(cls, cone_angle_vec=None, clock_angle_vec=None, _id=None):
+            """  Return corresponding :class:`instrupy.util.SphericalGeometry` object from input cone and clock angles.
 
-                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on unit sphere, then the 
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
                 :paramtype cone_angle_vec: list, float
 
                 :param clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
-                                        describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                                        describing a point on the unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
                 :paramtype clock_angle_vec: list, float
 
                 :param _id: Unique identifier.
                 :paramtype _id: str
 
-                .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CONICAL* shaped FOV, in which we 
+                .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shaped FOV, in which we 
                     have only one cone angle (:code:`cone_angle_vec[0] = 1/2 full_cone_angle`) and no corresponding clock angle. 
             
             """
@@ -538,45 +553,45 @@ class FieldOfView(Entity):
                 if(len(cone_angle_vec) != len(clock_angle_vec)):
                     raise Exception("With more than one cone angle specified, the length of cone angle vector should be the same as length of the clock angle vector.")
                 
-            return FieldOfView("CUSTOM", cone_angle_vec, clock_angle_vec, _id)
+            return SphericalGeometry("CUSTOM", cone_angle_vec, clock_angle_vec, _id)
 
         @classmethod
-        def from_conicalFOV(cls, full_cone_angle=None, _id=None):
-            """ Convert user-given conical sensor specifications to cone, clock angles and return corresponding :class:`instrupy.util.FieldOfView` object.
+        def from_circular_specs(cls, diameter=None, _id=None):
+            """ Convert input circular specs to cone, clock angles and return corresponding :class:`instrupy.util.SphericalGeometry` object.
             
-            :param full_cone_angle: (deg) Full conical angle of the Conical fov.
-            :paramtype full_cone_angle: float
+            :param diameter: (deg) Diameter of the circle.
+            :paramtype diameter: float
 
             :param _id: Unique identifier
             :paramtype _id: str
 
-            :return: Corresponding `FieldOfView` object
-            :rtype: :class:`instrupy.util.FieldOfView`
+            :return: Corresponding `SphericalGeometry` object
+            :rtype: :class:`instrupy.util.SphericalGeometry`
 
             """
-            if full_cone_angle is None:
-                raise Exception("Please specify full-cone-angle of the CONICAL fov.")
+            if diameter is None:
+                raise Exception("Please specify diameter of the CIRCULAR fov.")
 
-            if(full_cone_angle < 0 or full_cone_angle > 180):
-                raise Exception("Specified full-cone angle of CONICAL fov must be within the range 0 deg to 180 deg")
+            if(diameter < 0 or diameter > 180):
+                raise Exception("Specified diameter of CIRCULAR fov must be within the range 0 deg to 180 deg")
 
-            return FieldOfView("CONICAL", 0.5*full_cone_angle, None, _id)
+            return SphericalGeometry("CIRCULAR", 0.5*diameter, None, _id)
 
         @classmethod
-        def from_rectangularFOV(cls, angle_height=None, angle_width=None, _id=None):
-            """ Convert the angle_height (full) fov and angle_width (full) rectangular fov specs to clock, cone angles and return corresponding :class:`instrupy.util.FieldOfView` object.
+        def from_rectangular_specs(cls, angle_height=None, angle_width=None, _id=None):
+            """ Convert the angle_height and angle_width rectangular specs to clock, cone angles and return corresponding :class:`instrupy.util.SphericalGeometry` object.
 
-            :param angle_height: (deg) FOV angular width (about sensor X axis). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :param angle_height: (deg) Angular height (about sensor X axis). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
             :paramtype angle_height: float
 
-            :param angle_width: (deg) FOV angular height (about sensor Y axis). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :param angle_width: (deg) Angular width (about sensor Y axis). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
             :paramtype angle_width: float
             
             :param _id: Unique identifier
             :paramtype _id: str
 
-            :return: Corresponding `FieldOfView` object
-            :rtype: :class:`instrupy.util.FieldOfView`                      
+            :return: Corresponding `SphericalGeometry` object
+            :rtype: :class:`instrupy.util.SphericalGeometry`                      
 
             """
             if(angle_height is None or angle_width is None):
@@ -602,34 +617,34 @@ class FieldOfView(Entity):
 
             clock_angle_vec = [clock, 180.0-clock, 180.0+clock, -clock]
 
-            return FieldOfView("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)
+            return SphericalGeometry("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)
 
         @staticmethod
         def from_dict(d):
-            """Parses field-of-view specifications from a normalized JSON dictionary.
+            """Parses spherical geometry specifications from a normalized JSON dictionary.
     
-               :param d: Dictionary with the instrument field-of-view specifications.
+               :param d: Dictionary with the spherical geometry specifications.
                :paramtype d: dict
 
-               :return: Field-of-view
-               :rtype: :class:`instrupy.util.FieldOfView`
+               :return: Spherical geometry object
+               :rtype: :class:`instrupy.util.SphericalGeometry`
 
             """          
-            shape = FieldOfView.Shape.get(d.get("shape", None))
+            shape = SphericalGeometry.Shape.get(d.get("shape", None))
 
-            if(shape == "CONICAL"):
-                fldofview = FieldOfView.from_conicalFOV(d.get("fullConeAngle", None), d.get("_id", None))
+            if(shape == "CIRCULAR"):
+                sph_geom_dict = SphericalGeometry.from_circular_specs(d.get("diameter", None), d.get("_id", None))
             elif(shape == "RECTANGULAR"):
-                fldofview = FieldOfView.from_rectangularFOV(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("_id", None))
+                sph_geom_dict = SphericalGeometry.from_rectangular_specs(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("_id", None))
             elif(shape == "CUSTOM"):
-                fldofview = FieldOfView.from_customFOV(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("_id", None))  
+                sph_geom_dict = SphericalGeometry.from_custom_specs(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("_id", None))  
             else:
-                raise Exception("Invalid FOV shape specified.")
+                raise Exception("Invalid spherical geometry shape specified.")
 
-            return fldofview
+            return sph_geom_dict
         
         def get_cone_clock_fov_specs(self):
-            """ Function to the get the cone and clock angle vectors from the respective FieldOfView object.
+            """ Function to the get the cone and clock angle vectors from the respective SphericalGeometry object.
 
                 :return: Cone, Clock angles in degrees
                 :rtype: list, float
@@ -638,15 +653,15 @@ class FieldOfView(Entity):
             return [self.cone_angle_vec, self.clock_angle_vec]
 
         @staticmethod
-        def get_rectangular_fov_specs_from_custom_fov_specs(cone_angle_vec, clock_angle_vec):
-            """ Function to get the rectangular fov specifications (angle_height and angle_width), from custom clock, cone angle vectors.           
+        def get_rect_poly_specs_from_cone_clock_angles(cone_angle_vec, clock_angle_vec):
+            """ Function to get the rectangular specifications (angle_height and angle_width), from input clock, cone angle vectors.           
 
-                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on unit sphere, then the 
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`. 
                 :paramtype cone_angle_vec: list, float
 
                 :param clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
-                                        describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                                        describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
                 :paramtype clock_angle_vec: list, float
 
                 :return: angle_height and angle_width in degrees
@@ -654,19 +669,18 @@ class FieldOfView(Entity):
       
                 .. todo:: Make sure selected clock angle is from first quadrant. 
             """
-            # Check if the instance does correspond to an rectangular fov.
-            # Length of cone angle vector and clock angle vector must be 4.
-            if(len(cone_angle_vec)!= 4) or (len(clock_angle_vec)!= 4):
-                raise Exception("This FieldOfView instance does not correspond to a rectangular fov.")
+            # Check if the instance does correspond to an rectangular shape.
 
+            # Length of cone angle vector and clock angle vector must be 4.
+            if(len(cone_angle_vec) != 4) or (len(clock_angle_vec) != 4):
+                raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.")
             # Check that all elements in the cone angle vector are the same value.
             if(len(set(cone_angle_vec))!= 1):
-                raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
-
+                raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.")
             # The elements of the clock angle vector satisfy the following relationship: [theta, 180-theta, 180+theta, 360-theta]
-            # in case of rectangular fov. Check for this relationship.
+            # in case of rectangular shape. Check for this relationship.
             if(not math.isclose(clock_angle_vec[3],(360-clock_angle_vec[0])) or not math.isclose(clock_angle_vec[1], (180 - clock_angle_vec[0])) or not math.isclose(clock_angle_vec[2], (180 + clock_angle_vec[0]))):
-                raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
+                raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.") 
             
             theta = np.deg2rad(cone_angle_vec[0])
             omega = np.deg2rad(clock_angle_vec[0])
@@ -680,7 +694,7 @@ class FieldOfView(Entity):
             return [angle_height, angle_width]
 
         def get_fov_height_and_width(self):
-            """ Get the angle_height and angle_width. Valid only for CONICAL and 
+            """ Get the angle_height and angle_width. Valid only for CIRCULAR and 
                 RECTANGULAR FOV shapes.
 
                 :return: angle_height and angle_width in degrees
@@ -729,10 +743,10 @@ class Maneuverability(Entity):
         """ Calculate the field-of-regard.
 
         :param fldofview:  Field-of-view of the instrument
-        :paramtype fldofview: :class:`instrupy.util.FieldOfView`
+        :paramtype fldofview: :class:`instrupy.util.SphericalGeometry`
 
         :return: Field-of-Regard
-        :rtype: :class:`instrupy.util.FieldOfView`
+        :rtype: :class:`instrupy.util.SphericalGeometry`
         """
 
         # Calculate the field-of-regard
@@ -758,13 +772,13 @@ class Maneuverability(Entity):
             fr_ct = fldofview.angle_width
 
         elif(mv_type == 'CONE'):
-            if(fldofview.shape == 'CONICAL'):
-                fr_geom = 'CONICAL'
+            if(fldofview.shape == 'CIRCULAR'):
+                fr_geom = 'CIRCULAR'
                 fr_at =2*(mv_cone + fldofview.cone_angle_vec[0])
                 fr_ct = fr_at
 
             elif(fldofview.shape == 'RECTANGULAR'):
-                fr_geom = 'CONICAL'
+                fr_geom = 'CIRCULAR'
                 diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview.angle_height))*np.cos(np.deg2rad(0.5*fldofview.angle_width))))
                 fr_at = 2*(mv_cone +  diag_half_angle)
                 fr_ct = fr_at
@@ -773,7 +787,7 @@ class Maneuverability(Entity):
                 raise Exception('Invalid FOV geometry')    
 
         elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
-            if(fldofview.shape == 'CONICAL'):
+            if(fldofview.shape == 'CIRCULAR'):
                 print("Approximating FOR as rectangular shape")
                 fr_geom = 'RECTANGULAR'
                 fr_at = 2*(fldofview.cone_angle_vec[0])
@@ -791,11 +805,11 @@ class Maneuverability(Entity):
         else:
             fr_yaw180_flag = False
 
-        if(fr_geom == 'CONICAL'):
-            fldofreg = FieldOfView.from_conicalFOV(full_cone_angle = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
+        if(fr_geom == 'CIRCULAR'):
+            fldofreg = SphericalGeometry.from_circular_specs(full_cone_angle = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
         elif(fr_geom == 'RECTANGULAR'):
             # Get the cone and clock angles from the rectangular FOV specifications.
-            fldofreg = FieldOfView.from_rectangularFOV(angle_height = fr_at, angle_width = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
+            fldofreg = SphericalGeometry.from_rectangular_specs(angle_height = fr_at, angle_width = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
         
         return fldofreg
                 

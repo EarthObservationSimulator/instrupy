@@ -46,19 +46,6 @@ Spacecraft Body Fixed reference frame. The axis of this coordinate system are al
 .. _satellite_to_target_viewing_geometry:
 
 
-Clock, Cone angle definitions in the description of sensor FOV:
-=================================================================
-If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the cone angle for the point is:
-
-:math:`\pi/2 - \sin^{-1}zP`.
-
-The clock angle for the point is:
-
-:math:`atan2(yP,xP)`.
-
-.. figure:: cone_clock_angle.png
-    :scale: 100 %
-    :align: center
 
 Satellite to Target viewing geometry
 =============================================
@@ -143,6 +130,34 @@ Illustrations
 
     FOV/SceneFOV vs FOR illustration for the case of a possible -22.5 deg to 45 deg roll of satellite.
 
+
+Representation of sensor FOV/ Scene-FOV with the :class:`instrupy.util.SphericalGeometry` object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+An object of the :code:`SphericalGeometry` class can be used to characterize a spherical geometry (polygon/circle). 
+The spherical polygon is maintained internally via vector of cone and clock angles. This is the same definition as that 
+in the orbitpy->propcov->lib->propcov-cpp CustomSensor C++ class. 
+
+The pointing axis is assumed to be along the z-axis of the sensor frame. 
+If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on the unit sphere, then the cone angle for the point is:
+
+:math:`\pi/2 - \sin^{-1}zP`.
+
+The clock angle for the point is:
+
+:math:`atan2(yP,xP)`.
+
+.. figure:: cone_clock_angle.png
+    :scale: 100 %
+    :align: center
+
+.. todo:: Extend the representation to include multiple non-intersecting spherical shapes. One way is to make the FOV representation 
+        a list of spherical shapes and associate an orientation (i.e. position on the sphere) with each shape. 
+
+Representation of sensor FOR
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO
+
 .. _purely_side_looking:
 
 Purely Side Looking Instruments
@@ -181,7 +196,7 @@ a FOR is calculated as described below.
     This manuver option indicates that the pointing axis can be manuevered within a conical region (within a user-defined
     conical angle). The rotation about the pointing axis is unrestricted. The resulting FOR per sensor FOV is as follows:
 
-        * Conical FOV sensor: FOR is conical with cone angle = manuver cone angle + sensor cone angle
+        * Circular FOV sensor: FOR is conical with cone angle = manuver cone angle + sensor cone angle
 
         * Retangular FOV sensor: FOR is conical with cone angle = manuver cone angle + half diagonal angle of the rectangular FOV
 
@@ -192,13 +207,13 @@ a FOR is calculated as described below.
     This manuver option indicates that the pointing axis can be manuevered along the roll axis (satellite velocity vector)
     over a range indicated by :code:`rollMin` and :code:`rollMax`. The resulting FOR per sensor FOV is as follows:
        
-        * Conical FOV sensor: FOR is rectangular with:
+        * Circular FOV sensor: FOR is rectangular with:
             
             cross track = (rollMax - rollMin) + sensor full cone angle
 
             along-track = sensor along track
 
-        * Retangular FOV sensor: FOR is rectangular with:
+        * Rectangular FOV sensor: FOR is rectangular with:
             
             cross-track = (rollMax - rollMin) + sensor cross track 
 
@@ -219,7 +234,7 @@ a FOR is calculated as described below.
     :scale: 75 %
     :align: center
 
-    Illustration of RollOnly maneuver for conical and rectangular FOV instruments
+    Illustration of RollOnly maneuver for circular and rectangular FOV instruments
 
 
 
