@@ -431,7 +431,7 @@ class SphericalGeometry(Entity):
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
         :vartype cone_angle_vec: list, float
 
-        :ivar clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+        :ivar clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the +X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
                                   describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
         :vartype clock_angle_vec: list, float
 
@@ -504,14 +504,17 @@ class SphericalGeometry(Entity):
                 :rtype: dict 
             """
             if self.shape==SphericalGeometry.Shape.CIRCULAR:
-                sph_geom_dict = {"shape": "Conical", "diameter": self.angle_height}
+                sph_geom_dict = {"shape": "CIRCULAR", "diameter": self.angle_height, "@id": self._id}
             elif self.shape==SphericalGeometry.Shape.RECTANGULAR:
-                sph_geom_dict = {"shape": "Rectangular", "angleHeight": self.angle_height, "angleWidth": self.angle_width}
+                sph_geom_dict = {"shape": "RECTANGULAR", "angleHeight": self.angle_height, "angleWidth": self.angle_width, "@id": self._id}
             elif self.shape==SphericalGeometry.Shape.CUSTOM:
-                sph_geom_dict = {"shape": "Custom", 
-                            "customConeAnglesVector": "[" + [str(x) for x in self.cone_angle_vec] + "]", 
-                            "customClockAnglesVector": "[" + [str(x) for x in self.clock_angle_vec] + "]"
+                sph_geom_dict = {"shape": "CUSTOM", 
+                            "customConeAnglesVector": "[" + ','.join(map(str, self.cone_angle_vec))  + "]", 
+                            "customClockAnglesVector": "[" + ','.join(map(str, self.clock_angle_vec))  + "]",
+                            "@id": self._id
                            }
+            else:
+                sph_geom_dict = None
             return sph_geom_dict
 
         @classmethod
@@ -695,12 +698,15 @@ class SphericalGeometry(Entity):
 
         def get_fov_height_and_width(self):
             """ Get the angle_height and angle_width. Valid only for CIRCULAR and 
-                RECTANGULAR FOV shapes.
+                RECTANGULAR shapes.
 
                 :return: angle_height and angle_width in degrees
                 :rtype: list, float
             """
             return [self.angle_height, self.angle_width]
+
+        def __repr__(self):
+            return "SphericalGeometry.from_dict({})".format(self.to_dict())
 
 class Maneuverability(Entity):
     """ Class holding the manueverability specifications of the instrument. """
