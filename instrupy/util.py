@@ -185,14 +185,6 @@ class SyntheticDataConfiguration(Entity):
         syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, "environVar": self.environVar, "interplMethod": self.interplMethod}
         return syndataconf_dict
 
-class ManueverType(EnumEntity):
-    """Enumeration of recognized manuvever types"""
-    FIXED = "FIXED"
-    CONE = "CONE",
-    ROLLONLY = "ROLLONLY",
-    YAW180 = "YAW180",
-    YAW180ROLL = "YAW180ROLL"
-
 class ReferenceFrame(EnumEntity):
     """ Enumeration of recognized reference frames.
     
@@ -236,11 +228,15 @@ class ReferenceFrame(EnumEntity):
         :cvar SC_BODY_FIXED: Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus. 
         :vartype SC_BODY_FIXED: str
 
+        :cvar SENSOR_BODY_FIXED: Sensor Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the sensor frame. 
+        :vartype SENSOR_BODY_FIXED: str
+
     """
     EARTH_CENTERED_INERTIAL = "EARTH_CENTERED_INERTIAL"
     EARTH_FIXED = "EARTH_FIXED"
     NADIR_POINTING = "NADIR_POINTING"
     SC_BODY_FIXED = "SC_BODY_FIXED"
+    SENSOR_BODY_FIXED = "SENSOR_BODY_FIXED"
 
 class Orientation(Entity):
     """ Class to store and handle orientation. Orientation is parameterized as intrinsic rotations specified by Euler angles and sequence 
@@ -445,7 +441,7 @@ class SphericalGeometry(Entity):
         :paramtype _id: str
 
         .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shape, in which we 
-                  have only one cone angle (:code:`cone_angle_vec[0] = 1/2 full_cone_angle`) and no corresponding clock angle. 
+                  have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
 
         """
         class Shape(EnumEntity):
@@ -533,7 +529,7 @@ class SphericalGeometry(Entity):
                 :paramtype _id: str
 
                 .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shaped FOV, in which we 
-                    have only one cone angle (:code:`cone_angle_vec[0] = 1/2 full_cone_angle`) and no corresponding clock angle. 
+                    have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
             
             """
             if(cone_angle_vec):
@@ -708,116 +704,171 @@ class SphericalGeometry(Entity):
         def __repr__(self):
             return "SphericalGeometry.from_dict({})".format(self.to_dict())
 
-class Maneuverability(Entity):
-    """ Class holding the manueverability specifications of the instrument. """
-    def __init__(self, manuver_type=None, roll_min=None , roll_max=None, yaw180=None, full_cone_angle=None, _id=None):
+class Maneuver(Entity):
+    """ Class holding the maneuverability specifications of the satellite and/or sensor. The maneuverability is specified with
+        reference to the NADIR_POINTING_FRAME. The maneuver describes the angular-space, where the pointing axis
+        of the sensor can be positioned. 
 
-        self.manuver_type = ManueverType.get(manuver_type) if manuver_type is not None else None
-        self.roll_min =  float(roll_min) if roll_min is not None else None
-        self.roll_max = float(roll_max) if roll_min is not None else None
-        self.full_cone_angle = float(full_cone_angle) if full_cone_angle is not None else None
+    :ivar manuever_type: Type of manuevers. Accepted values are "FIXED", "CIRCULAR", "SINGLE_ROLL_ONLY", "DOUBLE_ROLL_ONLY".
+    :vartype manuever_type: str
 
-        self.yaw180 = (self.manuver_type == ManueverType.YAW180 or self.manuver_type == ManueverType.YAW180ROLL)
+    :ivar A_roll_min: (deg) Minimum roll angle of the 1st ROLL_ONLY region. 
+    :vartype A_roll_min: float
 
-        super(Maneuverability, self).__init__(_id, "Maneuverability")
+    :ivar A_roll_max: (deg) Maximum roll angle of the 1st ROLL_ONLY region. 
+    :vartype A_roll_max: float
+
+    :ivar B_roll_min: (deg) Minimum roll angle of the 2nd ROLL_ONLY region. 
+    :vartype B_roll_min: float
+
+    :ivar B_roll_max: (deg) Maximum roll angle of the 2nd ROLL_ONLY region. 
+    :vartype B_roll_max: float
+
+    :ivar diameter: (deg) Diameter of the circle.
+    :vartype diameter: float
+
+    :param _id: Unique identifier.
+    :paramtype _id: str
+    
+    """
+
+    class Category(EnumEntity):
+    """ Enumeration of recognized maneuver categories.
+
+
+    """
+        FIXED = "FIXED"
+        CIRCULAR = "CIRCULAR"
+        SINGLE_ROLL_ONLY = "SINGLE_ROLL_ONLY"
+        DOUBLE_ROLL_ONLY = "DOUBLE_ROLL_ONLY"
+
+    def __init__(self, manuever_type=None, A_roll_min=None, A_roll_max=None, B_roll_min=None, B_roll_max=None, diameter=None, _id=None):
+
+        self.manuever_type = ManueverType.get(manuever_type) if manuever_type is not None else None
+        self.A_roll_min =  float(A_roll_min) if A_roll_min is not None else None
+        self.A_roll_max = float(A_roll_max) if A_roll_max is not None else None
+        self.B_roll_min =  float(B_roll_min) if B_roll_min is not None else None
+        self.B_roll_max = float(B_roll_max) if B_roll_max is not None else None
+        self.diameter = float(diameter) if diameter is not None else None
+
+        super(Maneuver, self).__init__(_id, "Maneuver")
 
     @staticmethod
     def from_dict(d):
-        """Parses an maneuvarability object from a normalized JSON dictionary."""
-        return Maneuverability(
-                manuver_type = d.get("@type", None),
-                roll_min = d.get("rollMin", None),
-                roll_max = d.get("rollMax", None),
-                full_cone_angle = d.get("fullConeAngle", None),
+        """Parses an maneuverability object from a normalized JSON dictionary."""
+        return Maneuver(
+                manuever_type = d.get("@type", None),
+                roll_min = d.get("A_rollMin", None),
+                roll_max = d.get("A_rollMax", None),
+                roll_min = d.get("B_rollMin", None),
+                roll_max = d.get("B_rollMax", None),
+                diameter = d.get("diameter", None),
                 )
+    
+    def __repr__(self):
+            return "Maneuver.from_dict({})".format(self.to_dict())
 
     def to_dict(self):
-        if self.manuver_type == ManueverType.FIXED:
-            manuv_dict= dict({ "@type": "FIXED"})
-        elif self.manuver_type == ManueverType.CONE:
-            manuv_dict= dict({"@type": "CONE", "fullConeAngle": self.full_cone_angle})
-        elif self.manuver_type == ManueverType.ROLLONLY:
-            manuv_dict= dict({"@type": "ROLLONLY", "rollMin": self.roll_min, "rollMax": self.roll_max})
-        elif self.manuver_type == ManueverType.YAW180:
-            manuv_dict= dict({"@type": "YAW180"})
-        elif self.manuver_type == ManueverType.YAW180ROLL:
-            manuv_dict= dict({"@type": "YAW180ROLL", "rollMin": self.roll_min, "rollMax": self.roll_max})
+        if self.manuever_type == ManueverType.FIXED:
+            specs_dict= dict({ "@type": "FIXED"})
+        elif self.manuever_type == ManueverType.CONE:
+            specs_dict= dict({"@type": "CIRCULAR", "diameter": self.diameter})
+        elif self.manuever_type == ManueverType.SINGLE_ROLL_ONLY:
+            specs_dict= dict({"@type": "SINGLE_ROLL_ONLY", "A_rollMin": self.roll_min, "A_rollMax": self.roll_max})
+        elif self.manuever_type == ManueverType.DOUBLE_ROLL_ONLY:
+            specs_dict= dict({"@type": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max})
+        else:
+            raise Exception("Invalid or no Manuever type specification.")
         
-        return manuv_dict
+        return specs_dict
     
-    def calc_field_of_regard(self, fldofview):
-        """ Calculate the field-of-regard.
+    def calc_field_of_regard(self, field_of_view):
+        """ Calculate the field-of-regard (FOR). The FOR is characterized by (list of) pair of :code:`Orientation` and :code:`SphericalGeometry` 
+            objects. Only CIRCULAR and RECTANGULAR inputs FOV objects are permitted.
+            
+            The :code:`Orientation` object characterizes the **reference** orientation of the SENSOR_FRAME with respect to the 
+            NADIR_POINTING_FRAME. The :code:`SphericalGeometry` object specifies the spherical polygon/circle angular space which when paired
+            with the :code:`Orientation` object, characterizes the FOR. In some cases the FOR can have non-overlapping angular spaces (e.g. sidelooking
+            SARs which can point on either "side", but cannot point at the nadir), in which case we shall have a list of the pairs of :code:`Orientation` and 
+            :code:`SphericalGeometry` objects, where each element of the list corresponds to a closed angular space.
 
-        :param fldofview:  Field-of-view of the instrument
-        :paramtype fldofview: :class:`instrupy.util.SphericalGeometry`
+        :param field_of_view:  Field-of-view of the sensor. Must be either CIRCULAR or RECTANGULAR shape.
+        :paramtype field_of_view: :class:`instrupy.util.SphericalGeometry`
 
-        :return: Field-of-Regard
-        :rtype: :class:`instrupy.util.SphericalGeometry`
+        :return: Field-of-Regard characterized by the reference sensor orientation with respect to the NADIR_POINTING_FRAME, and the coresponding spherical geometry specifications.
+        :rtype: list, tuple, :class:`instrupy.util.Orientation`, :class:`instrupy.util.SphericalGeometry`
+
         """
-
-        # Calculate the field-of-regard
-        mv_type = self.manuver_type
-
-        if(mv_type == 'FIXED' or mv_type == 'YAW180'):
-            pass
-        elif(mv_type == 'CONE'):
-            mv_cone = 0.5 * float(self.full_cone_angle)
-        elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
-            mv_ct_range = float(self.roll_max) - float(self.roll_min)
-        else:
-            raise Exception('Invalid manuver type.')                                 
-
+        field_of_regard = None 
+        mv_type = self.manuever_type
+        
+        # evaluate FOR for FIXED maneuver
         if(mv_type == 'FIXED'):
-            fr_geom = fldofview.shape
-            fr_at = fldofview.angle_height
-            fr_ct = fldofview.angle_width
-        
-        elif(mv_type == 'YAW180'):
-            fr_geom = fldofview.shape
-            fr_at = fldofview.angle_height
-            fr_ct = fldofview.angle_width
+            field_of_regard = [(Orientation(ref_frame="NADIR_POINTING_FRAME", 0,0,0,1,2,3), field_of_view)]
 
-        elif(mv_type == 'CONE'):
-            if(fldofview.shape == 'CIRCULAR'):
-                fr_geom = 'CIRCULAR'
-                fr_at =2*(mv_cone + fldofview.cone_angle_vec[0])
-                fr_ct = fr_at
+        # evaluate FOR for CIRCULAR maneuver
+        if(mv_type == 'CIRCULAR'):
+            
+            mv_radius = 0.5 * float(self.diameter)
 
-            elif(fldofview.shape == 'RECTANGULAR'):
-                fr_geom = 'CIRCULAR'
-                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview.angle_height))*np.cos(np.deg2rad(0.5*fldofview.angle_width))))
-                fr_at = 2*(mv_cone +  diag_half_angle)
-                fr_ct = fr_at
+            if(field_of_view.shape == 'CIRCULAR'):
+                sph_shape_angle_height =2*(mv_radius + field_of_view.cone_angle_vec[0])
+                sph_shape_angle_width = sph_shape_angle_height
 
+            elif(field_of_view.shape == 'RECTANGULAR'):
+                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*field_of_view.angle_height))*np.cos(np.deg2rad(0.5*field_of_view.angle_width))))
+                sph_shape_angle_height = 2*(mv_radius +  diag_half_angle)
+                sph_shape_angle_width = sph_shape_angle_height
             else:
-                raise Exception('Invalid FOV geometry')    
+                raise Exception('Invalid input FOV geometry')    
 
-        elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
-            if(fldofview.shape == 'CIRCULAR'):
+            field_of_regard = [(    Orientation(ref_frame="NADIR_POINTING_FRAME", 0,0,0,1,2,3), 
+                                    SphericalGeometry.from_dict({"shape": 'CIRCULAR', "diameter": sph_shape_angle_height})
+                                )]                              
+
+        def get_roll_only_maneuver_specs(roll_min, roll_mix, field_of_view):
+            mv_ct_range = self.A_roll_max - self.A_roll_min # cross-track angular maneuver range
+            mv_ref_roll = self.A_roll_min + 0.5*mv_ct_range # reference orientation
+
+            if(field_of_view.shape == 'CIRCULAR'):
                 print("Approximating FOR as rectangular shape")
-                fr_geom = 'RECTANGULAR'
-                fr_at = 2*(fldofview.cone_angle_vec[0])
-                fr_ct = 2*(0.5*mv_ct_range + fldofview.cone_angle_vec[0])
+                sph_geom = 'RECTANGULAR'
+                sph_shape_angle_height = 2*(field_of_view.cone_angle_vec[0])
+                sph_shape_angle_width = 2*(0.5*mv_ct_range_A + field_of_view.cone_angle_vec[0])
 
-            elif(fldofview.shape == 'RECTANGULAR'):
-                fr_geom = 'RECTANGULAR'
-                fr_at = fldofview.angle_height
-                fr_ct = mv_ct_range + fldofview.angle_width
+            elif(field_of_view.shape == 'RECTANGULAR'):
+                sph_geom = 'RECTANGULAR'
+                sph_shape_angle_height = field_of_view.angle_height
+                sph_shape_angle_width = mv_ct_range_A + field_of_view.angle_width
             else:
-                raise Exception('Invalid FOV geometry')
+                raise Exception('Invalid input FOV geometry') 
 
-        if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
-            fr_yaw180_flag = True
-        else:
-            fr_yaw180_flag = False
+            return [mv_ref_roll, sph_shape_angle_height, sph_shape_angle_width]
 
-        if(fr_geom == 'CIRCULAR'):
-            fldofreg = SphericalGeometry.from_circular_specs(full_cone_angle = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
-        elif(fr_geom == 'RECTANGULAR'):
-            # Get the cone and clock angles from the rectangular FOV specifications.
-            fldofreg = SphericalGeometry.from_rectangular_specs(angle_height = fr_at, angle_width = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
+        # evaluate FOR for SINGLE_ROLL_ONLY maneuver
+        if(mv_type == 'SINGLE_ROLL_ONLY'):
+
+            [w, x, y] = get_roll_only_maneuver_specs(self.A_roll_min, self.A_roll_max)
+
+            field_of_regard = [(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING_FRAME", side_look_angle=w), 
+                                    SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x, "angleWidth":y}
+                               )]
+
+        # evaluate FOR for DOUBLE_ROLL_ONLY maneuver
+        if(mv_type == 'DOUBLE_ROLL_ONLY'):
+
+            [w1, x1, y1] = get_roll_only_maneuver_specs(self.A_roll_min, self.A_roll_max)
+            [w2, x2, y2] = get_roll_only_maneuver_specs(self.A_roll_min, self.A_roll_max)
+
+            field_of_regard = [(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING_FRAME", side_look_angle=w1), 
+                                    SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x1, "angleWidth":y1}
+                               ),
+                               (    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING_FRAME", side_look_angle=w2), 
+                                    SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x2, "angleWidth":y2}
+                               )]
+
         
-        return fldofreg
+        return field_of_regard
                 
 class MathUtilityFunctions:
     """ Class aggregating various mathematical computation functions used in the InstruPy package. """

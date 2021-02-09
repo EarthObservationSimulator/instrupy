@@ -287,17 +287,17 @@ Example:
         "@type":"Fixed"
    }
 
-2. :code:`"@type":"Cone"`
+2. :code:`"@type":"Circular"`
 
-This option indicates that the payload pointing axis can be manuvered inside a conical region of full-cone angle as indicated
-by the :code:`fullConeAngle` name, value pair. The axis of the cone is aligned to the nominal orientation of the instrument specified
+This option indicates that the payload pointing axis can be maneuvered inside a circular region of diameter as indicated
+by the :code:`diameter` name, value pair. The axis of the cone is aligned to the nominal orientation of the instrument specified
 in the :code:`instrument` JSON object.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   fullConeAngle, float, degrees, Full cone angle of the maneuverability conical region
+   diameter, float, degrees, Diameter
 
 Example:
 
@@ -305,12 +305,12 @@ Example:
    
    "maneuverability":{
         "@type":"Cone",
-        "fullConeAngle": 25
+        "diameter": 25
    }
 
 3. :code:`"@type":"RollOnly"`
 
-This option indicates that the payload can be manuevered only about the satellite-roll axis (about the satellite velocity vector in Inertial frame).
+This option indicates that the payload can be maneuvered only about the satellite-roll axis (about the satellite velocity vector in Inertial frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
 At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
 The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.

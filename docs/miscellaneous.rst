@@ -102,7 +102,7 @@ IFOV, FOV, Scene-FOV, FOR description
           due to the rotation of the Earth. The approximation is good for small scan times.
 
 * **FOR:** The Field Of Regard is the total angular region which *can be* (not *will be* as in case of FOV) covered by 
-  the instrument at any instant of time. This applies for the case of manueverable payloads where the instrument orientation 
+  the instrument at any instant of time. This applies for the case of maneuverable payloads where the instrument orientation 
   can be changed.
 
   .. warning:: After computing the access over grid-points using the FOR, just because a grid point is accessed (at some time), it 
@@ -176,7 +176,7 @@ takes place by imaging of consequetive strips and building a scene, a *SceneFOV*
 
 .. _manuv_desc:
 
-Manuverability and corresponging FOR calculations
+Maneuverability and corresponding FOR calculations
 ===================================================
 
 There are four types of maneuver which can be specified by the user. Depending on the geometry of the underlying FOV/ SceneFOV, 
@@ -184,16 +184,16 @@ a FOR is calculated as described below.
 
 1. :code:`"@type":"Fixed"`
 
-   This is equivalent to specifying a no-manuever. The resulting FOR is equal to the instrument FOV/ SceneFOV.
+   This is equivalent to specifying a no-maneuver. The resulting FOR is equal to the instrument FOV/ SceneFOV.
 
 2. :code:`"@type":"Yaw180"`
 
-    This manuver option indicates that the pointing axis can be manuevered to an orientation at 180 deg about the 
+    This manuver option indicates that the pointing axis can be maneuvered to an orientation at 180 deg about the 
     satellite yaw axis (nadir vector).  
 
 3. :code:`"@type":"Cone"`
 
-    This manuver option indicates that the pointing axis can be manuevered within a conical region (within a user-defined
+    This manuver option indicates that the pointing axis can be maneuvered within a conical region (within a user-defined
     conical angle). The rotation about the pointing axis is unrestricted. The resulting FOR per sensor FOV is as follows:
 
         * Circular FOV sensor: FOR is conical with cone angle = manuver cone angle + sensor cone angle
@@ -204,7 +204,7 @@ a FOR is calculated as described below.
 
 4. :code:`"@type":"RollOnly"`
 
-    This manuver option indicates that the pointing axis can be manuevered along the roll axis (satellite velocity vector)
+    This manuver option indicates that the pointing axis can be maneuvered along the roll axis (satellite velocity vector)
     over a range indicated by :code:`rollMin` and :code:`rollMax`. The resulting FOR per sensor FOV is as follows:
        
         * Circular FOV sensor: FOR is rectangular with:
