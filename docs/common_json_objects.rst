@@ -276,8 +276,7 @@ maneuvers are accepted: `Fixed`, `Circular`, `Single_Roll_Only` and `Double_Roll
 
 1. :code:`"@type":"Fixed"`
 
-This option indicates that the payload shall be fixed at it's nominal orientation (specified inside the :code:`instrument`
-JSON object). There is no maneuverability.
+This option indicates that the instrument shall be fixed at it's nominal orientation. There is no maneuverability.
 
 Example:
 
@@ -289,9 +288,8 @@ Example:
 
 2. :code:`"@type":"Circular"`
 
-This option indicates that the payload pointing axis can be maneuvered inside a circular region of diameter as indicated
-by the :code:`diameter` name, value pair. The axis of the cone is aligned to the nominal orientation of the instrument specified
-in the :code:`instrument` JSON object.
+This option indicates that the instrument pointing axis can be maneuvered about the nadir vector inside a circular region of diameter as indicated
+by the :code:`diameter` name, value pair.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
@@ -310,7 +308,7 @@ Example:
 
 3. :code:`"@type":"Single_Roll_Only"`
 
-This option indicates that the payload can be maneuvered only about the roll axis (of the nadir-pointing frame).
+This option indicates that the instrument can be maneuvered only about the roll axis (of the nadir-pointing frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
 The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs. Note that these angles are
 defined with respect to the NADIR_POINTING frame.
@@ -335,7 +333,7 @@ Example:
 4. :code:`"@type":"Double_Roll_Only"`
 
 This option is similar to the :code:`Single_Roll_Only` option, except that it allows for definition of two set of roll-ranges (labelled as A and B).
-THis option is useful to model manuever by purely side-looking (which cannot look at the nadir) instruments which may be pointed on either 'side' (i.e. positive roll region
+This option is useful to model manuever by purely side-looking (look at the nadir is prohibited) instruments which may be pointed on either 'side' (i.e. positive roll region
 and the negative roll region) of the nadir-pointing frame. 
 
 .. csv-table:: Expected parameters
