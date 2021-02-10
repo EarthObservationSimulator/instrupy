@@ -356,15 +356,15 @@ class Orientation(Entity):
         orien_conv = Orientation.Convention.get(d.get("convention", None))
         ref_frame = ReferenceFrame.get(d.get("referenceFrame", "NADIR_POINTING")).value # default reference frame is NADIR_POINTING
         if(orien_conv == "XYZ"):
-            return Orientation.from_XYZ_rotations(ref_frame=ref_frame, x_rot=d.get("xRotation", None), y_rot=d.get("yRotation", None), z_rot=d.get("zRotation", None), _id = d.get("@id", None))
+            return Orientation.from_XYZ_rotations(ref_frame=ref_frame, x_rot=d.get("xRotation", 0), y_rot=d.get("yRotation", 0), z_rot=d.get("zRotation", 0), _id = d.get("@id", None))
         elif(orien_conv == "SIDE_LOOK"):
-            return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=d.get("sideLookAngle", None), _id=d.get("@id", None))
+            return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=d.get("sideLookAngle", 0), _id=d.get("@id", None))
         elif(orien_conv == "REF_FRAME_ALIGNED"):
             return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=0, _id=d.get("@id", None))
         elif(orien_conv == "EULER"):
-            return Orientation(ref_frame=ref_frame, euler_angle1=d.get("eulerAngle1", None), euler_angle2=d.get("eulerAngle2", None), 
-                               euler_angle3=d.get("eulerAngle3", None), euler_seq1=d.get("eulerSeq1", None), euler_seq2=d.get("eulerSeq2", None),
-                               euler_seq3=d.get("eulerSeq3", None), _id=d.get("@id", None))
+            return Orientation(ref_frame=ref_frame, euler_angle1=d.get("eulerAngle1", 0), euler_angle2=d.get("eulerAngle2", 0), 
+                               euler_angle3=d.get("eulerAngle3", 0), euler_seq1=d.get("eulerSeq1", 1), euler_seq2=d.get("eulerSeq2", 2),
+                               euler_seq3=d.get("eulerSeq3", 3), _id=d.get("@id", None))
         else:
             raise Exception("Invalid or no Orientation convention specification")
     
@@ -404,7 +404,17 @@ class Orientation(Entity):
         else:
             return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
                                                                                           self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
-            
+
+    def __eq__(self, other):
+            # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+            # the Orientation is physically the same.
+            # note that _id data attribute may be different
+            if(isinstance(self, other.__class__)):
+                return (self.ref_frame==other.ref_frame) and (self.euler_angle1==other.euler_angle1) and (self.euler_angle2==other.euler_angle2) and (self.euler_angle3==other.euler_angle3) \
+                       and (self.euler_seq1==other.euler_seq1) and (self.euler_seq2==other.euler_seq2) and (self.euler_seq3==other.euler_seq3)                    
+            else:
+                return NotImplemented
+
 class SphericalGeometry(Entity):
         """ Class to handle spherical geometries (spherical polygons and circles) which are used to characterize the sensor 
             field-of-view (FOV) / scene FOV.
@@ -478,10 +488,10 @@ class SphericalGeometry(Entity):
                 self.clock_angle_vec = None
 
             self.shape = SphericalGeometry.Shape.get(shape) if shape is not None else None
-            if(self.shape is SphericalGeometry.Shape.CIRCULAR):
+            if(self.shape==SphericalGeometry.Shape.CIRCULAR):
                 self.angle_height = 2 * self.cone_angle_vec[0]
                 self.angle_width = self.angle_height
-            elif(self.shape is SphericalGeometry.Shape.RECTANGULAR):
+            elif(self.shape==SphericalGeometry.Shape.RECTANGULAR):
                 [self.angle_height, self.angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(self.cone_angle_vec, self.clock_angle_vec)
             else:
                 self.angle_height = None
@@ -508,6 +518,18 @@ class SphericalGeometry(Entity):
             else:
                 sph_geom_dict = None
             return sph_geom_dict
+
+        def __eq__(self, other):
+            # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+            # the spherical shape is physically the same.
+            # note that _id data attribute may be different
+            if(isinstance(self, other.__class__)):
+                return (self.shape==other.shape) and (self.angle_width==other.angle_width) and (self.angle_height==other.angle_height) and \
+                       (self.cone_angle_vec==other.cone_angle_vec) and (self.clock_angle_vec==other.clock_angle_vec)
+                    
+            else:
+                return NotImplemented
+                    
 
         @classmethod
         def from_custom_specs(cls, cone_angle_vec=None, clock_angle_vec=None, _id=None):
@@ -822,11 +844,11 @@ class Maneuver(Entity):
         if(self.maneuver_type is None):
             raise Exception("Please input valid maneuver type.")
 
-        if(self.maneuver_type is Maneuver.Type.CIRCULAR):
+        if(self.maneuver_type == Maneuver.Type.CIRCULAR):
             if(self.diameter is None or self.diameter <=0 or self.diameter > 180):
                 raise Exception("Please input valid maneuver CIRCULAR diameter.")
         
-        if(self.maneuver_type is Maneuver.Type.SINGLE_ROLL_ONLY or self.maneuver_type is Maneuver.Type.DOUBLE_ROLL_ONLY ):
+        if(self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY or self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY ):
             if(self.A_roll_min is None or abs(self.A_roll_min) > 180 ):
                 raise Exception("Please input valid roll range for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
             if(self.A_roll_max is None or abs(self.A_roll_max) > 180 ):
@@ -834,7 +856,7 @@ class Maneuver(Entity):
             if(self.A_roll_max <= self.A_roll_min):
                 raise Exception("Specified Max roll angle must be numerically greater than Min roll angle for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
         
-        if(self.maneuver_type is Maneuver.Type.DOUBLE_ROLL_ONLY):
+        if(self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY):
             if(self.B_roll_min is None or abs(self.B_roll_min) > 180 ):
                 raise Exception("Please input valid roll range for DOUBLE_ROLL_ONLY maneuver.")
             if(self.B_roll_max is None or abs(self.B_roll_max) > 180 ):
@@ -858,13 +880,13 @@ class Maneuver(Entity):
                 )
 
     def to_dict(self):
-        if self.maneuver_type is Maneuver.Type.FIXED:
+        if self.maneuver_type == Maneuver.Type.FIXED:
             specs_dict= dict({ "@type": "FIXED", "@id": self._id})
-        elif self.maneuver_type is Maneuver.Type.CIRCULAR:
+        elif self.maneuver_type == Maneuver.Type.CIRCULAR:
             specs_dict= dict({"@type": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
-        elif self.maneuver_type is Maneuver.Type.SINGLE_ROLL_ONLY:
+        elif self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY:
             specs_dict= dict({"@type": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "@id": self._id})
-        elif self.maneuver_type is Maneuver.Type.DOUBLE_ROLL_ONLY:
+        elif self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY:
             specs_dict= dict({"@type": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max, "@id": self._id})
         else:
             raise Exception("Invalid or no Manuever type specification.")

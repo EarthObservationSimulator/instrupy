@@ -313,6 +313,52 @@ class TestOrientation(unittest.TestCase):
         self.assertEqual(d["eulerSeq2"], 1)
         self.assertEqual(d["eulerSeq3"], 3)
         self.assertEqual(d["@id"], 123)
+    
+    def test___eq__(self):
+        # SIDE_LOOK convention
+        o1 = Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10}')
+        o2 = Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10}')
+        self.assertTrue(o1==o2)
+        o1 = Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10}')
+        o2 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK","sideLookAngle":10}')
+        self.assertFalse(o1==o2)
+
+        # XYZ convention
+        o1 = Orientation.from_json(
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation":-10,"yRotation":-78.2,"zRotation":-20.5, "@id":123}')
+        o2 = Orientation.from_json(
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation":-10,"yRotation":-78.2,"zRotation":-20.5, "@id":"xyz"}')
+        self.assertTrue(o1==o2) # @id parameter could be different, but the equality holds
+        o1 = Orientation.from_json(
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation":-10,"yRotation":-78.2,"zRotation":-20.5}')
+        o2 = Orientation.from_json(
+            '{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "XYZ","xRotation": 10,"yRotation":-78.2,"zRotation":-20.5}')
+        self.assertFalse(o1==o2)
+
+        # REF_FRAME_ALIGNED convention
+        o1 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        o2 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        self.assertTrue(o1==o2)
+        o1 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        o2 = Orientation.from_json('{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "REF_FRAME_ALIGNED", "@id":"123"}') 
+        self.assertFalse(o1==o2)
+
+        # EULER convention
+        o1 = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":10,"eulerAngle2":13.8, \
+              "eulerAngle3":-45,"eulerSeq1":3, "eulerSeq2":1, "eulerSeq3":3}')
+        o2 = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":10,"eulerAngle2":13.8, \
+              "eulerAngle3":-45,"eulerSeq1":3, "eulerSeq2":1, "eulerSeq3":3, "@id":123}')
+        self.assertTrue(o1==o2)
+        o1 = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":10,"eulerAngle2":13.8, \
+              "eulerAngle3":-45,"eulerSeq1":3, "eulerSeq2":1, "eulerSeq3":3}')
+        o2 = Orientation.from_json(
+            '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":400,"eulerAngle2":1345.8, \
+              "eulerAngle3":-45,"eulerSeq1":1, "eulerSeq2":2, "eulerSeq3":3, "@id":123}')
+        self.assertFalse(o1==o2)
+
                 
     def test___repr__(self):
         # _id = None
@@ -334,7 +380,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.CUSTOM)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.CUSTOM)
         self.assertEqual(o.cone_angle_vec, [10, 10, 10, 10])
         self.assertEqual(o.clock_angle_vec, [30, 60, 180, 220])
         self.assertIsNone(o.angle_height)
@@ -344,7 +390,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "Custom", "customConeAnglesVector": [10], "@id": 123}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.CUSTOM)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.CUSTOM)
         self.assertEqual(o.cone_angle_vec, [10])
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.angle_height)
@@ -354,7 +400,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "CusTOM", "customConeAnglesVector": 10, "@id": "123"}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.CUSTOM)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.CUSTOM)
         self.assertEqual(o.cone_angle_vec, [10])
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.angle_height)
@@ -377,7 +423,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "CIRCULAR", "diameter": 30.56}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.CIRCULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.CIRCULAR)
         self.assertEqual(o.cone_angle_vec, [15.28])
         self.assertIsNone(o.clock_angle_vec)
         self.assertEqual(o.angle_height, 30.56)
@@ -387,7 +433,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "Circular", "diameter": 15.4242, "@id":123}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.CIRCULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.CIRCULAR)
         self.assertEqual(o.cone_angle_vec, [7.7121])
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.clock_angle_vec)
@@ -398,7 +444,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "CirCuLar", "diameter": 25, "@id":"123"}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.CIRCULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.CIRCULAR)
         self.assertEqual(o.cone_angle_vec, [12.5])
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.clock_angle_vec)
@@ -422,7 +468,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec, [
                          15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
         self.assertAlmostEqual(o.clock_angle_vec, [
@@ -435,7 +481,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "RECTANGULAR", "angleHeight": 15 , "angleWidth": 15, "@id": 123}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec, [
                          10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208])
         self.assertAlmostEqual(o.clock_angle_vec, [
@@ -448,7 +494,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "RECTANGULAR", "angleHeight": 30 , "angleWidth": 10}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec, [
                          15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
         self.assertAlmostEqual(o.clock_angle_vec, [
@@ -461,7 +507,7 @@ class TestSphericalGeometry(unittest.TestCase):
         o = SphericalGeometry.from_json(
             '{"shape": "RECTANGULAR", "angleHeight": 0.1 , "angleWidth": 50, "@id": "123"}')
         self.assertIsInstance(o, SphericalGeometry)
-        self.assertIs(o.shape, SphericalGeometry.Shape.RECTANGULAR)
+        self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec[0], 25, 2)
         self.assertAlmostEqual(o.clock_angle_vec[0], 0, delta=0.2)
         self.assertAlmostEqual(o.clock_angle_vec[1], 180, delta=0.2)
@@ -548,13 +594,56 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertEqual(d["angleHeight"], 10.0)
         self.assertAlmostEqual(d["angleWidth"], 30.0)
         self.assertEqual(d["@id"], "123")
+    
+    def test___eq__(self):
+        # custom shape
+        o1 = SphericalGeometry.from_json(
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+        o2 = SphericalGeometry.from_json(
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+        self.assertTrue(o1==o2)
+
+        o1 = SphericalGeometry.from_json(
+            '{"shape": "CUSTOM", "customConeAnglesVector": [20,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+        o2 = SphericalGeometry.from_json(
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+        self.assertFalse(o1==o2)
+
+        # circular shape
+        o1 = SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 30, "@id": 123}')
+        o2 = SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 30, "@id": 123}')
+        self.assertTrue(o1==o2)
+        # @id may be different, but still satisfies the equality criteria
+        o1 = SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 30, "@id": 245}')
+        o2 = SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 30, "@id": 123}')
+        self.assertTrue(o1==o2)
+        
+        o1 = SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 30, "@id": 123}')
+        o2 = SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 20, "@id": 123}')
+        self.assertFalse(o1==o2)
+
+        # rectangular shape
+        o1 = SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30, "@id": "xyz"}')
+        o2 = SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30, "@id": "123"}')
+        self.assertTrue(o1==o2)
+
+        o1 = SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30}')
+        o2 = SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 40}')
+        self.assertFalse(o1==o2)
+
+        # test equality with object of another type
+        o1 = SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30}')
+        o2 = [1,2,3]
+        with self.assertRaises(Exception):
+             self.assertTrue(o1==o2)
+
 
 class TestManeuver(unittest.TestCase):
 
     def test_from_json_FIXED(self):
         o = Maneuver.from_json('{"@type": "FixEd"}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.FIXED)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.FIXED)
         self.assertIsNone(o.diameter)
         self.assertIsNone(o.A_roll_min)
         self.assertIsNone(o.A_roll_max)
@@ -566,7 +655,7 @@ class TestManeuver(unittest.TestCase):
 
         o = Maneuver.from_json('{"@type": "CIRCULAR", "diameter":10.3}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.CIRCULAR)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.CIRCULAR)
         self.assertEqual(o.diameter, 10.3)
         self.assertIsNone(o.A_roll_min)
         self.assertIsNone(o.A_roll_max)
@@ -576,7 +665,7 @@ class TestManeuver(unittest.TestCase):
 
         o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.CIRCULAR)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.CIRCULAR)
         self.assertIsInstance(o.diameter, float)
         self.assertIsNone(o.A_roll_min)
         self.assertIsNone(o.A_roll_max)
@@ -600,7 +689,7 @@ class TestManeuver(unittest.TestCase):
 
         o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.SINGLE_ROLL_ONLY)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.SINGLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
         self.assertEqual(o.A_roll_min, 0)
         self.assertEqual(o.A_roll_max, 30)
@@ -610,7 +699,7 @@ class TestManeuver(unittest.TestCase):
 
         o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "@id":123}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.SINGLE_ROLL_ONLY)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.SINGLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
         self.assertEqual(o.A_roll_min, -10)
         self.assertEqual(o.A_roll_max, 0)
@@ -637,7 +726,7 @@ class TestManeuver(unittest.TestCase):
 
         o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30, "B_rollMin":-30, "B_rollMax": 0}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.DOUBLE_ROLL_ONLY)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.DOUBLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
         self.assertEqual(o.A_roll_min, 0)
         self.assertEqual(o.A_roll_max, 30)
@@ -647,7 +736,7 @@ class TestManeuver(unittest.TestCase):
 
         o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60, "@id":"123"}')
         self.assertIsInstance(o, Maneuver)
-        self.assertIs(o.maneuver_type, Maneuver.Type.DOUBLE_ROLL_ONLY)
+        self.assertEqual(o.maneuver_type, Maneuver.Type.DOUBLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
         self.assertEqual(o.A_roll_min, -10)
         self.assertEqual(o.A_roll_max, 0)
@@ -704,6 +793,15 @@ class TestManeuver(unittest.TestCase):
         self.assertEqual(d["B_rollMin"], 10.0)
         self.assertEqual(d["B_rollMax"], 60.0)
         self.assertIsNone(d["@id"])
+    
+    def test_calc_field_of_regard(self):
+
+        # fixed
+        o = Maneuver.from_json('{"@type": "fixed"}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":10}))
+        self.assertIsNone(x[0][0])
+        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"Circular", "diameter":10}))
+
 
 
 
