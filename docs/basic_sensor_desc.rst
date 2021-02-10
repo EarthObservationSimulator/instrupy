@@ -19,7 +19,7 @@ Input JSON format specifications description
     fieldOfView, :ref:`fieldOfView_json_obj`, ,Field of view specification of instrument. 
     dataRate, float, Mega-bits-per-s,Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
-    maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
+    maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`maneuv_desc`)
 
 .. _basic_sensor_data_metrics_calc:
 

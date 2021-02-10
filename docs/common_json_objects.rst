@@ -270,9 +270,9 @@ Example:
 
 :code:`maneuverability` JSON object
 ========================================
-Total maneuverability of payload pointing (combining satellite and payload maneuverability). Four types of 
-maneuverability are accepted: `Fixed`, `Cone`, `RollOnly`, `Yaw180`, `Yaw180Roll` and should be indicated in the 
-:code:`@type` name, value pair. Please refer to :ref:`manuv_desc` for a complete description of the options.
+Total maneuverability of sensor pointing (combining satellite and sensor maneuverability). Four categories of 
+maneuvers are accepted: `Fixed`, `Circular`, `Single_Roll_Only` and `Double_Roll_Only`. This should be indicated in the 
+:code:`@type` name, value pair. Please refer to :ref:`maneuv_desc` for a complete description of the options.
 
 1. :code:`"@type":"Fixed"`
 
@@ -304,23 +304,23 @@ Example:
 .. code-block:: javascript
    
    "maneuverability":{
-        "@type":"Cone",
+        "@type":"Circular",
         "diameter": 25
    }
 
-3. :code:`"@type":"RollOnly"`
+3. :code:`"@type":"Single_Roll_Only"`
 
-This option indicates that the payload can be maneuvered only about the satellite-roll axis (about the satellite velocity vector in Inertial frame).
+This option indicates that the payload can be maneuvered only about the roll axis (of the nadir-pointing frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
-At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
-The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.
+The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs. Note that these angles are
+defined with respect to the NADIR_POINTING frame.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   rollMin, float, degrees, minimum roll angle
-   rollMax, float, degrees, maximum roll angle
+   A_rollMin, float, degrees, minimum roll angle
+   A_rollMax, float, degrees, maximum roll angle
 
 Example:
 
@@ -328,65 +328,34 @@ Example:
    
    "maneuverability":{
         "@type":"RollOnly",
-        "rollMin": -5,
-        "rollMax": 5
+        "A_rollMin": 5,
+        "A_rollMax": 15
    }
 
-4. :code:`"@type":"Yaw180"`
+4. :code:`"@type":"Double_Roll_Only"`
 
-This option allows for a 180 deg maneuver option about the satellite-yaw axis. 
-
-Example:
-
-.. code-block:: javascript
-   
-   "maneuverability":{
-        "@type":"Yaw180"
-   }
-
-5. :code:`"@type":"Yaw180Roll"`
-
-This option is similar to the :code:`RollOnly` option, but also includes 180 deg maneuver option about the yaw axis. 
-Such an option is expected for instruments which require a pure-side-looking target geometry.
-At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
-The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.
+This option is similar to the :code:`Single_Roll_Only` option, except that it allows for definition of two set of roll-ranges (labelled as A and B).
+THis option is useful to model manuever by purely side-looking (which cannot look at the nadir) instruments which may be pointed on either 'side' (i.e. positive roll region
+and the negative roll region) of the nadir-pointing frame. 
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   rollMin, float, degrees, minimum roll angle
-   rollMax, float, degrees, maximum roll angle
+   A_rollMin, float, degrees, minimum roll angle of roll region A
+   A_rollMax, float, degrees, maximum roll angle of roll region A
+   B_rollMin, float, degrees, minimum roll angle of roll region B
+   B_rollMax, float, degrees, maximum roll angle of roll region B
 
 Example:
 
 .. code-block:: javascript
    
    "maneuverability":{
-        "@type":"Yaw180Roll",
-        "rollMin": -5,
-        "rollMax": 5
+        "@type":"RollOnly",
+        "A_rollMin": 5,
+        "A_rollMax": 15,
+        "B_rollMin": -15,
+        "B_rollMax": -5
    }
 
-5. :code:`"@type":"FieldOfRegard"`
-
-In this option the field of regard (angular region over which the sensor FOV can span) is specified. A :code:`fieldOfRegard` JSON object parameter
-is to be specified for which the format is the same as that the :code:`fieldOfView` JSON object.
-
-.. csv-table:: Expected parameters
-   :header: Parameter, Data type, Units, Description
-   :widths: 10,10,5,40
-
-   fieldOfRegard, float, , Field-of-regard
-
-Example:
-
-.. code-block:: javascript
-   
-   "maneuverability":{
-        "@type":"FieldOfRegard",
-        "fieldOfRegard":{
-            "convention": "CIRCULAR",
-            "fullConeAngle": 60
-        }
-   }

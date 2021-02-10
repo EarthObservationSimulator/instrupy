@@ -153,11 +153,6 @@ The clock angle for the point is:
 .. todo:: Extend the representation to include multiple non-intersecting spherical shapes. One way is to make the FOV representation 
         a list of spherical shapes and associate an orientation (i.e. position on the sphere) with each shape. 
 
-Representation of sensor FOR
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-TODO
-
 .. _purely_side_looking:
 
 Purely Side Looking Instruments
@@ -174,62 +169,77 @@ takes place by imaging of consecutive strips and building a scene, a *SceneFOV* 
 
     SAR pure side looking geometry illustration.
 
-.. _manuv_desc:
+.. _maneuv_desc:
 
 Maneuverability and corresponding Field Of Regard (FOR) calculations
 =====================================================================
 
-There are four types of maneuver which can be specified by the user. Depending on the geometry of the underlying FOV/ SceneFOV, 
-a FOR is calculated as described below. 
+The maneuverability is specified with reference to the NADIR_POINTING_FRAME. The maneuver specifications 
+describe the angular-space, where the pointing axis of the sensor can be positioned.
+
+The FOR is characterized in terms of a proxy-sensor setup. The proxy sensor setup is further characterized by orientation (wrt the NADIR_POINTING frame) of the proxy-sensor 
+and a spherical polygon/circle specification of the proxy-sensor's field-of-view. This proxy-sensor setup allows to calculate all coverage opportunities
+by the satellite-sensor pair, taking into account the satellite and/or sensor maneuverability.  
+
+Following maneuver categories are recognized: :code:`FIXED`, :code:`CIRCULAR`, :code:`SINGLE_ROLL_ONLY` and :code:`DOUBLE_ROLL_ONLY`.
+All maneuvers are with respect to the NADIR_POINTING_FRAME.
 
 1. :code:`"@type":"Fixed"`
 
-   This is equivalent to specifying a no-maneuver. The resulting FOR is equal to the instrument FOV/ SceneFOV.
+   This option is equivalent to specifying no-maneuver. The resulting FOR is a proxy-sensor instrument with the same 
+   orientation and FOV as the original input sensor.
 
 2. :code:`"@type":"CIRCULAR"`
 
-    This maneuver option indicates that the pointing axis can be maneuvered within a circular region (within a user-defined
-    angular diameter) about the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
-    The resulting FOR per sensor FOV is as follows:
+    This maneuver option indicates that the pointing axis can be maneuvered within a circular region (corresponding to a
+    specified angular diameter) *around* the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
+    The resulting FOR is characterized by a proxy-sensor is as follows:
 
-        * CIRCULAR FOV sensor: FOR is CIRCULAR with radius = maneuver cone angle + sensor cone angle
+        * Reference orientation is the proxy-sensor aligned to the NADIR_POINTING frame.
 
-        * RECTANGULAR FOV sensor: FOR is CIRCULAR with radius = maneuver cone angle + half diagonal angle of the rectangular FOV
+        * If input sensor FOV is CIRCULAR: proxy-sensor FOV is CIRCULAR with diameter = maneuver diameter + input FOV diameter
 
-        where half diagonal angle of the RECTANGULAR FOV = acos( cos(along-track FOV/2) . cos(cross-track FOV/2) )
+        * If input sensor FOV is RECTANGULAR: proxy-sensor FOV  is CIRCULAR with diameter = maneuver diameter + diagonal angle of the input rectangular FOV
+
+            where diagonal angle of the RECTANGULAR FOV = 2 acos( cos(angle_width/2) . cos(angle_height/2) )
 
     .. figure:: circular_maneuver.png
-        :scale: 100 %
-        :align: center 
+        :scale: 75 %
+        :align: center
+
 
 3. :code:`"@type":"SINGLE_ROLL_ONLY"`
 
-    This maneuver option indicates that the pointing axis can be maneuvered along the roll axis (= y-axis of the NADIR_POINTING_FRAME) 
-    over a (single) range indicated by minimum and maximum roll angles. The resulting FOR per sensor FOV is as follows:
-    
-        * Circular FOV sensor: FOR is rectangular with:
+    This maneuver option indicates that the pointing axis can be maneuvered about the roll axis (= y-axis of the NADIR_POINTING_FRAME) 
+    over a (single) range indicated by minimum and maximum roll angles. The resulting FOR characterized by a proxy-sensor is as follows:
+
+        * Reference orientation is the proxy-sensor at a roll-position (wrt to the NADIR_POINTING_FRAME) as follows:
             
-            cross track = (rollMax - rollMin) + sensor full cone angle
+            roll position = rollMin + 0.5 * (rollMax - rollMin)
 
-            along-track = sensor along track
-
-        * Rectangular FOV sensor: FOR is rectangular with:
+        * If input sensor FOV is CIRCULAR: proxy-sensor FOV is rectangular with:
             
-            cross-track = (rollMax - rollMin) + sensor cross track 
+            angle width = (rollMax - rollMin) + input FOV diameter
 
-            along-track = sensor along track
+            angle height = input FOV diameter
+
+        * If input sensor FOV is RECTANGULAR: proxy-sensor FOV is rectangular with:
+            
+            angle width  = (rollMax - rollMin) + input FOV angle width
+
+            angle height = input FOV angle height
 
     .. figure:: single_rollonly_maneuver.png
-        :scale: 100 %
+        :scale: 75 %
         :align: center
 
 4. :code:`"@type":"DOUBLE_ROLL_ONLY"`
 
     This maneuver option is similar to the SINGLE_ROLL_ONLY case, except that **two** 
-    (potentially non-overlapping) ranges of roll-angles (minimum and maximum angles) characterizes this maneuver.
+    (potentially non-overlapping) ranges of roll-angles (minimum and maximum angles).
 
     .. figure:: double_rollonly_maneuver.png
-        :scale: 100 %
+        :scale: 75 %
         :align: center
 
 
