@@ -166,7 +166,7 @@ Purely Side Looking Instruments
 Some instruments such as Synthetic Aperture Radars operating under Stripmap mode are constrained to point sideways with 
 a fixed squint angle (usually 0 squint). The SAR model in the :code:`instrupy` package assumes Stripmap operating mode 
 with zero-squint angle and hence falls under the category of purely side-looking instruments. Further, since the imaging
-takes place by imaging of consequetive strips and building a scene, a *SceneFOV* may be associated with the instrument. 
+takes place by imaging of consecutive strips and building a scene, a *SceneFOV* may be associated with the instrument. 
 
 .. figure:: SAR_pure_sidelook.png
     :scale: 75 %
@@ -176,8 +176,8 @@ takes place by imaging of consequetive strips and building a scene, a *SceneFOV*
 
 .. _manuv_desc:
 
-Maneuverability and corresponding FOR calculations
-===================================================
+Maneuverability and corresponding Field Of Regard (FOR) calculations
+=====================================================================
 
 There are four types of maneuver which can be specified by the user. Depending on the geometry of the underlying FOV/ SceneFOV, 
 a FOR is calculated as described below. 
@@ -186,27 +186,27 @@ a FOR is calculated as described below.
 
    This is equivalent to specifying a no-maneuver. The resulting FOR is equal to the instrument FOV/ SceneFOV.
 
-2. :code:`"@type":"Yaw180"`
+2. :code:`"@type":"CIRCULAR"`
 
-    This manuver option indicates that the pointing axis can be maneuvered to an orientation at 180 deg about the 
-    satellite yaw axis (nadir vector).  
+    This maneuver option indicates that the pointing axis can be maneuvered within a circular region (within a user-defined
+    angular diameter) about the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
+    The resulting FOR per sensor FOV is as follows:
 
-3. :code:`"@type":"Cone"`
+        * CIRCULAR FOV sensor: FOR is CIRCULAR with radius = maneuver cone angle + sensor cone angle
 
-    This manuver option indicates that the pointing axis can be maneuvered within a conical region (within a user-defined
-    conical angle). The rotation about the pointing axis is unrestricted. The resulting FOR per sensor FOV is as follows:
+        * RECTANGULAR FOV sensor: FOR is CIRCULAR with radius = maneuver cone angle + half diagonal angle of the rectangular FOV
 
-        * Circular FOV sensor: FOR is conical with cone angle = manuver cone angle + sensor cone angle
+        where half diagonal angle of the RECTANGULAR FOV = acos( cos(along-track FOV/2) . cos(cross-track FOV/2) )
 
-        * Retangular FOV sensor: FOR is conical with cone angle = manuver cone angle + half diagonal angle of the rectangular FOV
+    .. figure:: circular_maneuver.png
+        :scale: 100 %
+        :align: center 
 
-        where half diagonal angle of the rectangular FOV = acos( cos(along-track FOV/2) . cos(cross-track FOV/2) )
+3. :code:`"@type":"SINGLE_ROLL_ONLY"`
 
-4. :code:`"@type":"RollOnly"`
-
-    This manuver option indicates that the pointing axis can be maneuvered along the roll axis (satellite velocity vector)
-    over a range indicated by :code:`rollMin` and :code:`rollMax`. The resulting FOR per sensor FOV is as follows:
-       
+    This maneuver option indicates that the pointing axis can be maneuvered along the roll axis (= y-axis of the NADIR_POINTING_FRAME) 
+    over a (single) range indicated by minimum and maximum roll angles. The resulting FOR per sensor FOV is as follows:
+    
         * Circular FOV sensor: FOR is rectangular with:
             
             cross track = (rollMax - rollMin) + sensor full cone angle
@@ -219,22 +219,18 @@ a FOR is calculated as described below.
 
             along-track = sensor along track
 
+    .. figure:: single_rollonly_maneuver.png
+        :scale: 100 %
+        :align: center
 
-5. :code:`"@type":"Yaw180Roll"`
+4. :code:`"@type":"DOUBLE_ROLL_ONLY"`
 
-    This manuver option indicates combines the :code:`"@type":"Yaw180"` and :code:`"@type":"RollOnly"` options.
+    This maneuver option is similar to the SINGLE_ROLL_ONLY case, except that **two** 
+    (potentially non-overlapping) ranges of roll-angles (minimum and maximum angles) characterizes this maneuver.
 
-.. figure:: cone_yaw180_maneuver.png
-    :scale: 75 %
-    :align: center
-
-    Illustration of Cone maneuver and Yaw180 maneuver for rectangular FOV instruments
-
-.. figure:: rollonly_maneuver.png
-    :scale: 75 %
-    :align: center
-
-    Illustration of RollOnly maneuver for circular and rectangular FOV instruments
+    .. figure:: double_rollonly_maneuver.png
+        :scale: 100 %
+        :align: center
 
 
 
