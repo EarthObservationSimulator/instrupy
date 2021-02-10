@@ -711,8 +711,8 @@ class Maneuver(Entity):
     and a spherical geometry (polygon/circle) specification of the proxy-sensor's field-of-view. This allows to calculate all coverage opportunities
     by the satellite-sensor pair, taking into account the satellite and/or sensor maneuverability.    
 
-    :ivar manuever_type: Type of manuevers. Accepted values are "FIXED", "CIRCULAR", "SINGLE_ROLL_ONLY", "DOUBLE_ROLL_ONLY".
-    :vartype manuever_type: str
+    :ivar maneuver_type: Type of manuevers. Accepted values are "FIXED", "CIRCULAR", "SINGLE_ROLL_ONLY", "DOUBLE_ROLL_ONLY".
+    :vartype maneuver_type: str
 
     :ivar A_roll_min: (deg) Minimum roll angle of the 1st ROLL_ONLY region. 
     :vartype A_roll_min: float
@@ -809,14 +809,38 @@ class Maneuver(Entity):
         SINGLE_ROLL_ONLY = "SINGLE_ROLL_ONLY"
         DOUBLE_ROLL_ONLY = "DOUBLE_ROLL_ONLY"
 
-    def __init__(self, manuever_type=None, A_roll_min=None, A_roll_max=None, B_roll_min=None, B_roll_max=None, diameter=None, _id=None):
+    def __init__(self, maneuver_type=None, A_roll_min=None, A_roll_max=None, B_roll_min=None, B_roll_max=None, diameter=None, _id=None):
 
-        self.manuever_type = Maneuver.Type.get(manuever_type) if manuever_type is not None else None
+        self.maneuver_type = Maneuver.Type.get(maneuver_type) if maneuver_type is not None else None
         self.A_roll_min =  float(A_roll_min) if A_roll_min is not None else None
         self.A_roll_max = float(A_roll_max) if A_roll_max is not None else None
         self.B_roll_min =  float(B_roll_min) if B_roll_min is not None else None
         self.B_roll_max = float(B_roll_max) if B_roll_max is not None else None
         self.diameter = float(diameter) if diameter is not None else None
+
+        # basic checks for inputs
+        if(self.maneuver_type is None):
+            raise Exception("Please input valid maneuver type.")
+
+        if(self.maneuver_type is Maneuver.Type.CIRCULAR):
+            if(self.diameter is None or self.diameter <=0 or self.diameter > 180):
+                raise Exception("Please input valid maneuver CIRCULAR diameter.")
+        
+        if(self.maneuver_type is Maneuver.Type.SINGLE_ROLL_ONLY or self.maneuver_type is Maneuver.Type.DOUBLE_ROLL_ONLY ):
+            if(self.A_roll_min is None or abs(self.A_roll_min) > 180 ):
+                raise Exception("Please input valid roll range for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
+            if(self.A_roll_max is None or abs(self.A_roll_max) > 180 ):
+                raise Exception("Please input valid roll range for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
+            if(self.A_roll_max <= self.A_roll_min):
+                raise Exception("Specified Max roll angle must be numerically greater than Min roll angle for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
+        
+        if(self.maneuver_type is Maneuver.Type.DOUBLE_ROLL_ONLY):
+            if(self.B_roll_min is None or abs(self.B_roll_min) > 180 ):
+                raise Exception("Please input valid roll range for DOUBLE_ROLL_ONLY maneuver.")
+            if(self.B_roll_max is None or abs(self.B_roll_max) > 180 ):
+                raise Exception("Please input valid roll range for DOUBLE_ROLL_ONLY maneuver.")
+            if(self.B_roll_max <= self.B_roll_min):
+                raise Exception("Specified Max roll angle must be numerically greater than Min roll angle for DOUBLE_ROLL_ONLY maneuver.")
 
         super(Maneuver, self).__init__(_id, "Maneuver")
 
@@ -824,23 +848,24 @@ class Maneuver(Entity):
     def from_dict(d):
         """Parses an maneuverability object from a normalized JSON dictionary."""
         return Maneuver(
-                manuever_type = d.get("@type", None),
+                maneuver_type = d.get("@type", None),
                 A_roll_min = d.get("A_rollMin", None),
                 A_roll_max = d.get("A_rollMax", None),
                 B_roll_min = d.get("B_rollMin", None),
                 B_roll_max = d.get("B_rollMax", None),
-                diameter = d.get("diameter", None)
+                diameter = d.get("diameter", None),
+                _id = d.get("@id", None)
                 )
 
     def to_dict(self):
-        if self.manuever_type is Maneuver.Type.FIXED:
-            specs_dict= dict({ "@type": "FIXED"})
-        elif self.manuever_type is Maneuver.Type.CIRCULAR:
-            specs_dict= dict({"@type": "CIRCULAR", "diameter": self.diameter})
-        elif self.manuever_type is Maneuver.Type.SINGLE_ROLL_ONLY:
-            specs_dict= dict({"@type": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max})
-        elif self.manuever_type is Maneuver.Type.DOUBLE_ROLL_ONLY:
-            specs_dict= dict({"@type": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max})
+        if self.maneuver_type is Maneuver.Type.FIXED:
+            specs_dict= dict({ "@type": "FIXED", "@id": self._id})
+        elif self.maneuver_type is Maneuver.Type.CIRCULAR:
+            specs_dict= dict({"@type": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
+        elif self.maneuver_type is Maneuver.Type.SINGLE_ROLL_ONLY:
+            specs_dict= dict({"@type": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "@id": self._id})
+        elif self.maneuver_type is Maneuver.Type.DOUBLE_ROLL_ONLY:
+            specs_dict= dict({"@type": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max, "@id": self._id})
         else:
             raise Exception("Invalid or no Manuever type specification.")
         
@@ -877,7 +902,7 @@ class Maneuver(Entity):
 
         """
         field_of_regard = None 
-        mv_type = self.manuever_type
+        mv_type = self.maneuver_type
 
         # Evaluate FOR for FIXED maneuver
         if(mv_type == 'FIXED'):
