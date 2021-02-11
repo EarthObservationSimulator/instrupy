@@ -853,9 +853,59 @@ class TestManeuver(unittest.TestCase):
         self.assertIsNone(x[0][0])
         self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"Circular", "diameter":10}))
 
+        # CIRCULAR Maneuver
+        # circular input fov
+        o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
+        self.assertEqual(x[0][0], Orientation(ref_frame="Nadir_pointing"))
+        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"Circular", "diameter":15}))
 
+        # rectangular input fov
+        o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":5, "angleHeight":5}))
+        self.assertEqual(x[0][0], Orientation(ref_frame="Nadir_pointing"))
+        proxy_sen_fov = x[0][1]
+        valid_fov = SphericalGeometry.from_dict({"shape":"Circular", "diameter":17.069945578430072})
+        self.assertAlmostEqual(proxy_sen_fov.diameter, valid_fov.diameter)
+        
+        # SINGLE_ROLL_ONLY
+        # circular input fov
+        o = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
+        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
+        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5}))
 
+        # rectangular input fov
+        o = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":5, "angleHeight":5}))
+        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
+        proxy_sen_fov = x[0][1]
+        valid_fov = SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5})
+        self.assertAlmostEqual(proxy_sen_fov.angle_width,  valid_fov.angle_width)
+        self.assertAlmostEqual(proxy_sen_fov.angle_height,  valid_fov.angle_height)
 
+        # DOUBLE_ROLL_ONLY
+        # circular input fov
+        o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":7.5}))
+        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
+        self.assertEqual(x[1][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))
+        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5}))
+        self.assertEqual(x[1][1], SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5}))
+
+        # rectangular input fov
+        o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":7.5, "angleHeight":7.5}))
+        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
+        self.assertEqual(x[1][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))
+        proxy_sen_fov = x[0][1]
+        valid_fov = SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5})
+        self.assertAlmostEqual(proxy_sen_fov.angle_width,  valid_fov.angle_width)
+        self.assertAlmostEqual(proxy_sen_fov.angle_height,  valid_fov.angle_height)
+        proxy_sen_fov = x[1][1]
+        valid_fov = SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5})
+        self.assertAlmostEqual(proxy_sen_fov.angle_width,  valid_fov.angle_width)
+        self.assertAlmostEqual(proxy_sen_fov.angle_height,  valid_fov.angle_height)
 
 
 
