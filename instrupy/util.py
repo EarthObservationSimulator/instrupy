@@ -437,10 +437,13 @@ class SphericalGeometry(Entity):
                                   describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
         :vartype clock_angle_vec: list, float
 
-        :ivar angle_height: (deg) Spherical geometry angular width (about sensor X axis) (only for CIRCULAR or RECTANGULAR shapes). Corresponds to along-track angular width if sensor frame is aligned to NADIR_POINTING frame.
+        :ivar diameter: (deg) Spherical circular diameter (around the sensor Z axis) (only for CIRCULAR shape).
+        :vartype diameter: float
+
+        :ivar angle_height: (deg) Spherical rectangular geometry angular width (about sensor X axis) (only for RECTANGULAR shape). Corresponds to along-track angular width if sensor frame is aligned to NADIR_POINTING frame.
         :vartype angle_height: float
 
-        :ivar angle_width: (deg) Spherical geometry angular height (about sensor Y axis)  (only for CIRCULAR or RECTANGULAR shapes). Corresponds to cross-track angular width if sensor frame is aligned to NADIR_POINTING frame.
+        :ivar angle_width: (deg) Spherical rectangular geometry angular height (about sensor Y axis)  (only for RECTANGULAR shape). Corresponds to cross-track angular width if sensor frame is aligned to NADIR_POINTING frame.
         :vartype angle_width: float
 
         :param _id: Unique identifier.
@@ -488,14 +491,15 @@ class SphericalGeometry(Entity):
                 self.clock_angle_vec = None
 
             self.shape = SphericalGeometry.Shape.get(shape) if shape is not None else None
+
+            self.diameter = None
+            self.angle_height = None
+            self.angle_width = None
             if(self.shape==SphericalGeometry.Shape.CIRCULAR):
-                self.angle_height = 2 * self.cone_angle_vec[0]
-                self.angle_width = self.angle_height
+                self.diameter = 2 * self.cone_angle_vec[0]
             elif(self.shape==SphericalGeometry.Shape.RECTANGULAR):
                 [self.angle_height, self.angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(self.cone_angle_vec, self.clock_angle_vec)
-            else:
-                self.angle_height = None
-                self.angle_width = None
+                
 
             super(SphericalGeometry, self).__init__(_id, "SphericalGeometry")
 
@@ -506,7 +510,7 @@ class SphericalGeometry(Entity):
                 :rtype: dict 
             """
             if self.shape==SphericalGeometry.Shape.CIRCULAR:
-                sph_geom_dict = {"shape": "CIRCULAR", "diameter": self.angle_height, "@id": self._id}
+                sph_geom_dict = {"shape": "CIRCULAR", "diameter": self.diameter, "@id": self._id}
             elif self.shape==SphericalGeometry.Shape.RECTANGULAR:
                 sph_geom_dict = {"shape": "RECTANGULAR", "angleHeight": self.angle_height, "angleWidth": self.angle_width, "@id": self._id}
             elif self.shape==SphericalGeometry.Shape.CUSTOM:
@@ -524,7 +528,7 @@ class SphericalGeometry(Entity):
             # the spherical shape is physically the same.
             # note that _id data attribute may be different
             if(isinstance(self, other.__class__)):
-                return (self.shape==other.shape) and (self.angle_width==other.angle_width) and (self.angle_height==other.angle_height) and \
+                return (self.shape==other.shape) and (self.diameter==other.diameter) == (self.angle_width==other.angle_width) and (self.angle_height==other.angle_height) and \
                        (self.cone_angle_vec==other.cone_angle_vec) and (self.clock_angle_vec==other.clock_angle_vec)
                     
             else:
@@ -896,6 +900,17 @@ class Maneuver(Entity):
     def __repr__(self):
             return "Maneuver.from_dict({})".format(self.to_dict())
 
+    def __eq__(self, other):
+            # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+            # the Maneuver is physically the same.
+            # note that _id data attribute may be different
+            if(isinstance(self, other.__class__)):
+                return (self.maneuver_type==other.maneuver_type) and (self.diameter==other.diameter) and (self.A_roll_min==other.A_roll_min) and \
+                       (self.A_roll_max==other.A_roll_max) and (self.B_roll_min==other.B_roll_min) and (self.B_roll_max==other.B_roll_max)
+                    
+            else:
+                return NotImplemented
+
     def calc_field_of_regard(self, field_of_view):
         """ Calculate the field-of-regard (FOR) in terms of a *proxy sensor setup* for an input sensor FOV/ scene-FOV. 
             
@@ -934,7 +949,7 @@ class Maneuver(Entity):
         if(mv_type == 'CIRCULAR'):
 
             if(field_of_view.shape == 'CIRCULAR'):
-                proxy_fov_diameter = self.diameter + field_of_view.angle_height # field-of-regard diameter
+                proxy_fov_diameter = self.diameter + field_of_view.diameter # field-of-regard diameter
 
             elif(field_of_view.shape == 'RECTANGULAR'):
                 diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*field_of_view.angle_height))*np.cos(np.deg2rad(0.5*field_of_view.angle_width))))
@@ -953,8 +968,8 @@ class Maneuver(Entity):
 
             if(field_of_view.shape == 'CIRCULAR'):
                 print("Approximating FOR as rectangular shape")
-                proxy_fov_angle_height = field_of_view.angle_height
-                proxy_fov_angle_width =  mv_angle_width_range + field_of_view.angle_width
+                proxy_fov_angle_height = field_of_view.diameter
+                proxy_fov_angle_width =  mv_angle_width_range + field_of_view.diameter
 
             elif(field_of_view.shape == 'RECTANGULAR'):
                 proxy_fov_angle_height = field_of_view.angle_height

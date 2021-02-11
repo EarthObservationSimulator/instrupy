@@ -385,6 +385,7 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertEqual(o.clock_angle_vec, [30, 60, 180, 220])
         self.assertIsNone(o.angle_height)
         self.assertIsNone(o.angle_width)
+        self.assertIsNone(o.diameter)
         self.assertIsNone(o._id)
 
         o = SphericalGeometry.from_json(
@@ -395,6 +396,7 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.angle_height)
         self.assertIsNone(o.angle_width)
+        self.assertIsNone(o.diameter)
         self.assertEqual(o._id, 123)
 
         o = SphericalGeometry.from_json(
@@ -405,6 +407,7 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.angle_height)
         self.assertIsNone(o.angle_width)
+        self.assertIsNone(o.diameter)
         self.assertEqual(o._id, "123")
 
         # test Exception is raised for invalid cone, clock angle inputs
@@ -426,8 +429,9 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertEqual(o.shape, SphericalGeometry.Shape.CIRCULAR)
         self.assertEqual(o.cone_angle_vec, [15.28])
         self.assertIsNone(o.clock_angle_vec)
-        self.assertEqual(o.angle_height, 30.56)
-        self.assertEqual(o.angle_width, 30.56)
+        self.assertEqual(o.diameter, 30.56)
+        self.assertIsNone(o.angle_height)
+        self.assertIsNone(o.angle_width)
         self.assertIsNone(o._id)        
 
         o = SphericalGeometry.from_json(
@@ -437,8 +441,9 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertEqual(o.cone_angle_vec, [7.7121])
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.clock_angle_vec)
-        self.assertEqual(o.angle_height, 15.4242)
-        self.assertEqual(o.angle_width, 15.4242)
+        self.assertEqual(o.diameter, 15.4242)
+        self.assertIsNone(o.angle_height)
+        self.assertIsNone(o.angle_width)
         self.assertEqual(o._id, 123)
 
         o = SphericalGeometry.from_json(
@@ -448,8 +453,9 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertEqual(o.cone_angle_vec, [12.5])
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.clock_angle_vec)
-        self.assertEqual(o.angle_height, 25)
-        self.assertEqual(o.angle_width, 25)
+        self.assertEqual(o.diameter, 25)
+        self.assertIsNone(o.angle_height)
+        self.assertIsNone(o.angle_width)
         self.assertEqual(o._id, "123")
         # Test for incomplete specification
         with self.assertRaises(Exception):
@@ -475,6 +481,7 @@ class TestSphericalGeometry(unittest.TestCase):
                          18.6768081421232, 161.3231918578768, 198.6768081421232, 341.3231918578768])
         self.assertEqual(o.angle_height, 10)
         self.assertAlmostEqual(o.angle_width, 30)
+        self.assertIsNone(o.diameter)
         self.assertIsNone(o._id)
 
         # Square FOV => Clock angle almost(?) 45 deg
@@ -488,6 +495,7 @@ class TestSphericalGeometry(unittest.TestCase):
                          45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
         self.assertAlmostEqual(o.angle_height, 15)
         self.assertAlmostEqual(o.angle_width, 15)
+        self.assertIsNone(o.diameter)
         self.assertEqual(o._id, 123)
 
         # angleWidth > angleHeight
@@ -501,6 +509,7 @@ class TestSphericalGeometry(unittest.TestCase):
                          71.98186515628623, 108.01813484371377, 251.98186515628623, 288.01813484371377])
         self.assertAlmostEqual(o.angle_height, 30)
         self.assertAlmostEqual(o.angle_width, 10)
+        self.assertIsNone(o.diameter)
         self.assertIsNone(o._id)
 
         # Test a edge case when the along-track fov is very small.
@@ -515,6 +524,7 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertAlmostEqual(o.clock_angle_vec[3], 360, delta=0.2)
         self.assertEqual(o.angle_height, 0.1)
         self.assertAlmostEqual(o.angle_width, 50)
+        self.assertIsNone(o.diameter)
         self.assertEqual(o._id, "123")
 
         # Test case with incomplete specification
@@ -794,6 +804,47 @@ class TestManeuver(unittest.TestCase):
         self.assertEqual(d["B_rollMax"], 60.0)
         self.assertIsNone(d["@id"])
     
+    def test___eq__(self):
+        # FIXED
+        o1 = Maneuver.from_json('{"@type": "fixed"}')
+        o2 = Maneuver.from_json('{"@type": "fixed"}')
+        self.assertTrue(o1==o2)
+        o1 = Maneuver.from_json('{"@type": "fixed"}')
+        o2 = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+        self.assertFalse(o1==o2)
+
+        # CIRCULAR
+        o1 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        o2 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"abc"}')
+        self.assertTrue(o1==o2)
+        o1 = Maneuver.from_json('{"@type": "circular", "diameter":20, "@id":"123"}')
+        o2 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        self.assertFalse(o1==o2)
+
+        # SINGLE_ROLL_ONLY
+        o1 = Maneuver.from_json(
+            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+        o2 = Maneuver.from_json(
+            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+        self.assertTrue(o1==o2)
+        o1 = Maneuver.from_json(
+            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+        o2 = Maneuver.from_json(
+            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 20.1}')
+        self.assertFalse(o1==o2)
+
+        # DOUBLE_ROLL_ONLY
+        o1 = Maneuver.from_json(
+            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        o2 = Maneuver.from_json(
+            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        self.assertTrue(o1==o2)
+        o1 = Maneuver.from_json(
+            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 10, "B_rollMin":10, "B_rollMax": 60}')
+        o2 = Maneuver.from_json(
+            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        self.assertFalse(o1==o2)
+
     def test_calc_field_of_regard(self):
 
         # fixed
