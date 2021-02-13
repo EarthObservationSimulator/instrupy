@@ -228,11 +228,15 @@ class ReferenceFrame(EnumEntity):
         :cvar SC_BODY_FIXED: Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus. 
         :vartype SC_BODY_FIXED: str
 
+        :cvar SENSOR_BODY_FIXED: Sensor Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Sensor. 
+        :vartype SENSOR_BODY_FIXED: str
+
     """
     EARTH_CENTERED_INERTIAL = "EARTH_CENTERED_INERTIAL"
     EARTH_FIXED = "EARTH_FIXED"
     NADIR_POINTING = "NADIR_POINTING"
     SC_BODY_FIXED = "SC_BODY_FIXED"
+    SENSOR_BODY_FIXED = "SENSOR_BODY_FIXED"
 
 class Orientation(Entity):
     """ Class to store and handle orientation. Orientation is parameterized as intrinsic rotations specified by Euler angles and sequence 
@@ -417,10 +421,11 @@ class Orientation(Entity):
 
 class SphericalGeometry(Entity):
         """ Class to handle spherical geometries (spherical polygons and circles) which are used to characterize the sensor 
-            field-of-view (FOV) / scene FOV.
+            field-of-view (FOV) / scene FOV/ field-of-regard (FOR).
 
-            The spherical polygon/circle is maintained internally via vector of cone and clock angles defined in the sensor frame. This is the same 
-            definition as that in the orbitpy->propcov->lib->propcov-cpp CustomSensor C++ class. 
+            The spherical geometry is maintained internally via vector of cone and clock angles defined in the SENSOR_BODY_FIXED frame with 
+            the Z-axis as the pointing axis. This can be paired with an Orientation object (which describes the orientation of the sensor (hence the SENSOR_BODY_FIXED frame)
+            with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
 
             .. figure:: cone_clock_angle.png
                 :scale: 100 %
@@ -726,18 +731,44 @@ class SphericalGeometry(Entity):
         def __repr__(self):
             return "SphericalGeometry.from_dict({})".format(self.to_dict())
 
+class ViewGeometry(Entity):
+    """ Container class which congregates the :class:`SphericalGeometry` and :class:`Orientation` objects and can be used to model
+        the Field of View (FOV) or Scene FOV or Field of Regard (FOR) of a sensor. 
+
+        The :code:`SphericalGeometry` member of the container describes the spherical geometry (polygon/ circle) in the SENSOR_BODY_FIXED frame
+        with the Z-axis as the pointing axis. This can be paired with an Orientation object (which describes the orientation of the sensor (hence the SENSOR_BODY_FIXED frame)
+        with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
+        
+        In the current :class:`instrupy` implementation when used to model the FOR, the Orientation is always defined with respect to the 
+        NADIR_POINTING reference frame. 
+
+    :ivar orien: Orientation of the sensor (and hence the spherical geometry which is described in the SENSOR_BODY_FIXED frame).
+    :vartype orien: :class:`instrupy.util.Orientation
+    
+    :ivar sph_geom: Spherical geometry object associated with the FOV/ Scene FOV/ FOR.
+    :vartype sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+    """
+
+    def __init__(self, orien=None, sph_geom=None):
+
+        self.orien = orien if orien is not None and isinstance(orien, Orientation) else None
+        self.sph_geom = sph_geom if sph_geom is not None and isinstance(sph_geom, SphericalGeometry) else None
+        
+
+
 class Maneuver(Entity):
     """ Class handling the maneuverability of the satellite and/or sensor. 
         
     The maneuverability is specified with reference to the NADIR_POINTING frame. The maneuver specifications 
-    describe the angular-space, where the pointing axis of the sensor can be positioned. 
+    describe the angular-space where the pointing axis of the sensor can be positioned. 
     
-    This class includes a function which can be used to obtain the Field-Of-Regard in terms of a *proxy-sensor setup*. 
-    The proxy-sensor setup is characterized by orientation (wrt the NADIR_POINTING frame) of the proxy-sensor 
+    This class includes a function which can be used to obtain the Field-Of-Regard in terms of a *proxy-FOV setup*. 
+    The proxy-sensor setup is characterized by orientation (wrt the NADIR_POINTING frame) of the proxy-sensor (hence the proxy-sensor SENSOR_BODY_FIXED frame)
     and a spherical geometry (polygon/circle) specification of the proxy-sensor's field-of-view. This allows to calculate all coverage opportunities
     by the satellite-sensor pair, taking into account the satellite and/or sensor maneuverability.    
 
-    :ivar maneuver_type: Type of manuevers. Accepted values are "FIXED", "CIRCULAR", "SINGLE_ROLL_ONLY", "DOUBLE_ROLL_ONLY".
+    :ivar maneuver_type: Type of manuevers. Accepted values are "CIRCULAR", "SINGLE_ROLL_ONLY", "DOUBLE_ROLL_ONLY".
     :vartype maneuver_type: str
 
     :ivar A_roll_min: (deg) Minimum roll angle of the 1st ROLL_ONLY region. 
@@ -762,10 +793,6 @@ class Maneuver(Entity):
 
     class Type(EnumEntity):
         """ Enumeration of recognized maneuver types. All maneuvers are with respect to the NADIR_POINTING frame.
-
-        :cvar FIXED: This option is equivalent to specifying no-maneuver. The resulting FOR is a proxy-sensor instrument with the same 
-                     orientation and FOV as the original input sensor.
-        :vartype FIXED: str
 
         :cvar CIRCULAR: This maneuver option indicates that the pointing axis can be maneuvered within a circular region (corresponding to a
                         specified angular diameter) *around* the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
@@ -830,7 +857,6 @@ class Maneuver(Entity):
 
 
         """
-        FIXED = "FIXED"
         CIRCULAR = "CIRCULAR"
         SINGLE_ROLL_ONLY = "SINGLE_ROLL_ONLY"
         DOUBLE_ROLL_ONLY = "DOUBLE_ROLL_ONLY"
@@ -884,9 +910,7 @@ class Maneuver(Entity):
                 )
 
     def to_dict(self):
-        if self.maneuver_type == Maneuver.Type.FIXED:
-            specs_dict= dict({ "@type": "FIXED", "@id": self._id})
-        elif self.maneuver_type == Maneuver.Type.CIRCULAR:
+        if self.maneuver_type == Maneuver.Type.CIRCULAR:
             specs_dict= dict({"@type": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
         elif self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY:
             specs_dict= dict({"@type": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "@id": self._id})
@@ -911,69 +935,62 @@ class Maneuver(Entity):
             else:
                 return NotImplemented
 
-    def calc_field_of_regard(self, field_of_view):
+    def calc_field_of_regard(self, fov_sph_geom):
         """ Calculate the field-of-regard (FOR) in terms of a *proxy sensor setup* for an input sensor FOV/ scene-FOV. 
             
-        The FOR is characterized by (list of) pair of :code:`Orientation` and :code:`SphericalGeometry` objects. 
-        The pair of orientation and spherical geometry objects form a *proxy-sensor setup*, which can be utilized to run coverage calculations
-        and calculate all possible access opportunites by the sensor taking into account the satellite/sensor maneuverability.
+        The FOR is characterized by (list of) :class:`ViewGeometry` container(s) (pairs :code:`Orientation` and :code:`SphericalGeometry` objects). 
+        This forms a *proxy-sensor setup*, which can be utilized to run coverage calculations and calculate all possible access 
+        opportunites by the sensor taking into account the (satellite + sensor) maneuverability.
         Note that only CIRCULAR or RECTANGULAR shaped sensor FOV are permitted as inputs.
-        
-        The returned :code:`Orientation` object characterizes the orientation of the proxy-sensor with respect to the 
-        NADIR_POINTING frame. The returned :code:`SphericalGeometry` object specifies the FOV of the proxy sensor. 
 
         In some scenarios where the FOR can have non-overlapping angular spaces (e.g. sidelooking
         SARs which can point on either "side", but cannot point at the nadir), we shall have as return a list of 
-        the pairs of :code:`Orientation` and :code:`SphericalGeometry` objects, where each element of the list corresponds to a separate proxy sensor setup.
-        All the proxy-sensor setups in the list must be considered to form the FOR.
+        :code:`ViewGeometry` objects, where each element of the list corresponds to a separate proxy sensor setup.
+        All the proxy-sensor setups in the list together form the FOR.
 
         Note that always, the proxy-sensor FOV >= input sensor FOV. 
 
         .. seealso:: :class:`instrupy.util.Maneuver.Type` for calculation of the FOR for the different maneuver types.
 
-        :param field_of_view:  Field-of-view (or scene field-of-view) of the sensor. Must be either CIRCULAR or RECTANGULAR shape.
-        :paramtype field_of_view: :class:`instrupy.util.SphericalGeometry`
+        :param fov_sph_geom:  Sensor FOV spherical geometry. Must be either CIRCULAR or RECTANGULAR shape.
+        :paramtype fov_sph_geom: :class:`instrupy.util.ViewGeometry`
 
-        :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the NADIR_POINTING frame, and the coresponding spherical geometry specifications.
-        :rtype: list, tuple, :class:`instrupy.util.Orientation`, :class:`instrupy.util.SphericalGeometry`
+        :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the NADIR_POINTING frame, 
+                 and the coresponding spherical geometry specifications.
+        :rtype: list, ViewGeometry
 
         """
         field_of_regard = None 
         mv_type = self.maneuver_type
-
-        # Evaluate FOR for FIXED maneuver
-        if(mv_type == 'FIXED'):
-            field_of_regard = [(None, field_of_view)] # None is returned for orientation. The orientation in this "maneuver" case has to be the original instrument orientation.
-
         # Evaluate FOR for CIRCULAR maneuver. proxy-sensor FOV shall be CIRCULAR shape.
         if(mv_type == 'CIRCULAR'):
 
-            if(field_of_view.shape == 'CIRCULAR'):
-                proxy_fov_diameter = self.diameter + field_of_view.diameter # field-of-regard diameter
+            if(fov_sph_geom.shape == 'CIRCULAR'):
+                proxy_fov_diameter = self.diameter + fov_sph_geom.diameter # field-of-regard diameter
 
-            elif(field_of_view.shape == 'RECTANGULAR'):
-                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*field_of_view.angle_height))*np.cos(np.deg2rad(0.5*field_of_view.angle_width))))
+            elif(fov_sph_geom.shape == 'RECTANGULAR'):
+                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fov_sph_geom.angle_height))*np.cos(np.deg2rad(0.5*fov_sph_geom.angle_width))))
                 proxy_fov_diameter = self.diameter +  2*diag_half_angle
 
             else:
                 raise Exception('Invalid input FOV geometry')    
 
-            field_of_regard = [(    Orientation(ref_frame="NADIR_POINTING"), 
-                                    SphericalGeometry.from_dict({"shape": 'CIRCULAR', "diameter": proxy_fov_diameter})
+            field_of_regard = [ViewGeometry(    Orientation(ref_frame="NADIR_POINTING"), 
+                                                SphericalGeometry.from_dict({"shape": 'CIRCULAR', "diameter": proxy_fov_diameter})
                                 )]                              
 
         def get_roll_only_mv_proxy_sen_specs(roll_min, roll_max):
             mv_angle_width_range = roll_max - roll_min # angular maneuver range
             proxy_sen_roll_angle = roll_min + 0.5*mv_angle_width_range # reference orientation
 
-            if(field_of_view.shape == 'CIRCULAR'):
+            if(fov_sph_geom.shape == 'CIRCULAR'):
                 print("Approximating FOR as rectangular shape")
-                proxy_fov_angle_height = field_of_view.diameter
-                proxy_fov_angle_width =  mv_angle_width_range + field_of_view.diameter
+                proxy_fov_angle_height = fov_sph_geom.diameter
+                proxy_fov_angle_width =  mv_angle_width_range + fov_sph_geom.diameter
 
-            elif(field_of_view.shape == 'RECTANGULAR'):
-                proxy_fov_angle_height = field_of_view.angle_height
-                proxy_fov_angle_width = mv_angle_width_range + field_of_view.angle_width
+            elif(fov_sph_geom.shape == 'RECTANGULAR'):
+                proxy_fov_angle_height = fov_sph_geom.angle_height
+                proxy_fov_angle_width = mv_angle_width_range + fov_sph_geom.angle_width
 
             else:
                 raise Exception('Invalid input FOV geometry') 
@@ -985,8 +1002,8 @@ class Maneuver(Entity):
 
             [w, x, y] = get_roll_only_mv_proxy_sen_specs(self.A_roll_min, self.A_roll_max)
 
-            field_of_regard = [(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w), 
-                                    SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x, "angleWidth":y})
+            field_of_regard = [ViewGeometry(  Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w), 
+                                              SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x, "angleWidth":y})
                                )]
 
         # Evaluate FOR for DOUBLE_ROLL_ONLY maneuver. proxy-sensor FOV shall be RECTANGULAR shape. There are two proxy-sensors (orientation, FOV).
@@ -995,11 +1012,11 @@ class Maneuver(Entity):
             [w1, x1, y1] = get_roll_only_mv_proxy_sen_specs(self.A_roll_min, self.A_roll_max)
             [w2, x2, y2] = get_roll_only_mv_proxy_sen_specs(self.B_roll_min, self.B_roll_max)
 
-            field_of_regard = [(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w1), 
-                                    SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x1, "angleWidth":y1})
+            field_of_regard = [ViewGeometry(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w1), 
+                                                SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x1, "angleWidth":y1})
                                ),
-                               (    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w2), 
-                                    SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x2, "angleWidth":y2})
+                               ViewGeometry(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w2), 
+                                                SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x2, "angleWidth":y2})
                                )]
 
         

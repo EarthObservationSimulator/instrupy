@@ -1,1 +1,1 @@
-from .passive_optical_scanner import *
+from .passive_optical_scanner import PassiveOpticalScanner

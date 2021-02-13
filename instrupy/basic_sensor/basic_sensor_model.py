@@ -8,13 +8,14 @@ import json
 import numpy
 import copy
 import pandas, csv
-from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, SensorGeometry, Maneuverability, SyntheticDataConfiguration
+from instrupy.util import Entity, Orientation, SphericalGeometry, Maneuver, ViewGeometry, MathUtilityFunctions, Constants, SyntheticDataConfiguration
 from netCDF4 import Dataset
 import cartopy.crs as ccrs
 import numpy as np
 import scipy.interpolate
 import metpy.interpolate
 import astropy.time
+import uuid
 import logging
 logger = logging.getLogger(__name__)
 
@@ -27,32 +28,35 @@ class BasicSensorModel(Entity):
         :ivar acronym: Acronym, initialism, or abbreviation.
         :vartype acronym: str
 
-        :ivar mass: Total mass (kg) of this entity.
+        :ivar mass: Total mass (kg) of this instrument.
         :vartype mass: float
 
-        :ivar volume: Total volume (m3) of this entity.
+        :ivar volume: Total volume (m3) of this instrument.
         :vartype volume: float
         
-        :ivar power: Nominal operating power (W).
+        :ivar power: Nominal operating power (W) of this instrument.
         :vartype power: float
 
-        :ivar orientation: Orientation of the instrument with respect to Nadir-frame.
+        :ivar orientation: Orientation of the instrument.
         :vartype orientation: :class:`instrupy.util.Orientation`
 
         :ivar fieldOfView: Field of view specification of instrument. 
-        :vartype fieldOfView: :class:`instrupy.util.FieldOfView`   
+        :vartype fieldOfView: :class:`instrupy.util.SphericalGeometry`   
 
-        :ivar maneuver: Maneuvarability specification of the instrument
-        :vartype maneuver: :class:`instrupy.util.Maneuverability`  
+        :ivar maneuver: Maneuver specification of the instrument
+        :vartype maneuver: :class:`instrupy.util.Maneuver`  
        
         :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
         :vartype dataRate: float  
 
-        :ivar bitsPerPixel: Bits encoded per pixel of image
+        :ivar bitsPerPixel: Number of bits encoded per pixel of image.
         :vartype bitsPerPixel: int
 
-        :ivar fieldOfRegard: Field of regard calculated taking into account FOV and manueverability of the payload.
+        :ivar fieldOfRegard: Field of regard calculated taking into account the sensor FOV and manueverability of the satellite-sensor system.
         :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
+
+        :ivar _id: Unique instrument identifier. If unassigned, a default random string shall be assigned as the identifier.
+        :vartype _id: str
    
     """
 
@@ -78,6 +82,7 @@ class BasicSensorModel(Entity):
         self.syntheticDataConfig = copy.deepcopy(syntheticDataConfig) if syntheticDataConfig is not None else None
         self.numberDetectorRows = int(numberDetectorRows) if numberDetectorRows is not None else 4
         self.numberDetectorCols = int(numberDetectorCols) if numberDetectorCols is not None else 4
+        self._id = _id if _id is not None else uuid.uuid4()
 
         super(BasicSensorModel,self).__init__(_id, "Basic Sensor")
 
@@ -86,7 +91,7 @@ class BasicSensorModel(Entity):
         """Parses an instrument from a normalized JSON dictionary."""
         default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
         default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
-        default_manuv = dict({"@type": "FIXED"}) #  default maneuverability = Nadir pointing
+        default_manuv = dict({"@type": "FIXED"}) #  default Maneuver = Nadir pointing
         default_synobsconf = dict({"sourceFilePaths": None, "environVar": None, "interplMethod":None})
         return BasicSensorModel(
                 name = d.get("name", None),
@@ -96,7 +101,7 @@ class BasicSensorModel(Entity):
                 power = d.get("power", None),
                 orientation = Orientation.from_json(d.get("orientation", default_orien)),
                 fieldOfView =  FieldOfView.from_json(d.get("fieldOfView", default_fov)),
-                maneuver =  Maneuverability.from_json(d.get("maneuverability", default_manuv)),
+                maneuver =  Maneuver.from_json(d.get("Maneuver", default_manuv)),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
                 syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", default_synobsconf)),

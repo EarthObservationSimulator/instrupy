@@ -1,1 +1,1 @@
-from .synthetic_aperture_radar import *
+from .synthetic_aperture_radar import SyntheticApertureRadar

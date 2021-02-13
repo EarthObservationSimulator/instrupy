@@ -288,9 +288,9 @@ class TestOrientation(unittest.TestCase):
         self.assertIsNone(d["@id"])
         # REF_FRAME_ALIGNED convention
         o = Orientation.from_json(
-            '{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+            '{"referenceFrame": "SENSOR_BODY_FIXED", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
         d = o.to_dict()
-        self.assertEqual(d["referenceFrame"], "NADIR_POINTING")
+        self.assertEqual(d["referenceFrame"], "SENSOR_BODY_FIXED")
         self.assertEqual(d["convention"], "EULER")
         self.assertEqual(d["eulerAngle1"], 0)
         self.assertAlmostEqual(d["eulerAngle2"], 0)
@@ -336,10 +336,10 @@ class TestOrientation(unittest.TestCase):
         self.assertFalse(o1==o2)
 
         # REF_FRAME_ALIGNED convention
-        o1 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
-        o2 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        o1 = Orientation.from_json('{"referenceFrame": "SENSOR_BODY_FIXED", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        o2 = Orientation.from_json('{"referenceFrame": "SENSOR_BODY_FIXED", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
         self.assertTrue(o1==o2)
-        o1 = Orientation.from_json('{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
+        o1 = Orientation.from_json('{"referenceFrame": "SENSOR_BODY_FIXED", "convention": "REF_FRAME_ALIGNED", "@id":"123"}')
         o2 = Orientation.from_json('{"referenceFrame": "EARTH_CENTERED_INERTIAL", "convention": "REF_FRAME_ALIGNED", "@id":"123"}') 
         self.assertFalse(o1==o2)
 
@@ -649,18 +649,7 @@ class TestSphericalGeometry(unittest.TestCase):
 
 
 class TestManeuver(unittest.TestCase):
-
-    def test_from_json_FIXED(self):
-        o = Maneuver.from_json('{"@type": "FixEd"}')
-        self.assertIsInstance(o, Maneuver)
-        self.assertEqual(o.maneuver_type, Maneuver.Type.FIXED)
-        self.assertIsNone(o.diameter)
-        self.assertIsNone(o.A_roll_min)
-        self.assertIsNone(o.A_roll_max)
-        self.assertIsNone(o.B_roll_min)
-        self.assertIsNone(o.B_roll_max)
-        self.assertIsNone(o._id)
-    
+  
     def test_from_json_CIRCULAR(self):
 
         o = Maneuver.from_json('{"@type": "CIRCULAR", "diameter":10.3}')
@@ -771,12 +760,6 @@ class TestManeuver(unittest.TestCase):
 
     def test_to_dict(self):
         
-        # FIXED
-        o = Maneuver.from_json('{"@type": "fixed"}')
-        d = o.to_dict()
-        self.assertEqual(d["@type"], "FIXED")
-        self.assertIsNone(d["@id"])
-
         # CIRCULAR
         o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
         d = o.to_dict()
@@ -805,13 +788,6 @@ class TestManeuver(unittest.TestCase):
         self.assertIsNone(d["@id"])
     
     def test___eq__(self):
-        # FIXED
-        o1 = Maneuver.from_json('{"@type": "fixed"}')
-        o2 = Maneuver.from_json('{"@type": "fixed"}')
-        self.assertTrue(o1==o2)
-        o1 = Maneuver.from_json('{"@type": "fixed"}')
-        o2 = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
-        self.assertFalse(o1==o2)
 
         # CIRCULAR
         o1 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
@@ -847,24 +823,18 @@ class TestManeuver(unittest.TestCase):
 
     def test_calc_field_of_regard(self):
 
-        # fixed
-        o = Maneuver.from_json('{"@type": "fixed"}')
-        x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":10}))
-        self.assertIsNone(x[0][0])
-        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"Circular", "diameter":10}))
-
         # CIRCULAR Maneuver
         # circular input fov
         o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
-        self.assertEqual(x[0][0], Orientation(ref_frame="Nadir_pointing"))
-        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"Circular", "diameter":15}))
+        self.assertEqual(x[0].orien, Orientation(ref_frame="Nadir_pointing"))
+        self.assertEqual(x[0].sph_geom, SphericalGeometry.from_dict({"shape":"Circular", "diameter":15}))
 
         # rectangular input fov
         o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":5, "angleHeight":5}))
-        self.assertEqual(x[0][0], Orientation(ref_frame="Nadir_pointing"))
-        proxy_sen_fov = x[0][1]
+        self.assertEqual(x[0].orien, Orientation(ref_frame="Nadir_pointing"))
+        proxy_sen_fov = x[0].sph_geom
         valid_fov = SphericalGeometry.from_dict({"shape":"Circular", "diameter":17.069945578430072})
         self.assertAlmostEqual(proxy_sen_fov.diameter, valid_fov.diameter)
         
@@ -872,14 +842,14 @@ class TestManeuver(unittest.TestCase):
         # circular input fov
         o = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
-        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
-        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5}))
+        self.assertEqual(x[0].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
+        self.assertEqual(x[0].sph_geom, SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5}))
 
         # rectangular input fov
         o = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":5, "angleHeight":5}))
-        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
-        proxy_sen_fov = x[0][1]
+        self.assertEqual(x[0].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
+        proxy_sen_fov = x[0].sph_geom
         valid_fov = SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5})
         self.assertAlmostEqual(proxy_sen_fov.angle_width,  valid_fov.angle_width)
         self.assertAlmostEqual(proxy_sen_fov.angle_height,  valid_fov.angle_height)
@@ -888,21 +858,21 @@ class TestManeuver(unittest.TestCase):
         # circular input fov
         o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":7.5}))
-        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
-        self.assertEqual(x[1][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))
-        self.assertEqual(x[0][1], SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5}))
-        self.assertEqual(x[1][1], SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5}))
+        self.assertEqual(x[0].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
+        self.assertEqual(x[1].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))
+        self.assertEqual(x[0].sph_geom, SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5}))
+        self.assertEqual(x[1].sph_geom, SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5}))
 
         # rectangular input fov
         o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":7.5, "angleHeight":7.5}))
-        self.assertEqual(x[0][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
-        self.assertEqual(x[1][0], Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))
-        proxy_sen_fov = x[0][1]
+        self.assertEqual(x[0].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
+        self.assertEqual(x[1].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))
+        proxy_sen_fov = x[0].sph_geom
         valid_fov = SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5})
         self.assertAlmostEqual(proxy_sen_fov.angle_width,  valid_fov.angle_width)
         self.assertAlmostEqual(proxy_sen_fov.angle_height,  valid_fov.angle_height)
-        proxy_sen_fov = x[1][1]
+        proxy_sen_fov = x[1].sph_geom
         valid_fov = SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5})
         self.assertAlmostEqual(proxy_sen_fov.angle_width,  valid_fov.angle_width)
         self.assertAlmostEqual(proxy_sen_fov.angle_height,  valid_fov.angle_height)

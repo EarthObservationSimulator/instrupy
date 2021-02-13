@@ -6,7 +6,7 @@ Miscellaneous
 Reference Frames
 ====================
 
-There are four reference frames of interest:
+There are five reference frames of interest:
 
 Earth Centered Inertial:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -43,9 +43,12 @@ Spacecraft Body Fixed:
 ^^^^^^^^^^^^^^^^^^^^^^^
 Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus.
 
+Sensor Body Fixed:
+^^^^^^^^^^^^^^^^^^^^
+
+Sensor Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Sensor.
+
 .. _satellite_to_target_viewing_geometry:
-
-
 
 Satellite to Target viewing geometry
 =============================================
@@ -131,13 +134,12 @@ Illustrations
     FOV/SceneFOV vs FOR illustration for the case of a possible -22.5 deg to 45 deg roll of satellite.
 
 
-Representation of sensor FOV/ Scene-FOV with the :class:`instrupy.util.SphericalGeometry` object
+Representation of sensor FOV/ Scene-FOV/ FOR with the :class:`instrupy.util.ViewGeometry` object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-An object of the :code:`SphericalGeometry` class can be used to characterize a spherical geometry (polygon/circle). 
-The spherical polygon is maintained internally via vector of cone and clock angles. This is the same definition as that 
-in the orbitpy->propcov->lib->propcov-cpp CustomSensor C++ class. 
+An object of the :code:`ViewGeometry` container class can be used to characterize the FOV/ Scene FOV/ FOR of an instrument. 
+The :code:`SphericalGeometry` member of the container describes the spherical geometry (spherical polygon/ circle) in the SENSOR_BODY_FIXED frame 
+with the Z-axis as the pointing axis. 
 
-The pointing axis is assumed to be along the z-axis of the sensor frame. 
 If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on the unit sphere, then the cone angle for the point is:
 
 :math:`\pi/2 - \sin^{-1}zP`.
@@ -150,8 +152,11 @@ The clock angle for the point is:
     :scale: 100 %
     :align: center
 
-.. todo:: Extend the representation to include multiple non-intersecting spherical shapes. One way is to make the FOV representation 
-        a list of spherical shapes and associate an orientation (i.e. position on the sphere) with each shape. 
+The :code:`SphericalGeometry` member is paired with an :class:`Orientation` member which describes the orientation of the sensor (hence the SENSOR_BODY_FIXED frame)
+with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
+
+.. note:: In the current :class:`instrupy` implementation when used to model the FOR, the Orientation is always defined with respect to the 
+             NADIR_POINTING reference frame. 
 
 .. _purely_side_looking:
 
@@ -179,17 +184,13 @@ describe the angular-space, where the pointing axis of the sensor can be positio
 
 The FOR is characterized in terms of a proxy-sensor setup. The proxy sensor setup is characterized by orientation (wrt the NADIR_POINTING frame) of the proxy-sensor 
 and a spherical geometry (polygon/circle) specification of the proxy-sensor's field-of-view. This proxy-sensor setup allows to calculate all coverage opportunities
-by the satellite-sensor pair, taking into account the satellite and/or sensor maneuverability. Note that only CIRCULAR or RECTANGULAR shaped sensor FOV are permitted as inputs. 
+by the (satellite + sensor) pair, taking into account the satellite and/or sensor maneuverability. 
+Note that only CIRCULAR or RECTANGULAR shaped sensor FOV/ Scene FOV are permitted as inputs. 
 
-Following maneuver categories are recognized: :code:`FIXED`, :code:`CIRCULAR`, :code:`SINGLE_ROLL_ONLY` and :code:`DOUBLE_ROLL_ONLY`.
+Following maneuver categories are recognized: :code:`CIRCULAR`, :code:`SINGLE_ROLL_ONLY` and :code:`DOUBLE_ROLL_ONLY`.
 All maneuvers are with respect to the NADIR_POINTING frame.
 
-1. :code:`"@type":"Fixed"`
-
-   This option is equivalent to specifying no-maneuver. The resulting FOR is a proxy-sensor instrument with the same 
-   orientation and FOV as the original input sensor.
-
-2. :code:`"@type":"CIRCULAR"`
+1. :code:`"@type":"CIRCULAR"`
 
     This maneuver option indicates that the pointing axis can be maneuvered within a circular region (corresponding to a
     specified angular diameter) *around* the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
@@ -212,7 +213,7 @@ All maneuvers are with respect to the NADIR_POINTING frame.
         :align: center
 
 
-3. :code:`"@type":"SINGLE_ROLL_ONLY"`
+2. :code:`"@type":"SINGLE_ROLL_ONLY"`
 
     This maneuver option indicates that the pointing axis can be maneuvered about the roll axis (= y-axis of the NADIR_POINTING frame) 
     over a (single) range indicated by minimum and maximum roll angles. The resulting FOR characterized by a proxy-sensor is as follows:
@@ -241,7 +242,7 @@ All maneuvers are with respect to the NADIR_POINTING frame.
         :scale: 75 %
         :align: center
 
-4. :code:`"@type":"DOUBLE_ROLL_ONLY"`
+3. :code:`"@type":"DOUBLE_ROLL_ONLY"`
 
     This maneuver option is similar to the SINGLE_ROLL_ONLY case, except that there are **two** 
     (potentially non-overlapping) ranges of roll-angles (minimum and maximum angles).

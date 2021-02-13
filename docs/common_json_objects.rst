@@ -9,18 +9,18 @@ This page contains description of the user-configurable JSON objects shared by t
 ================================
 Several modes (in a list) maybe specified within a single instrument. Each mode corresponds to a specific operating point. For example, 
 consider a *Synthetic Aperture Radar* type instrument which operates in both L-band and C-band. Such an instrument is considered
-to be made up of two *sub-sensors* with each sub-sensor of instrument type *Synthetic Aperture Radar* and operating at L-band
-and C-band. A mode-identifier is to be specified by the user with which the subsensor can be referenced.
+to be made up of two sensors with each sensor of instrument type *Synthetic Aperture Radar* and operating at L-band
+and C-band. A mode-identifier is to be specified by the user with which the corresponding mode can be referenced.
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   @id, string,, Unique identifier
-   @type, string,, For SAR specify Stripmap or ScanSar. For others leave empty.
+   @id, string,, Unique identifier of mode.
+   @type, string,, Mode type. For SAR specify Stripmap or ScanSar.
 
-The parameters outside the mode block are used as the common parameters for all the sub-sensors, while the parameters specified
-within a mode list entry are specific to the particular sub-sensor.
+The parameters outside the mode block are used as the common parameters for all the modes, while the parameters specified
+within a mode list entry are specific to the particular mode.
 
 Example: The example below is that of a *Basic Sensor* type instrument with two modes. The common parameters for both the modes
 are outside the :code:`mode` block. The `NadirObservationMode` has a nadir viewing geometry with a 35 deg Circular FOV. The `SideObservationMode`
@@ -55,10 +55,7 @@ has a side looking geometry (both the side) at 25 deg circular FOV.
                         "orientation": {
                            "convention": "SIDE_LOOK",
                            "sideLookAngle": 30
-                        },
-                        "maneuverability":{
-                           "@type": "YAW180"
-                        }        
+                        }       
                         }
                   ]
                }
@@ -270,23 +267,11 @@ Example:
 
 :code:`maneuverability` JSON object
 ========================================
-Total maneuverability of sensor pointing (combining satellite and sensor maneuverability). Four categories of 
-maneuvers are accepted: `Fixed`, `Circular`, `Single_Roll_Only` and `Double_Roll_Only`. This should be indicated in the 
+Total maneuverability of sensor pointing (combining satellite and sensor maneuverability). Three types of 
+maneuvers are accepted: `Circular`, `Single_Roll_Only` and `Double_Roll_Only`. This should be indicated in the 
 :code:`@type` name, value pair. Please refer to :ref:`maneuv_desc` for a complete description of the options.
 
-1. :code:`"@type":"Fixed"`
-
-This option indicates that the instrument shall be fixed at it's nominal orientation. There is no maneuverability.
-
-Example:
-
-.. code-block:: javascript
-   
-   "maneuverability":{
-        "@type":"Fixed"
-   }
-
-2. :code:`"@type":"Circular"`
+1. :code:`"@type":"Circular"`
 
 This option indicates that the instrument pointing axis can be maneuvered about the nadir vector inside a circular region of diameter as indicated
 by the :code:`diameter` name, value pair.
@@ -299,14 +284,14 @@ by the :code:`diameter` name, value pair.
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
    "maneuverability":{
         "@type":"Circular",
         "diameter": 25
    }
 
-3. :code:`"@type":"Single_Roll_Only"`
+2. :code:`"@type":"Single_Roll_Only"`
 
 This option indicates that the instrument can be maneuvered only about the roll axis (of the nadir-pointing frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
@@ -322,7 +307,7 @@ defined with respect to the NADIR_POINTING frame.
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
    "maneuverability":{
         "@type":"RollOnly",
@@ -330,7 +315,7 @@ Example:
         "A_rollMax": 15
    }
 
-4. :code:`"@type":"Double_Roll_Only"`
+3. :code:`"@type":"Double_Roll_Only"`
 
 This option is similar to the :code:`Single_Roll_Only` option, except that it allows for definition of two set of roll-ranges (labelled as A and B).
 This option is useful to model manuever by purely side-looking (look at the nadir is prohibited) instruments which may be pointed on either 'side' (i.e. positive roll region
@@ -347,7 +332,7 @@ and the negative roll region) of the nadir-pointing frame.
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
    "maneuverability":{
         "@type":"RollOnly",

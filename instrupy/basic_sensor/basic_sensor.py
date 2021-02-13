@@ -10,11 +10,11 @@ import numpy
 import copy
 import pandas, csv
 import random
-from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
+from instrupy.util import Entity
 from instrupy.basic_sensor.basic_sensor_model import BasicSensorModel
 
 class BasicSensor(Entity):
-    """A synthetic aperture radar class. Instrument may support multiple operating modes and operating points which are 
+    """A basic sensor class. Instrument may support multiple operating modes and operating points which are 
        stored in a variable length list.
 
        :ivar instru_id: Instrument identifier
