@@ -754,7 +754,16 @@ class ViewGeometry(Entity):
 
         self.orien = orien if orien is not None and isinstance(orien, Orientation) else None
         self.sph_geom = sph_geom if sph_geom is not None and isinstance(sph_geom, SphericalGeometry) else None
-        
+    
+    def __eq__(self, other):
+        if(isinstance(self, other.__class__)):
+            return (self.orien==other.orien) and (self.sph_geom==other.sph_geom)
+        else:
+            return NotImplemented
+    
+    def __repr__(self):
+        return "ViewGeometry(orien=Orientation.from_dict({}), sph_geom=.from_dict({}))".format(self.orien.to_dict(), self.sph_geom.to_dict())
+
 
 
 class Maneuver(Entity):
