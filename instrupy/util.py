@@ -20,6 +20,9 @@ import shapely
 import cartopy.geodesic
 import math
 import json
+import copy
+import scipy.interpolate
+import metpy.interpolate
 
 from math import radians, cos, sin, asin, sqrt
 #import lowtran #TEMPORARY: PLEASE REMOVE if commented
@@ -152,38 +155,186 @@ class EnumEntity(str, Enum):
             except: return None
 
 class Constants(object):
-    """ Enumeration of various constants. Unless indicated otherwise, the constants 
+    """ Collection of various frequently utilized constants. Unless indicated otherwise, the constants 
         are in S.I. units. 
     """
-    radiusOfEarthInKM = 6378.137 # Nominal equatorial radius of Earth
-    speedOfLight = scipy.constants.speed_of_light
-    GMe = 3.986004418e14*1e-9 # product of Gravitaional constant and Mass of Earth [km^3 s^-2]
+    radiusOfEarthInKM = 6378.137 # [km] Nominal equatorial radius of Earth
+    speedOfLight = scipy.constants.speed_of_light# [meters per second]
+    GMe = 3.986004418e14*1e-9 # [km^3 s^-2] product of Gravitational constant and Mass of Earth 
     Boltzmann = scipy.constants.physical_constants['Boltzmann constant'][0]
-    angularSpeedofEarthInRADpS = 7292115e-11 # WGS-84 nominal mean angular velocity of Earth
+    angularSpeedOfEarthInRadPerSec = 7292115e-11 # [rad per sec] WGS-84 nominal mean angular velocity of Earth
     Planck = scipy.constants.physical_constants['Planck constant'][0]
-    SunBlackBodyTemperature = 6000.0 # Sun black body temperature in Kelvin
-    SolarRadius = 6.95700e8 # Solar radius
+    SunBlackBodyTemperature = 6000.0 # [Kelvin] Sun black body temperature
+    SolarRadius = 6.95700e8 # [meters] Solar radius
 
 class SyntheticDataConfiguration(Entity):
-    def __init__(self, sourceFilePaths=None, environVar=None, interplMethod=None):
-        self.sourceFilePaths = sourceFilePaths if sourceFilePaths is not None else list()
-        self.environVar = environVar if environVar is not None else None 
-        self.interplMethod = interplMethod if interplMethod is not None else None
+    """ Class to handle configuration of synthetic data.
+
+    :ivar sourceFilePaths: List of filepaths of the science-data files in NetCDF format. Each file corresponds to a specific (forecast/analysis) time.
+    :vartype sourceFilePaths: list, str
+
+    :ivar geophysicalVar: Geophysical variable (name as present in the source NetCDF file) to be used for the synthetic data.
+    :vartype geophysicalVar: str
+
+    :ivar interpolMethod: Interpolation method to be employed while spatially interpolating the source data onto the pixel-positions.
+    :vartype interpolMethod: :class:`instrupy.util.SyntheticDataConfiguration.InterpolationMethod`
+
+    :ivar _id: Unique identifier.
+    :vartype _id: str
+    """
+
+    class InterpolationMethod(EnumEntity):
+        """ Enumeration of recognized interpolation methods which can be used for synthetic data production.
+        """
+        SCIPY_LINEAR = "SCIPY_LINEAR"
+        METPY_LINEAR = "METPY_LINEAR"
+
+    def __init__(self, sourceFilePaths=None, geophysicalVar=None, interpolMethod=None, _id=None):
+        
+        self.sourceFilePaths = sourceFilePaths if sourceFilePaths is not None else None
+        if(not isinstance(self.sourceFilePaths, list)):
+            self.sourceFilePaths = [self.sourceFilePaths]
+        self.geophysicalVar = str(geophysicalVar) if geophysicalVar is not None else None 
+        self.interpolMethod = SyntheticDataConfiguration.InterpolationMethod.get(interpolMethod) if interpolMethod is not None else None
+
+        self.interpolators = {"SCIPY_LINEAR": SyntheticDataInterpolator.scipy_linear, "METPY_LINEAR": SyntheticDataInterpolator.metpy_linear} # list of available interpolators
+
+        super(SyntheticDataConfiguration, self).__init__(_id, "SyntheticDataConfiguration")
     
     @staticmethod
     def from_dict(d):
-        return SyntheticDataConfiguration(sourceFilePaths = d.get("sourceFilePaths", None), 
-                                          environVar      = d.get("environVar", None),
-                                          interplMethod    = d.get("interplMethod", None))
+        """ Construct an SyntheticDataConfiguration object from a dictionary.
+        
+            :return: Parsed python object. 
+            :rtype: :class:`instrupy.util.SyntheticDataConfiguration`
+        """
+        return SyntheticDataConfiguration(sourceFilePaths   = d.get("sourceFilePaths", None), 
+                                           geophysicalVar   = d.get("geophysicalVar", None),
+                                           interpolMethod   = d.get("interpolMethod", None),
+                                                      _id   = d.get("@id", None))
 
     def to_dict(self):
-        """ Return data members of the object as python dictionary. 
+        """ Translate the SyntheticDataConfiguration object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-            :return: SyntheticDataConfiguration object as python dictionary
-            :rtype: dict
+        :return: SyntheticDataConfiguration object as python dictionary
+        :rtype: dict
         """
-        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, "environVar": self.environVar, "interplMethod": self.interplMethod}
+        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, 
+                            "geophysicalVar": self.geophysicalVar, 
+                            "interpolMethod": self.interpolMethod,
+                            "@id": self._id
+                           }
         return syndataconf_dict
+    
+    def get_interpolator(self):
+        """ Get the interpolator associated with the configured interpolation method.
+
+        :return: Interpolation function.
+        :rtype: function
+
+        """
+        interp = self.interpolators.get(self.interpolMethod.value)
+        if not interp:
+            print('{} interpolation method was not recognized.'.format(self.interpolMethod.value))
+            raise ValueError(self.interpolMethod.value)
+        return interp
+    
+    def __repr__(self):
+        return "SyntheticDataConfiguration.from_dict({})".format(self.to_dict())
+    
+    def __eq__(self, other):
+        # Equality test is simple one which compares the data attributes.
+        # note that _id data attribute may be different
+        # @TODO: Make the list of strings comparison (sourceFilePaths variable) insensitive to order of the elements in the list and the case (upper/ lower cases).
+        if(isinstance(self, other.__class__)):
+            return (self.sourceFilePaths==other.sourceFilePaths) and (self.geophysicalVar==other.geophysicalVar) and (self.interpolMethod==other.interpolMethod)         
+        else:
+            return NotImplemented
+
+class SyntheticDataInterpolator:
+    """ Class containting functional implementations of interpolators which shall be used to 
+        interpolate geophysical variable data onto pixel (center) positions to produce synthetic observations.
+
+    """
+    @staticmethod
+    def scipy_linear(lons, lats, var_data, pixel_center_pos):
+        """ Execute SciPy linear interpolation on the input data.
+
+        :param lons: (degrees) List of longitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param lats: (degrees) List of latitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param var_data: Geophysical variable data on the base grid.
+        :paramtype var_data: list, float
+
+        :param pixel_center_pos: Pixel center positions (locations to which the interpolation should take place).
+                                 List of dictionaries with the dictionary keys as:
+
+                                 1. lon[deg]: Longitude
+                                 2. lat[deg]: Latitude
+
+        :paramtype pixel_center_pos: list, dict
+
+        :returns: Interpolated values at the pixel center positions.
+        :rtype: list, float
+
+        """
+        f = scipy.interpolate.interp2d(lons, lats, var_data, kind='linear')
+        interpl_data = []
+        for _pix_p in pixel_center_pos:
+            lon = _pix_p['lon[deg]']
+            lat = _pix_p['lat[deg]']
+            interpl_data.append(f(lon, lat)[0]) # [0] is needed to convert from the single element np.array to float
+        print("Inaccuracy around longitude=0 deg")
+
+        return interpl_data
+    
+    @staticmethod
+    def metpy_linear(lons, lats, var_data, pixel_center_pos):
+        """ Execute MetPy linear interpolation on the input data.
+
+        :param lons: (degrees) List of longitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param lats: (degrees) List of latitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param var_data: Geophysical variable data on the base grid.
+        :paramtype var_data: list, float
+
+        :param pixel_center_pos: Pixel center positions (locations to which the interpolation should take place).
+                                 List of dictionaries with the dictionary keys as:
+
+                                 1. lon[deg]: Longitude
+                                 2. lat[deg]: Latitude
+
+        :paramtype pixel_center_pos: list, dict
+
+        :returns: Interpolated values at the pixel center positions.
+        :rtype: list, float
+
+        """
+        # transform input data into format required by the MetPy API
+        X = np.array(lons)
+        Y = np.array(lats)
+        X = X.reshape((np.prod(X.shape),))
+        Y = Y.reshape((np.prod(Y.shape),))
+        coords = np.dstack((X,Y))[0]
+        var_data = np.array(var_data).flatten()
+
+        pix_cen_pos = [] 
+        for x in pixel_center_pos:
+            pix_cen_pos.append([x["lon[deg]"],x["lat[deg]"]])
+               
+        interpl_data = metpy.interpolate.interpolate_to_points(coords, var_data, pix_cen_pos, interp_type='linear')
+                      # metpy.interpolate.interpolate_to_points(coords, var_data, pixel_center_pos, interp_type='linear', 
+                      #                                          minimum_neighbors=3, gamma=0.25, kappa_star=5.052, 
+                      #                                          search_radius=None, rbf_func='linear', rbf_smooth=0)
+        return interpl_data
+
+
 
 class ReferenceFrame(EnumEntity):
     """ Enumeration of recognized reference frames.
@@ -752,8 +903,8 @@ class ViewGeometry(Entity):
 
     def __init__(self, orien=None, sph_geom=None):
 
-        self.orien = orien if orien is not None and isinstance(orien, Orientation) else None
-        self.sph_geom = sph_geom if sph_geom is not None and isinstance(sph_geom, SphericalGeometry) else None
+        self.orien = copy.deepcopy(orien) if orien is not None and isinstance(orien, Orientation) else None
+        self.sph_geom = copy.deepcopy(sph_geom) if sph_geom is not None and isinstance(sph_geom, SphericalGeometry) else None
     
     def __eq__(self, other):
         if(isinstance(self, other.__class__)):
@@ -799,7 +950,6 @@ class Maneuver(Entity):
     :paramtype _id: str
     
     """
-
     class Type(EnumEntity):
         """ Enumeration of recognized maneuver types. All maneuvers are with respect to the NADIR_POINTING frame.
 
@@ -962,7 +1112,7 @@ class Maneuver(Entity):
         .. seealso:: :class:`instrupy.util.Maneuver.Type` for calculation of the FOR for the different maneuver types.
 
         :param fov_sph_geom:  Sensor FOV spherical geometry. Must be either CIRCULAR or RECTANGULAR shape.
-        :paramtype fov_sph_geom: :class:`instrupy.util.ViewGeometry`
+        :paramtype fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
 
         :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the NADIR_POINTING frame, 
                  and the coresponding spherical geometry specifications.
@@ -1032,7 +1182,63 @@ class Maneuver(Entity):
         return field_of_regard
                 
 class MathUtilityFunctions:
-    """ Class aggregating various mathematical computation functions used in the InstruPy package. """
+    """ Class aggregating various mathematical computation functions. """
+
+    @staticmethod
+    def normalize(v):
+        """ Normalize a input vector.
+
+            :param v: Input vector
+            :paramtype v: list, float
+
+            :return: Normalized vector
+            :rtype: :obj:`np.array`, float
+        
+        """
+        v = np.array(v)
+        norm = np.linalg.norm(v)
+        if(norm == 0):
+            raise Exception("Encountered division by zero in vector normalization function.")
+        return v / norm
+
+    @staticmethod
+    def angle_between_vectors(vector1, vector2):
+        """ Find angle between two input vectors in radians. Use the dot-product relationship to obtain the angle.
+        
+            :param vector1: Input vector 1
+            :paramtype vector1: list, float
+
+            :param vector2: Input vector 2
+            :paramtype vector2: list, float
+
+            :return: [rad] Angle between the vectors, calculated using dot-product relationship.
+            :rtype: float
+
+        """
+        unit_vec1 = MathUtilityFunctions.normalize(vector1)
+        unit_vec2 = MathUtilityFunctions.normalize(vector2)
+        return np.arccos(np.dot(unit_vec1, unit_vec2))
+
+    @staticmethod
+    def find_closest_value_in_array(array, value):
+        """ Find the value in an array closest to the supplied scalar value.
+
+            :param array: Array under consideration
+            :paramtype array: list, float
+
+            :param value: Value under consideration
+            :paramtype value: float
+
+            :return: Value in array corresponding to one which is closest to supplied value, Index of the value in array
+            :rtype: list, float
+
+        """
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return [array[idx], idx]
+
+class GeoUtilityFunctions:
+    """ Class aggregating various geography related functions. """
 
     @staticmethod
     def compute_satellite_footprint_speed(r,v):
@@ -1055,7 +1261,7 @@ class MathUtilityFunctions:
         omega = np.cross(r,v)/ (np.linalg.norm(r)**2) # angular velocity vector in radians per second
         
         # compensate for Earths rotation
-        omega = omega - np.array([0,0,Constants.angularSpeedofEarthInRADpS])
+        omega = omega - np.array([0,0,Constants.angularSpeedOfEarthInRadPerSec])
 
         # Find linear speed of satellite footprint on ground [m/s].   
         return np.linalg.norm(omega)*Constants.radiusOfEarthInKM*1e3
@@ -1169,7 +1375,7 @@ class MathUtilityFunctions:
         lon = np.deg2rad(gcoord[1])
         alt = gcoord[2]
                
-        gst = MathUtilityFunctions.JD2GMST(JDtime)
+        gst = GeoUtilityFunctions.JD2GMST(JDtime)
         
         angle_sid=gst*2.0*np.pi/24.0 # sidereal angle
 
@@ -1191,7 +1397,7 @@ class MathUtilityFunctions:
         [X,Y,Z] = ecicoord
         theta = np.arctan2(Y,X)
         
-        gst = MathUtilityFunctions.JD2GMST(JDtime)        
+        gst = GeoUtilityFunctions.JD2GMST(JDtime)        
         angle_sid=gst*2.0*np.pi/24.0 # sidereal angle
         lon = np.mod((theta - angle_sid),2*np.pi) 
 
@@ -1204,42 +1410,6 @@ class MathUtilityFunctions:
         lon = np.rad2deg(lon)
                 
         return [lat,lon,alt]
-
-    @staticmethod
-    def normalize(v):
-        """ Normalize a input vector.
-
-            :param v: Input vector
-            :paramtype v: list, float
-
-            :return: Normalized vector
-            :rtype: :obj:`np.array`, float
-        
-        """
-        v = np.array(v)
-        norm = np.linalg.norm(v)
-        if(norm == 0):
-            raise Exception("Encountered division by zero in vector normalization function.")
-        return v / norm
-
-    @staticmethod
-    def angle_between_vectors(vector1, vector2):
-        """ Find angle between two input vectors in radians. Use the dot-product relationship to obtain the angle.
-        
-            :param vector1: Input vector 1
-            :paramtype vector1: list, float
-
-            :param vector2: Input vector 2
-            :paramtype vector2: list, float
-
-            :return: [rad] Angle between the vectors, calculated using dot-product relationship.
-            :rtype: float
-
-        """
-        unit_vec1 = MathUtilityFunctions.normalize(vector1)
-        unit_vec2 = MathUtilityFunctions.normalize(vector2)
-        return np.arccos(np.dot(unit_vec1, unit_vec2))
-
 
     @staticmethod
     def JD2GMST(JD):
@@ -1271,25 +1441,6 @@ class MathUtilityFunctions:
 
         return GMST
 
-
-    @staticmethod
-    def find_closest_value_in_array(array, value):
-        """ Find the value in an array closest to the supplied scalar value.
-
-            :param array: Array under consideration
-            :paramtype array: list, float
-
-            :param value: Value under consideration
-            :paramtype value: float
-
-            :return: Value in array corresponding to one which is closest to supplied value, Index of the value in array
-            :rtype: list, float
-
-        """
-        array = np.asarray(array)
-        idx = (np.abs(array - value)).argmin()
-        return [array[idx], idx]
-    
     @staticmethod
     def SunVector_ECIeq(Time_JDUT1):
         """Find Sun Vector in Earth Centered Inertial (ECI) equatorial frame.
@@ -1405,9 +1556,9 @@ class MathUtilityFunctions:
             
         """
         # calculate Sun-vector in ECI frame
-        sunVector_km = MathUtilityFunctions.SunVector_ECIeq(time_JDUT1)
+        sunVector_km = GeoUtilityFunctions.SunVector_ECIeq(time_JDUT1)
         # verify point-of-interest is below in night region
-        if(MathUtilityFunctions.checkLOSavailability(pos_km, sunVector_km, Constants.radiusOfEarthInKM) is False):
+        if(GeoUtilityFunctions.checkLOSavailability(pos_km, sunVector_km, Constants.radiusOfEarthInKM) is False):
             return [None, None]
 
         # calculate sun to target vector
@@ -1506,6 +1657,7 @@ class MathUtilityFunctions:
         eca_deg = lambda_deg*2 # total earth centric angle
 
         return eca_deg
+
 
 class FileUtilityFunctions:
 

@@ -7,8 +7,8 @@ import numpy as np
 import sys, os
 import random
 
-from instrupy.basic_sensor import BasicSensorModel
-from instrupy.util import Orientation, FieldOfView, SensorGeometry
+from instrupy.basic_sensor.basic_sensor_model import BasicSensorModel
+from instrupy.util import Orientation, ViewGeometry, SphericalGeometry, ReferenceFrame, SyntheticDataConfiguration
 
 RE = 6378.137 # [km] radius of Earth
 
@@ -21,19 +21,23 @@ class TestBasicSensorModel(unittest.TestCase):
     def test_from_json_basic(self):
         """ Test initialization of basic sensor in the many different ways allowed.
         """
-        # Test: Typical case
-        x = random.uniform(10,50)
-        o = BasicSensorModel.from_json('{"name": "Atom","acronym":"At", "@id": "bs1","mass":10,"volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12,' \
-                                  '"orientation": {"convention": "NADIR"},' \
-                                  '"fieldOfView": {"sensorGeometry": "Conical", "fullConeAngle":'+ str(x)+' },' \
-                                  '"maneuverability":{"@type": "FIXED"}}')
+        # Typical case
+        o = BasicSensorModel.from_json('{"name": "Atom", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
+                                  "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, \
+                                  "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
+                                  "maneuver":{"@type": "CIRCULAR", "diameter":10}, \
+                                  "numberDetectorRows":5, "numberDetectorCols":10, "@id": "bs1", \
+                                  "syntheticDataConfig": {"sourceFilePaths":   ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"], \
+                                                            "geophysicalVar": "TMP_P0_L1_GLL0", "interpolMethod":"SCIPY_LINEAR"}}')
+
         self.assertEqual(o._type, "Basic Sensor")
 
         self.assertEqual(o.name, "Atom")
         self.assertIsInstance(o.name, str)
-
-        self.assertEqual(o.acronym, "At")
-        self.assertIsInstance(o.acronym, str)
 
         self.assertIsInstance(o._id, str)
         self.assertEqual(o._id, "bs1")    
@@ -54,6 +58,7 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertIsInstance(o.bitsPerPixel, int)
 
         self.assertIsInstance(o.orientation, Orientation)
+        self.assertEqual(o.orientation.ref_frame, ReferenceFrame.SC_BODY_FIXED)
         self.assertEqual(o.orientation.euler_angle1, 0)
         self.assertEqual(o.orientation.euler_angle2, 0)
         self.assertEqual(o.orientation.euler_angle3, 0)
@@ -61,21 +66,30 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertEqual(o.orientation.euler_seq2, 2)
         self.assertEqual(o.orientation.euler_seq3, 3)
 
-        self.assertIsInstance(o.fieldOfView, FieldOfView)
-        self.assertAlmostEqual(o.fieldOfView._coneAngleVec_deg, [x/2])
-        self.assertIsNone(o.fieldOfView._clockAngleVec_deg)
-        self.assertEqual(o.fieldOfView._AT_fov_deg, x)
-        self.assertEqual(o.fieldOfView._CT_fov_deg, x)
-
-        self.assertIsInstance(o.fieldOfRegard, FieldOfView)
-        self.assertEqual(o.fieldOfRegard._geometry, SensorGeometry.CONICAL)
-        self.assertAlmostEqual(o.fieldOfRegard._coneAngleVec_deg, [x/2])
-        self.assertIsNone(o.fieldOfRegard._clockAngleVec_deg)
-        self.assertEqual(o.fieldOfRegard._AT_fov_deg, x)
-        self.assertEqual(o.fieldOfRegard._CT_fov_deg, x)
+        self.assertIsInstance(o.fieldOfViewGeometry, SphericalGeometry)
         
-        self.assertIsInstance(o, BasicSensorModel)
+        self.assertIsInstance(o.fieldOfView, ViewGeometry)
+        self.assertEqual(o.fieldOfView, ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":5})))
 
+        self.assertIsInstance(o.fieldOfRegard[0], ViewGeometry)
+        self.assertEqual(o.fieldOfRegard[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":15})))
+
+        self.assertEqual(o.numberDetectorRows, 5)
+        self.assertIsInstance(o.numberDetectorRows, int)
+
+        self.assertEqual(o.numberDetectorCols, 10)
+        self.assertIsInstance(o.numberDetectorCols, int)
+
+        self.assertIsInstance(o.syntheticDataConfig, SyntheticDataConfiguration)
+        self.assertEqual(o.syntheticDataConfig, SyntheticDataConfiguration.from_dict({"sourceFilePaths":   ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                                                                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                                                                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                                                                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                                                                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"], \
+                                                                                        "geophysicalVar": "TMP_P0_L1_GLL0", "interpolMethod":"SCIPY_LINEAR"}))
+                                    
+        self.assertIsInstance(o, BasicSensorModel)
+'''
         # Test: Test default initialization of orientation, FOV and FOR fields.        
         o = BasicSensorModel.from_json('{}')
         self.assertIsNone(o.name)
@@ -113,8 +127,6 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertEqual(o._type, "Basic Sensor")
         self.assertEqual(o.name, "Atom")
         self.assertIsInstance(o.name, str)
-        self.assertEqual(o.acronym, "Atom")
-        self.assertIsInstance(o.acronym, str)
         
         # Test: Incomplete field-of-view specification, test that Exception is raised
         with self.assertRaises(Exception):
@@ -276,3 +288,5 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["Observation Range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["Look angle [deg]"], abs(poi_lat_deg), delta = 0.15)
+
+'''

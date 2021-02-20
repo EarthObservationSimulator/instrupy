@@ -11,7 +11,7 @@ import copy
 import pandas, csv
 import random
 from instrupy.util import Entity
-from instrupy.basic_sensor.basic_sensor_model import BasicSensorModel
+from .basic_sensor_model import BasicSensorModel
 
 class BasicSensor(Entity):
     """A basic sensor class. Instrument may support multiple operating modes and operating points which are 

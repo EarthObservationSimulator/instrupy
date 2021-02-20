@@ -877,10 +877,186 @@ class TestManeuver(unittest.TestCase):
         self.assertAlmostEqual(proxy_fov_geom.angle_width,  valid_fov_geom.angle_width)
         self.assertAlmostEqual(proxy_fov_geom.angle_height,  valid_fov_geom.angle_height)
 
+class TestSyntheticDataConfiguration(unittest.TestCase):
+    def test_from_json(self):
+        o = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": [ "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "SCIPY_LINEAR" }'
+                                                )
+        self.assertIsInstance(o, SyntheticDataConfiguration)
+        self.assertIsInstance(o.sourceFilePaths, list)
+        self.assertEqual(o.sourceFilePaths[0], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc")
+        self.assertEqual(o.sourceFilePaths[1], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc")
+        self.assertEqual(o.sourceFilePaths[2], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc")
+        self.assertEqual(o.sourceFilePaths[3], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc")
+        self.assertEqual(o.sourceFilePaths[4], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc")
+        self.assertEqual(o.geophysicalVar, "TMP_P0_L1_GLL0")
+        self.assertEqual(o.interpolMethod, SyntheticDataConfiguration.InterpolationMethod.SCIPY_LINEAR)
+        self.assertIsNone(o._id)
+        # only 1 source file 
+        o = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": [ "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "METPY_LINEAR", \
+                                                    "@id": 123 }'
+                                                )
+        self.assertIsInstance(o, SyntheticDataConfiguration)
+        self.assertIsInstance(o.sourceFilePaths, list)
+        self.assertEqual(o.sourceFilePaths[0], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc")
+        self.assertEqual(o.geophysicalVar, "TMP_P0_L1_GLL0")
+        self.assertEqual(o.interpolMethod, SyntheticDataConfiguration.InterpolationMethod.METPY_LINEAR)
+        self.assertEqual(o._id, 123)
+        # only 1 source file (not in a list)
+        o = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "METPY_LINEAR", \
+                                                    "@id": "123" }'
+                                                )
+        self.assertIsInstance(o, SyntheticDataConfiguration)
+        self.assertIsInstance(o.sourceFilePaths, list)
+        self.assertEqual(o.sourceFilePaths[0], "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc")
+        self.assertEqual(o.geophysicalVar, "TMP_P0_L1_GLL0")
+        self.assertEqual(o.interpolMethod, SyntheticDataConfiguration.InterpolationMethod.METPY_LINEAR)
+        self.assertEqual(o._id, "123")
+
+    def test_to_dict(self):
+        
+        o = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": [ "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "SCIPY_LINEAR" }')
+        d = o.to_dict()
+        self.assertEqual(d["sourceFilePaths"], ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"])
+        self.assertEqual(d["geophysicalVar"], "TMP_P0_L1_GLL0")
+        self.assertEqual(d["interpolMethod"], "SCIPY_LINEAR")
+        self.assertIsNone(d["@id"])
+
+        o = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "METPY_LINEAR", \
+                                                    "@id": "123" }'
+                                                )
+        d = o.to_dict()
+        self.assertEqual(d["sourceFilePaths"], ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc"])
+        self.assertEqual(d["geophysicalVar"], "TMP_P0_L1_GLL0")
+        self.assertEqual(d["interpolMethod"], "METPY_LINEAR")
+        self.assertEqual(d["@id"], "123")
+    
+    def test_get_interpolator(self):
+
+        o = SyntheticDataConfiguration.from_json(' {"interpolMethod": "SCIPY_LINEAR" }')
+        self.assertEqual(o.get_interpolator(), SyntheticDataInterpolator.scipy_linear)
+        o = SyntheticDataConfiguration.from_json(' {"interpolMethod": "METPY_LINEAR" }')
+        self.assertEqual(o.get_interpolator(), SyntheticDataInterpolator.metpy_linear)
+    
+    def test___eq__(self):
+
+        o1 = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": [ "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "SCIPY_LINEAR" }')
+        o2 = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": [ "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc", \
+                                                                         "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "SCIPY_LINEAR" }')
+        
+        self.assertTrue(o1==o2)
+
+        o1 = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": [ "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "METPY_LINEAR", \
+                                                    "@id": 123 }'
+                                                )
+        o2 = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "METPY_LINEAR", \
+                                                    "@id": "abc" }'
+                                                )
+        self.assertTrue(o1==o2)
+
+        o1 = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "SCIPY_LINEAR", \
+                                                    "@id": 123 }'
+                                                )
+        o2 = SyntheticDataConfiguration.from_json(' {"sourceFilePaths": ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc"], \
+                                                    "geophysicalVar": "TMP_P0_L1_GLL0", \
+                                                    "interpolMethod": "METPY_LINEAR", \
+                                                    "@id": 123 }'
+                                                )
+        self.assertFalse(o1==o2)
+
+class TestSyntheticDataInterpolator(unittest.TestCase):
+    def test_scipy_linear(self):
+        
+        x = np.arange(-2, 2, 0.1)
+        y = np.arange(-2, 2, 0.1)
+        lons, lats = np.meshgrid(x, y)
+                        
+        # uniform field        
+        var_data = np.sin(lons**2+lats**2)*0 + 1
+        pixel_center_pos = [{"lon[deg]": 0, "lat[deg]": 0}, {"lon[deg]": 0.5, "lat[deg]": 0.5}, {"lon[deg]": -0.5, "lat[deg]": 0.5}, {"lon[deg]": 0.5, "lat[deg]": -0.5}, {"lon[deg]": -0.5, "lat[deg]": -0.5}]
+
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[0], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[1], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[2], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[3], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[4], 1)
+
+        # sine field
+        var_data = np.sin(lons**2+lats**2)
+        pixel_center_pos = [{"lon[deg]": 0, "lat[deg]": 0}, {"lon[deg]": 0.5, "lat[deg]": 0.5}, {"lon[deg]": 1.5, "lat[deg]": 0.5}, {"lon[deg]": 0.5, "lat[deg]": 1}, {"lon[deg]": -1.5, "lat[deg]": 0}]
+
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[0], 0)
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[1], np.sin(0.5**2 + 0.5**2))
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[2], np.sin(1.5**2 + 0.5**2))
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[3], np.sin(0.5**2 + 1**2))
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[4], np.sin(1.5**2 + 0**2))
 
 
+    def test_metpy_linear(self):
+        
+        x = np.arange(-2, 2, 0.1)
+        y = np.arange(-2, 2, 0.1)
+        lons, lats = np.meshgrid(x, y)
+        var_data = np.sin(lons**2+lats**2)*0 + 1
+                
+        # uniform field   
+        var_data = np.sin(lons**2+lats**2)*0 + 1     
+        pixel_center_pos = [{"lon[deg]": 0, "lat[deg]": 0}, {"lon[deg]": 0.5, "lat[deg]": 0.5}, {"lon[deg]": -0.5, "lat[deg]": 0.5}, {"lon[deg]": 0.5, "lat[deg]": -0.5}, {"lon[deg]": -0.5, "lat[deg]": -0.5}]
 
-'''
+        self.assertAlmostEqual(SyntheticDataInterpolator.metpy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[0], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.metpy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[1], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.metpy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[2], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.metpy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[3], 1)
+        self.assertAlmostEqual(SyntheticDataInterpolator.metpy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[4], 1)
+
+        # sine field
+        var_data = np.sin(lons**2+lats**2)
+        pixel_center_pos = [{"lon[deg]": 0, "lat[deg]": 0}, {"lon[deg]": 0.5, "lat[deg]": 0.5}, {"lon[deg]": 1.5, "lat[deg]": 0.5}, {"lon[deg]": 0.5, "lat[deg]": 1}, {"lon[deg]": -1.5, "lat[deg]": 0}]
+
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[0], 0)
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[1], np.sin(0.5**2 + 0.5**2))
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[2], np.sin(1.5**2 + 0.5**2))
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[3], np.sin(0.5**2 + 1**2))
+        self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[4], np.sin(1.5**2 + 0**2))
+
 class TestConstants(unittest.TestCase):
     def test_radiusOfEarthInKM(self):
         self.assertEqual(Constants.radiusOfEarthInKM, 6378.137)
@@ -891,9 +1067,9 @@ class TestConstants(unittest.TestCase):
     def test_Boltzmann(self):
         self.assertEqual(Constants.Boltzmann, 1.380649e-23)
 
-    def test_angularSpeedofEarthInRADpS(self):
+    def test_angularSpeedOfEarthInRadPerSec(self):
         self.assertAlmostEqual(
-            Constants.angularSpeedofEarthInRADpS, 2*numpy.pi / 86400.0, places=5)
+            Constants.angularSpeedOfEarthInRadPerSec, 2*numpy.pi / 86400.0, places=5)
 
     def test_Planck(self):
         self.assertEqual(Constants.Planck, 6.62607015e-34)
@@ -901,198 +1077,7 @@ class TestConstants(unittest.TestCase):
     def test_SunBlackBodyTemperature(self):
         self.assertEqual(Constants.SunBlackBodyTemperature, 6000)
 
-
-
-
-
 class TestMathUtilityFunctions(unittest.TestCase):
-
-    @staticmethod
-    def compute_satellite_footprint_speed_with_EF_vectors(_gmat_r_ef, _gmat_v_ef):
-        """ GMAT does not directly output the ground-speed. Compute using EF position vector and EF velocity vector available from GMAT. 
-            In this case no compensation needs to be performed for Earth-rotation (unlike in the case of instrupy.MathUtilityFunctions.compute_satellite_footprint_speed(r,v) 
-            where the input vectors (r,v) are in ECI frame) since the (r,v) vectors are taken in EF frame. 
-
-        """
-        _gmat_omega = numpy.cross(
-            _gmat_r_ef, _gmat_v_ef) / (numpy.linalg.norm(_gmat_r_ef)**2)
-        _gmat_fp_speed = numpy.linalg.norm(_gmat_omega)*6378100
-        return _gmat_fp_speed
-
-    def test_compute_satellite_footprint_speed(self):
-
-        # Validating using 'GMAT R2018a 64bit' as external reference.
-        # Test 1 (low inclination orbit)
-        _gmat_r_eci = [7100, 0, 1300]
-        _gmat_v_eci = [0, 7.35, 1]
-        _gmat_r_ef = [1272.929354832122, 6984.992046762509, 1299.821897134824]
-        _gmat_v_ef = [-6.721571319063451,
-                      1.224987254217343, 0.9997979087785365]
-        _gmat_fp_speed = TestMathUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
-            _gmat_r_ef, _gmat_v_ef)
-        fp_speed = MathUtilityFunctions.compute_satellite_footprint_speed(
-            _gmat_r_eci, _gmat_v_eci)
-        # acceptable error limits of 10 m/s
-        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
-
-        # Test 2 (mid inclination orbit)
-        _gmat_r_eci = [-5436.533450168191, -
-                       3053.079465330414, 3181.636343704307]
-        _gmat_v_eci = [1.114632787950382, -
-                       6.244419534847031, -4.087510077679621]
-        _gmat_r_ef = [2028.820780817868, -5895.733640536318, 3181.856545975942]
-        _gmat_v_ef = [5.913247918270616, -
-                      0.1710549493218195, -4.087366758963451]
-        _gmat_fp_speed = TestMathUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
-            _gmat_r_ef, _gmat_v_ef)
-        fp_speed = MathUtilityFunctions.compute_satellite_footprint_speed(
-            _gmat_r_eci, _gmat_v_eci)
-        # acceptable error limits of 10 m/s
-        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
-
-        # Test (retrograde high inclination orbit)
-        _gmat_r_eci = [-2138.840731205298, -
-                       4957.003244328315, 4455.724313987103]
-        _gmat_v_eci = [-3.12197717174031, -3.798411634168159, -5.7243556677441]
-        _gmat_r_ef = [4493.108372866067, -
-                      2992.792499467348,  4455.914070627137]
-        _gmat_v_ef = [2.959015709181303, -
-                      4.08021854816618,  -5.724173608651788]
-        _gmat_fp_speed = TestMathUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
-            _gmat_r_ef, _gmat_v_ef)
-        fp_speed = MathUtilityFunctions.compute_satellite_footprint_speed(
-            _gmat_r_eci, _gmat_v_eci)
-        # acceptable error limits of 10 m/s
-        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
-
-        # Test (retrograde mid-incinaton orbit)
-        _gmat_r_eci = [74.22234833534203, -6234.715809034727, 3181.63634370431]
-        _gmat_v_eci = [-5.965142343040525, -
-                       2.15690945716741, -4.087510077679617]
-        _gmat_r_ef = [6146.925885818154, -1044.708013320701,  3181.80566992428]
-        _gmat_v_ef = [0.9763805839389828, -
-                      6.703558863610055, -4.087302022035398]
-        _gmat_fp_speed = TestMathUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
-            _gmat_r_ef, _gmat_v_ef)
-        fp_speed = MathUtilityFunctions.compute_satellite_footprint_speed(
-            _gmat_r_eci, _gmat_v_eci)
-        # acceptable error limits of 10 m/s
-        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
-
-    def test_latlonalt_To_Cartesian(self):
-
-        # Test, trivial case with point at (0 deg,0 deg,0 km)
-        p_vec = MathUtilityFunctions.latlonalt_To_Cartesian(0, 0, 0)
-        self.assertAlmostEqual(p_vec[0], 6378.137, delta=1)
-        self.assertAlmostEqual(p_vec[1], 0)
-        self.assertAlmostEqual(p_vec[2], 0)
-
-        # Test, trivial case with point at (0 deg, 90 deg,0 km)
-        p_vec = MathUtilityFunctions.latlonalt_To_Cartesian(0, 90, 0)
-        self.assertAlmostEqual(p_vec[0], 0)
-        self.assertAlmostEqual(p_vec[1], 6378.137, delta=1)
-        self.assertAlmostEqual(p_vec[2], 0)
-
-        # Test, trivial case with point at (0 deg, -90 deg,0 km)
-        p_vec = MathUtilityFunctions.latlonalt_To_Cartesian(0, -90, 0)
-        self.assertAlmostEqual(p_vec[0], 0)
-        self.assertAlmostEqual(p_vec[1], -6378.137, delta=1)
-        self.assertAlmostEqual(p_vec[2], 0)
-
-        # Test, trivial case with point at (0 deg, -90 deg,100 km)
-        p_vec = MathUtilityFunctions.latlonalt_To_Cartesian(0, -90, 100)
-        self.assertAlmostEqual(p_vec[0], 0)
-        self.assertAlmostEqual(p_vec[1], -6378.137 - 100, delta=1)
-        self.assertAlmostEqual(p_vec[2], 0)
-
-        # Test, trivial case with point at (90 deg, 90 deg,100 km)
-        p_vec = MathUtilityFunctions.latlonalt_To_Cartesian(90, 90, 500)
-        self.assertAlmostEqual(p_vec[0], 0)
-        self.assertAlmostEqual(p_vec[1], 0)
-        self.assertAlmostEqual(p_vec[2], 6378.137 + 500, delta=1)
-
-        # Test, trivial case with point at (40 deg, 270 deg,100 km) and point at (40 deg, -90 deg,100 km) (both coords a off the same point)
-        p_vec1 = MathUtilityFunctions.latlonalt_To_Cartesian(40, 270, 100)
-        p_vec2 = MathUtilityFunctions.latlonalt_To_Cartesian(40, -90, 100)
-        self.assertAlmostEqual(p_vec1[0], p_vec2[0])
-        self.assertAlmostEqual(p_vec1[1], p_vec2[1])
-        self.assertAlmostEqual(p_vec1[2], p_vec2[2])
-
-    def test_latlonaltGeodetic_To_Cartesian(self):
-        """ Validating using 'GMAT R2018a 64bit' as external reference.         
-            Generate some latitude, longitude and corresponding [X,Y,Z] position (in EF frame) of a object in GMAT. 
-            Check with the generated Cartesian position vector of the instrupy.MathUtilityFunctions.latlonalt_To_Cartesian(...).
-
-        """
-        # Test case 1, positive lat, positive lon
-        p_vec = MathUtilityFunctions.latlonaltGeodetic_To_Cartesian(
-            65.8772312763883,  102.0971826243001, 643.382903131308)
-        _gmat_p_vec = [-602.9227650102, 2813.05830480065, 6385.563708800454]
-        # acceptable error limits of 1 km
-        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
-        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
-        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
-
-        # Test case 2, positive lat, negative lon
-        p_vec = MathUtilityFunctions.latlonaltGeodetic_To_Cartesian(
-            39.70771912759876, -33.66699237384308, 630.5515018592132)
-        _gmat_p_vec = [4493.108372866067, -
-                       2992.792499467348, 4455.914070627137]
-        # acceptable error limits of 1 km
-        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
-        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
-        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
-
-        # Test case 3, negative lat, positive lon
-        p_vec = MathUtilityFunctions.latlonaltGeodetic_To_Cartesian(
-            -15.57990628688177, 128.1073197882878,  631.6338423255838)
-        _gmat_p_vec = [-4167.949699384632,
-                       5314.18497094466, -1871.641779273967]
-        # acceptable error limits of 1 km
-        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
-        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
-        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
-
-        # Test case 4, negative lat, negative lon
-        p_vec = MathUtilityFunctions.latlonaltGeodetic_To_Cartesian(
-            -68.9408803669571,  -93.36510673726006,  640.3777836151294)
-        _gmat_p_vec = [-148.4295520342744, -
-                       2524.319956760156, -6527.213550924283]
-        # acceptable error limits of 1 km
-        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
-        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
-        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
-
-    def test_geo2eci(self):
-        """ Truth data from `IDL Astronomy Users Library <https://idlastro.gsfc.nasa.gov/ftp/pro/astro/geo2eci.pro>`_, on which the 
-            python function being tested is also written.
-        """
-        # intersection of the equator and Greenwich's meridian on 2002/03/09 21:21:21.021
-        sample = MathUtilityFunctions.geo2eci([0, 0, 0], 2452343.38982663)
-        truth = [-3902.9606, 5044.5548, 0.0000000]
-        self.assertAlmostEqual(sample[0], truth[0], places=3)
-        self.assertAlmostEqual(sample[1], truth[1], places=3)
-        self.assertAlmostEqual(sample[2], truth[2], places=3)
-
-    def test_compute_sun_zenith(self):
-        """ Truth data from https://www.esrl.noaa.gov/gmd/grad/solcalc/
-        """
-
-        time_JDUT1 = 2452343.38982663  # 2002/03/09 21:21:21.021
-        pos_km = MathUtilityFunctions.geo2eci([0.0,  0.0, 0.0], time_JDUT1)
-        self.assertIsNone(MathUtilityFunctions.compute_sun_zenith(
-            time_JDUT1, pos_km)[0])  # cause it is night
-
-        time_JDUT1 = 2452343.000000  # 2002/03/09 12:00:00.000
-        pos_km = MathUtilityFunctions.geo2eci([0.0,  0.0, 0.0], time_JDUT1)
-        self.assertAlmostEqual(MathUtilityFunctions.compute_sun_zenith(
-            time_JDUT1, pos_km)[0], numpy.deg2rad(90-84.82), places=2)
-
-        time_JDUT1 = 2458619.133333  # A.D. 2019 May 15 15:12:00.0
-        pos_km = MathUtilityFunctions.geo2eci(
-            [61.217,  -149.9, 0.0], time_JDUT1)
-        self.assertAlmostEqual(MathUtilityFunctions.compute_sun_zenith(
-            time_JDUT1, pos_km)[0], numpy.deg2rad(90-11.44), places=2)
 
     def test_normalize(self):
 
@@ -1123,29 +1108,218 @@ class TestMathUtilityFunctions(unittest.TestCase):
         self.assertAlmostEqual(MathUtilityFunctions.angle_between_vectors(
             [.5, .5, 0], [1, 0, 0]), numpy.pi/4)
 
+class TestGeoUtilityFunctions(unittest.TestCase):
+
+    @staticmethod
+    def compute_satellite_footprint_speed_with_EF_vectors(_gmat_r_ef, _gmat_v_ef):
+        """ GMAT does not directly output the ground-speed. Compute using EF position vector and EF velocity vector available from GMAT. 
+            In this case no compensation needs to be performed for Earth-rotation (unlike in the case of instrupy.GeoUtilityFunctions.compute_satellite_footprint_speed(r,v) 
+            where the input vectors (r,v) are in ECI frame) since the (r,v) vectors are taken in EF frame. 
+
+        """
+        _gmat_omega = numpy.cross(
+            _gmat_r_ef, _gmat_v_ef) / (numpy.linalg.norm(_gmat_r_ef)**2)
+        _gmat_fp_speed = numpy.linalg.norm(_gmat_omega)*6378100
+        return _gmat_fp_speed
+
+    def test_compute_satellite_footprint_speed(self):
+
+        # Validating using 'GMAT R2018a 64bit' as external reference.
+        # Test 1 (low inclination orbit)
+        _gmat_r_eci = [7100, 0, 1300]
+        _gmat_v_eci = [0, 7.35, 1]
+        _gmat_r_ef = [1272.929354832122, 6984.992046762509, 1299.821897134824]
+        _gmat_v_ef = [-6.721571319063451,
+                      1.224987254217343, 0.9997979087785365]
+        _gmat_fp_speed = TestGeoUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
+            _gmat_r_ef, _gmat_v_ef)
+        fp_speed = GeoUtilityFunctions.compute_satellite_footprint_speed(
+            _gmat_r_eci, _gmat_v_eci)
+        # acceptable error limits of 10 m/s
+        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
+
+        # Test 2 (mid inclination orbit)
+        _gmat_r_eci = [-5436.533450168191, -
+                       3053.079465330414, 3181.636343704307]
+        _gmat_v_eci = [1.114632787950382, -
+                       6.244419534847031, -4.087510077679621]
+        _gmat_r_ef = [2028.820780817868, -5895.733640536318, 3181.856545975942]
+        _gmat_v_ef = [5.913247918270616, -
+                      0.1710549493218195, -4.087366758963451]
+        _gmat_fp_speed = TestGeoUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
+            _gmat_r_ef, _gmat_v_ef)
+        fp_speed = GeoUtilityFunctions.compute_satellite_footprint_speed(
+            _gmat_r_eci, _gmat_v_eci)
+        # acceptable error limits of 10 m/s
+        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
+
+        # Test (retrograde high inclination orbit)
+        _gmat_r_eci = [-2138.840731205298, -
+                       4957.003244328315, 4455.724313987103]
+        _gmat_v_eci = [-3.12197717174031, -3.798411634168159, -5.7243556677441]
+        _gmat_r_ef = [4493.108372866067, -
+                      2992.792499467348,  4455.914070627137]
+        _gmat_v_ef = [2.959015709181303, -
+                      4.08021854816618,  -5.724173608651788]
+        _gmat_fp_speed = TestGeoUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
+            _gmat_r_ef, _gmat_v_ef)
+        fp_speed = GeoUtilityFunctions.compute_satellite_footprint_speed(
+            _gmat_r_eci, _gmat_v_eci)
+        # acceptable error limits of 10 m/s
+        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
+
+        # Test (retrograde mid-incinaton orbit)
+        _gmat_r_eci = [74.22234833534203, -6234.715809034727, 3181.63634370431]
+        _gmat_v_eci = [-5.965142343040525, -
+                       2.15690945716741, -4.087510077679617]
+        _gmat_r_ef = [6146.925885818154, -1044.708013320701,  3181.80566992428]
+        _gmat_v_ef = [0.9763805839389828, -
+                      6.703558863610055, -4.087302022035398]
+        _gmat_fp_speed = TestGeoUtilityFunctions.compute_satellite_footprint_speed_with_EF_vectors(
+            _gmat_r_ef, _gmat_v_ef)
+        fp_speed = GeoUtilityFunctions.compute_satellite_footprint_speed(
+            _gmat_r_eci, _gmat_v_eci)
+        # acceptable error limits of 10 m/s
+        self.assertAlmostEqual(_gmat_fp_speed, fp_speed, delta=10)
+
+    def test_latlonalt_To_Cartesian(self):
+
+        # Test, trivial case with point at (0 deg,0 deg,0 km)
+        p_vec = GeoUtilityFunctions.latlonalt_To_Cartesian(0, 0, 0)
+        self.assertAlmostEqual(p_vec[0], 6378.137, delta=1)
+        self.assertAlmostEqual(p_vec[1], 0)
+        self.assertAlmostEqual(p_vec[2], 0)
+
+        # Test, trivial case with point at (0 deg, 90 deg,0 km)
+        p_vec = GeoUtilityFunctions.latlonalt_To_Cartesian(0, 90, 0)
+        self.assertAlmostEqual(p_vec[0], 0)
+        self.assertAlmostEqual(p_vec[1], 6378.137, delta=1)
+        self.assertAlmostEqual(p_vec[2], 0)
+
+        # Test, trivial case with point at (0 deg, -90 deg,0 km)
+        p_vec = GeoUtilityFunctions.latlonalt_To_Cartesian(0, -90, 0)
+        self.assertAlmostEqual(p_vec[0], 0)
+        self.assertAlmostEqual(p_vec[1], -6378.137, delta=1)
+        self.assertAlmostEqual(p_vec[2], 0)
+
+        # Test, trivial case with point at (0 deg, -90 deg,100 km)
+        p_vec = GeoUtilityFunctions.latlonalt_To_Cartesian(0, -90, 100)
+        self.assertAlmostEqual(p_vec[0], 0)
+        self.assertAlmostEqual(p_vec[1], -6378.137 - 100, delta=1)
+        self.assertAlmostEqual(p_vec[2], 0)
+
+        # Test, trivial case with point at (90 deg, 90 deg,100 km)
+        p_vec = GeoUtilityFunctions.latlonalt_To_Cartesian(90, 90, 500)
+        self.assertAlmostEqual(p_vec[0], 0)
+        self.assertAlmostEqual(p_vec[1], 0)
+        self.assertAlmostEqual(p_vec[2], 6378.137 + 500, delta=1)
+
+        # Test, trivial case with point at (40 deg, 270 deg,100 km) and point at (40 deg, -90 deg,100 km) (both coords a off the same point)
+        p_vec1 = GeoUtilityFunctions.latlonalt_To_Cartesian(40, 270, 100)
+        p_vec2 = GeoUtilityFunctions.latlonalt_To_Cartesian(40, -90, 100)
+        self.assertAlmostEqual(p_vec1[0], p_vec2[0])
+        self.assertAlmostEqual(p_vec1[1], p_vec2[1])
+        self.assertAlmostEqual(p_vec1[2], p_vec2[2])
+
+    def test_latlonaltGeodetic_To_Cartesian(self):
+        """ Validating using 'GMAT R2018a 64bit' as external reference.         
+            Generate some latitude, longitude and corresponding [X,Y,Z] position (in EF frame) of a object in GMAT. 
+            Check with the generated Cartesian position vector of the instrupy.GeoUtilityFunctions.latlonalt_To_Cartesian(...).
+
+        """
+        # Test case 1, positive lat, positive lon
+        p_vec = GeoUtilityFunctions.latlonaltGeodetic_To_Cartesian(
+            65.8772312763883,  102.0971826243001, 643.382903131308)
+        _gmat_p_vec = [-602.9227650102, 2813.05830480065, 6385.563708800454]
+        # acceptable error limits of 1 km
+        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
+        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
+        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
+
+        # Test case 2, positive lat, negative lon
+        p_vec = GeoUtilityFunctions.latlonaltGeodetic_To_Cartesian(
+            39.70771912759876, -33.66699237384308, 630.5515018592132)
+        _gmat_p_vec = [4493.108372866067, -
+                       2992.792499467348, 4455.914070627137]
+        # acceptable error limits of 1 km
+        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
+        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
+        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
+
+        # Test case 3, negative lat, positive lon
+        p_vec = GeoUtilityFunctions.latlonaltGeodetic_To_Cartesian(
+            -15.57990628688177, 128.1073197882878,  631.6338423255838)
+        _gmat_p_vec = [-4167.949699384632,
+                       5314.18497094466, -1871.641779273967]
+        # acceptable error limits of 1 km
+        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
+        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
+        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
+
+        # Test case 4, negative lat, negative lon
+        p_vec = GeoUtilityFunctions.latlonaltGeodetic_To_Cartesian(
+            -68.9408803669571,  -93.36510673726006,  640.3777836151294)
+        _gmat_p_vec = [-148.4295520342744, -
+                       2524.319956760156, -6527.213550924283]
+        # acceptable error limits of 1 km
+        self.assertAlmostEqual(p_vec[0], _gmat_p_vec[0], delta=1)
+        self.assertAlmostEqual(p_vec[1], _gmat_p_vec[1], delta=1)
+        self.assertAlmostEqual(p_vec[2], _gmat_p_vec[2], delta=1)
+
+    def test_geo2eci(self):
+        """ Truth data from `IDL Astronomy Users Library <https://idlastro.gsfc.nasa.gov/ftp/pro/astro/geo2eci.pro>`_, on which the 
+            python function being tested is also written.
+        """
+        # intersection of the equator and Greenwich's meridian on 2002/03/09 21:21:21.021
+        sample = GeoUtilityFunctions.geo2eci([0, 0, 0], 2452343.38982663)
+        truth = [-3902.9606, 5044.5548, 0.0000000]
+        self.assertAlmostEqual(sample[0], truth[0], places=3)
+        self.assertAlmostEqual(sample[1], truth[1], places=3)
+        self.assertAlmostEqual(sample[2], truth[2], places=3)
+
+    def test_compute_sun_zenith(self):
+        """ Truth data from https://www.esrl.noaa.gov/gmd/grad/solcalc/
+        """
+
+        time_JDUT1 = 2452343.38982663  # 2002/03/09 21:21:21.021
+        pos_km = GeoUtilityFunctions.geo2eci([0.0,  0.0, 0.0], time_JDUT1)
+        self.assertIsNone(GeoUtilityFunctions.compute_sun_zenith(
+            time_JDUT1, pos_km)[0])  # cause it is night
+
+        time_JDUT1 = 2452343.000000  # 2002/03/09 12:00:00.000
+        pos_km = GeoUtilityFunctions.geo2eci([0.0,  0.0, 0.0], time_JDUT1)
+        self.assertAlmostEqual(GeoUtilityFunctions.compute_sun_zenith(
+            time_JDUT1, pos_km)[0], numpy.deg2rad(90-84.82), places=2)
+
+        time_JDUT1 = 2458619.133333  # A.D. 2019 May 15 15:12:00.0
+        pos_km = GeoUtilityFunctions.geo2eci(
+            [61.217,  -149.9, 0.0], time_JDUT1)
+        self.assertAlmostEqual(GeoUtilityFunctions.compute_sun_zenith(
+            time_JDUT1, pos_km)[0], numpy.deg2rad(90-11.44), places=2)    
+
     def test_JD2GMST(self):
         """ Truth data is from David A. Vallado,"Fundamentals of Astrodynamics and Applications", 4th ed, page after index titled julian Data Values.
-            The table gives the GMST in degrees, hence is converted into hours for testing the intrupy.MathUtilityFunctions.JD2GMST(...) function.
+            The table gives the GMST in degrees, hence is converted into hours for testing the intrupy.GeoUtilityFunctions.JD2GMST(...) function.
             Note that in the table the JD is specified at 12h UT, while GMST is at 0h UT. Take this into account.
             For example, for the date 2000 Jan 1 12h UT, the table reads the JD as 2451545. Since the GMST is specified at 0h UT (on the same day), the corresponding
             JD to be input is 2451544.5, corresponding to the date 2000 Jan 1 0h UT.
         """
-        self.assertAlmostEqual(MathUtilityFunctions.JD2GMST(
+        self.assertAlmostEqual(GeoUtilityFunctions.JD2GMST(
             2451544.5), 99.9677947 * (24/360), places=3)  # row corresponding to year 2000
 
-        self.assertAlmostEqual(MathUtilityFunctions.JD2GMST(
+        self.assertAlmostEqual(GeoUtilityFunctions.JD2GMST(
             2415020.5), 100.1837764 * (24/360), places=3)  # row corresponding to year 1900
-        self.assertAlmostEqual(MathUtilityFunctions.JD2GMST(
+        self.assertAlmostEqual(GeoUtilityFunctions.JD2GMST(
             2458119.5), 100.5992406 * (24/360), places=3)  # row corresponding to year 2018
-        self.assertAlmostEqual(MathUtilityFunctions.JD2GMST(
+        self.assertAlmostEqual(GeoUtilityFunctions.JD2GMST(
             2466154.5), 100.2728782 * (24/360), places=3)  # row corresponding to year 2040 (Leap year)
 
         """ Truth data from https://www.celnav.de/longterm.htm.
 
         """
-        self.assertAlmostEqual(MathUtilityFunctions.JD2GMST(
+        self.assertAlmostEqual(GeoUtilityFunctions.JD2GMST(
             2458542.127859), 1.5460, places=3)  # 2019/02/27 15:04:07 UT, after 12h UT test
-        self.assertAlmostEqual(MathUtilityFunctions.JD2GMST(
+        self.assertAlmostEqual(GeoUtilityFunctions.JD2GMST(
             2459823.582662), 0.665478055555556, places=3)  # 2022/09/01 01:59:02 UT, before 12h UT test
 
     def test_find_closest_value_in_array(self):
@@ -1163,30 +1337,30 @@ class TestMathUtilityFunctions(unittest.TestCase):
             Acceptable deviation is kept as 0.1km.
         """
         # A.D. 2006 Apr 2, 0 UT1
-        self.assertAlmostEqual(MathUtilityFunctions.SunVector_ECIeq(
+        self.assertAlmostEqual(GeoUtilityFunctions.SunVector_ECIeq(
             2453827.5)[0], 146186212.986846, delta=0.1)
-        self.assertAlmostEqual(MathUtilityFunctions.SunVector_ECIeq(
+        self.assertAlmostEqual(GeoUtilityFunctions.SunVector_ECIeq(
             2453827.5)[1], 28788976.3117029, delta=0.1)
-        self.assertAlmostEqual(MathUtilityFunctions.SunVector_ECIeq(
+        self.assertAlmostEqual(GeoUtilityFunctions.SunVector_ECIeq(
             2453827.5)[2], 	12481063.6450839, delta=0.1)
 
         # A.D. 2019 Feb 27, 15:56:00.0 UT1
-        self.assertAlmostEqual(MathUtilityFunctions.SunVector_ECIeq(
+        self.assertAlmostEqual(GeoUtilityFunctions.SunVector_ECIeq(
             2458542.163889)[0], 138092570.424158, delta=0.1)
-        self.assertAlmostEqual(MathUtilityFunctions.SunVector_ECIeq(
+        self.assertAlmostEqual(GeoUtilityFunctions.SunVector_ECIeq(
             2458542.163889)[1], -49238069.9169012, delta=0.1)
-        self.assertAlmostEqual(MathUtilityFunctions.SunVector_ECIeq(
+        self.assertAlmostEqual(GeoUtilityFunctions.SunVector_ECIeq(
             2458542.163889)[2],	-21344772.5319679, delta=0.1)
 
     def test_checkLOSavailability(self):
         """ Truth data from running Matlab script :code:`sight.m` to compute SUn vector available as companion to 
             David A.Vallado, Fundamental of Astrodynamics and Applications, 4th ed.           
         """
-        self.assertFalse(MathUtilityFunctions.checkLOSavailability(
+        self.assertFalse(GeoUtilityFunctions.checkLOSavailability(
             [-4464.696, -5102.509, 0], [5740.323, 3189.068, 0], 6378.137))
-        self.assertTrue(MathUtilityFunctions.checkLOSavailability(
+        self.assertTrue(GeoUtilityFunctions.checkLOSavailability(
             [-4464.696, -5102.509, 0], [-4464.696, -5102.509, 100], 6378.137))
-        self.assertTrue(MathUtilityFunctions.checkLOSavailability(
+        self.assertTrue(GeoUtilityFunctions.checkLOSavailability(
             [-4464.696, -5102.509, 0], [-7464.696, 102.509, 100], 6378.137))
 
     def test_calculate_derived_satellite_coords(self):
@@ -1197,7 +1371,7 @@ class TestMathUtilityFunctions(unittest.TestCase):
         obs_position_km = [6378+700, 0, 0]
         obs_vel_vec_kmps = [0, 6.5, 0]
         target_position_km = [6378, 0, 0]
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(
+        derived_coords = GeoUtilityFunctions.calculate_derived_satellite_coords(
             tObs_JDUT1, obs_position_km, obs_vel_vec_kmps, target_position_km)
         self.assertEqual(derived_coords["derived_obsTime_JDUT1"], 100)
         self.assertEqual(
@@ -1210,7 +1384,7 @@ class TestMathUtilityFunctions(unittest.TestCase):
         obs_position_km = [6378+700, 100, 0]
         obs_vel_vec_kmps = [0, 6.5, 0]
         target_position_km = [6378, 100, 0]
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(
+        derived_coords = GeoUtilityFunctions.calculate_derived_satellite_coords(
             tObs_JDUT1, obs_position_km, obs_vel_vec_kmps, target_position_km)
         self.assertEqual(derived_coords["derived_obsTime_JDUT1"], 100)
         self.assertEqual(derived_coords["derived_obs_pos_km"], [
@@ -1224,7 +1398,7 @@ class TestMathUtilityFunctions(unittest.TestCase):
         obs_position_km = [6378+700, 0, 0]
         obs_vel_vec_kmps = [0, -6.5, 0]
         target_position_km = [6378, 0, 0]
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(
+        derived_coords = GeoUtilityFunctions.calculate_derived_satellite_coords(
             tObs_JDUT1, obs_position_km, obs_vel_vec_kmps, target_position_km)
         self.assertEqual(derived_coords["derived_obsTime_JDUT1"], 100)
         self.assertEqual(
@@ -1237,7 +1411,7 @@ class TestMathUtilityFunctions(unittest.TestCase):
         obs_position_km = [6378+700, 0, 0]
         obs_vel_vec_kmps = [0, -6.5, 0]
         target_position_km = [6378, 0, 100]
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(
+        derived_coords = GeoUtilityFunctions.calculate_derived_satellite_coords(
             tObs_JDUT1, obs_position_km, obs_vel_vec_kmps, target_position_km)
         self.assertEqual(derived_coords["derived_obsTime_JDUT1"], 100)
         self.assertEqual(
@@ -1254,7 +1428,7 @@ class TestMathUtilityFunctions(unittest.TestCase):
         obs_position_km = [6378+700, 0, 0]
         obs_vel_vec_kmps = [0, 6.5, 0]
         target_position_km = [6378, 6.5, 0]
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(
+        derived_coords = GeoUtilityFunctions.calculate_derived_satellite_coords(
             tObs_JDUT1, obs_position_km, obs_vel_vec_kmps, target_position_km)
         self.assertEqual(derived_coords["derived_obsTime_JDUT1"], 101)
         self.assertEqual(derived_coords["derived_obs_pos_km"], [
@@ -1269,7 +1443,7 @@ class TestMathUtilityFunctions(unittest.TestCase):
         obs_position_km = [6378+700, 0, 0]
         obs_vel_vec_kmps = [0, 6.5, 0]
         target_position_km = [6378, 13.0, 100]
-        derived_coords = MathUtilityFunctions.calculate_derived_satellite_coords(
+        derived_coords = GeoUtilityFunctions.calculate_derived_satellite_coords(
             tObs_JDUT1, obs_position_km, obs_vel_vec_kmps, target_position_km)
         self.assertEqual(derived_coords["derived_obsTime_JDUT1"], 102)
         self.assertEqual(derived_coords["derived_obs_pos_km"], [
@@ -1345,4 +1519,3 @@ class TestFileUtilityFunctions(unittest.TestCase):
         self.assertEqual(o["nutrition"],  {
                          'Fat': 0, 'Sodium': 2, 'Protein': 0})
         self.assertEqual(o["nutrition"]["Fat"],  0)
-'''

@@ -4,11 +4,8 @@
 :synopsis: *Module to handle sensor type with the most basic attributes.*
 
 """
-import json
-import numpy
 import copy
-import pandas, csv
-from instrupy.util import Entity, Orientation, SphericalGeometry, Maneuver, ViewGeometry, MathUtilityFunctions, Constants, SyntheticDataConfiguration
+from instrupy.util import Entity, Orientation, SphericalGeometry, Maneuver, ViewGeometry, MathUtilityFunctions, GeoUtilityFunctions, Constants, SyntheticDataConfiguration
 from netCDF4 import Dataset
 import cartopy.crs as ccrs
 import numpy as np
@@ -16,6 +13,7 @@ import scipy.interpolate
 import metpy.interpolate
 import astropy.time
 import uuid
+from collections import namedtuple
 import logging
 logger = logging.getLogger(__name__)
 
@@ -24,9 +22,6 @@ class BasicSensorModel(Entity):
       
         :ivar name: Full name of the instrument.
         :vartype name: str
-        
-        :ivar acronym: Acronym, initialism, or abbreviation.
-        :vartype acronym: str
 
         :ivar mass: Total mass (kg) of this instrument.
         :vartype mass: float
@@ -40,87 +35,116 @@ class BasicSensorModel(Entity):
         :ivar orientation: Orientation of the instrument.
         :vartype orientation: :class:`instrupy.util.Orientation`
 
-        :ivar fieldOfView: Field of view specification of instrument. 
-        :vartype fieldOfView: :class:`instrupy.util.SphericalGeometry`   
+        :ivar fieldOfViewGeometry: Field of view spherical geometry specification of the instrument. 
+        :vartype fieldOfViewGeometry: :class:`instrupy.util.SphericalGeometry`   
+
+        :ivar fieldOfView: Field of view of instrument (spherical geometry and Orientation)
+        :vartype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
         :ivar maneuver: Maneuver specification of the instrument
         :vartype maneuver: :class:`instrupy.util.Maneuver`  
+
+        :ivar fieldOfRegard: Field of regard of the instrument taking into account the sensor FOV and manueverability of the satellite-sensor system. Note that this shall be a list.
+        :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
-        :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
+        :ivar dataRate: Rate of data recorded (Mega bits per sec) during nominal operations.
         :vartype dataRate: float  
 
+        :ivar syntheticDataConfig: Synthetic data configuration for the instrument.
+        :vartype syntheticDataConfig: :class:`instrupy.util.SyntheticDataConfiguration`  
+
         :ivar bitsPerPixel: Number of bits encoded per pixel of image.
-        :vartype bitsPerPixel: int
+        :vartype bitsPerPixel: int        
 
-        :ivar fieldOfRegard: Field of regard calculated taking into account the sensor FOV and manueverability of the satellite-sensor system.
-        :vartype fieldOfRegard: :class:`instrupy.util.FieldOfView`  
+        :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). Default is 4.
+        :vartype numberDetectorRows: int
 
-        :ivar _id: Unique instrument identifier. If unassigned, a default random string shall be assigned as the identifier.
+        :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). Default is 4.
+        :vartype numberDetectorCols: int
+
+        :ivar _id: Unique instrument identifier. If :class:`None`, a default random string shall be assigned as the identifier.
         :vartype _id: str
+
+        .. figure:: detector_config.png
+            :scale: 75 %
+            :align: center
    
     """
 
-    def __init__(self, name=None, acronym=None, mass=None,
-            volume=None, power=None,  orientation=None,
-            fieldOfView=None, maneuver=None, dataRate=None, 
-            syntheticDataConfig=None, bitsPerPixel=None, 
-            numberDetectorRows=None, numberDetectorCols=None, _id=None):
+    def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None,
+                 fieldOfViewGeometry=None, maneuver=None, dataRate=None, syntheticDataConfig=None, bitsPerPixel=None, 
+                 numberDetectorRows=None, numberDetectorCols=None, _id=None):
         """Initialization
 
         """
         self.name = str(name) if name is not None else None
-        self.acronym = str(acronym) if acronym is not None else self.name
         self.mass = float(mass) if mass is not None else None
         self.volume = float(volume) if volume is not None else None
         self.power = float(power) if power is not None else None
-        self.orientation = copy.deepcopy(orientation) if orientation is not None else None
-        self.fieldOfView = copy.deepcopy(fieldOfView) if fieldOfView is not None else None
-        self.maneuver = copy.deepcopy(maneuver) if maneuver is not None else None
+        self.orientation = copy.deepcopy(orientation) if orientation is not None and isinstance(orientation, Orientation) else None
+        self.fieldOfViewGeometry = copy.deepcopy(fieldOfViewGeometry) if fieldOfViewGeometry is not None and isinstance(fieldOfViewGeometry, SphericalGeometry) else None
+        self.fieldOfView = ViewGeometry(orien=self.orientation, sph_geom=self.fieldOfViewGeometry) if self.orientation is not None and self.fieldOfViewGeometry is not None else None
+        self.maneuver = copy.deepcopy(maneuver) if maneuver is not None and isinstance(maneuver, Maneuver) else None
+        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfViewGeometry) if (self.maneuver is not None and self.fieldOfViewGeometry is not None) else None
         self.dataRate = float(dataRate) if dataRate is not None else None
-        self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None        
-        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfView)
-        self.syntheticDataConfig = copy.deepcopy(syntheticDataConfig) if syntheticDataConfig is not None else None
-        self.numberDetectorRows = int(numberDetectorRows) if numberDetectorRows is not None else 4
-        self.numberDetectorCols = int(numberDetectorCols) if numberDetectorCols is not None else 4
-        self._id = _id if _id is not None else uuid.uuid4()
+        self.syntheticDataConfig = copy.deepcopy(syntheticDataConfig) if syntheticDataConfig is not None and isinstance(syntheticDataConfig, SyntheticDataConfiguration) else None
+        self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None                
+        self.numberDetectorRows = int(numberDetectorRows) if numberDetectorRows is not None else None
+        self.numberDetectorCols = int(numberDetectorCols) if numberDetectorCols is not None else None
+        self._id = _id if _id is not None else None
 
         super(BasicSensorModel,self).__init__(_id, "Basic Sensor")
 
     @staticmethod
     def from_dict(d):
-        """Parses an instrument from a normalized JSON dictionary."""
-        default_fov = dict({'sensorGeometry': 'CONICAL', 'fullConeAngle':25}) # default fov is a 25 deg conical
-        default_orien = dict({"convention": "NADIR"}) #  default orientation = Nadir pointing
-        default_manuv = dict({"@type": "FIXED"}) #  default Maneuver = Nadir pointing
+        """ Parses an instrument from a normalized JSON dictionary.
+        
+        The following default values are assigned to the object instance parameters in case of 
+        :class:`None` values or missing key/value pairs in the input dictionary.
+
+        .. csv-table:: Default values
+            :header: Parameter, Default Value
+            :widths: 10,40
+
+            orientation, Referenced and aligned to the SC_BODY_FIXED frame.
+            fieldOfView, CIRCULAR shape with 25 deg diameter.
+            numberDetectorRows, 4
+            numberDetectorRows, 4
+            _id, random string
+            
+        """
+        default_fov = dict({'sensorGeometry': 'CIRCULAR', 'diameter':25}) # default fov is a 25 deg diameter circular
+        default_orien = dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}) #  default orientation = referenced and aligned to the SC_BODY_FIXED frame.
         default_synobsconf = dict({"sourceFilePaths": None, "environVar": None, "interplMethod":None})
         return BasicSensorModel(
                 name = d.get("name", None),
-                acronym = d.get("acronym", None),
                 mass = d.get("mass", None),
                 volume = d.get("volume", None),
                 power = d.get("power", None),
                 orientation = Orientation.from_json(d.get("orientation", default_orien)),
-                fieldOfView =  FieldOfView.from_json(d.get("fieldOfView", default_fov)),
-                maneuver =  Maneuver.from_json(d.get("Maneuver", default_manuv)),
+                fieldOfViewGeometry =  SphericalGeometry.from_json(d.get("fieldOfViewGeometry", default_fov)),
+                maneuver =  Maneuver.from_json(d.get("maneuver", None)),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
                 syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", default_synobsconf)),
-                numberDetectorRows = d.get("numberDetectorRows", None),
-                numberDetectorCols = d.get("numberDetectorCols", None),
-                _id = d.get("@id", None)
+                numberDetectorRows = d.get("numberDetectorRows", 4),
+                numberDetectorCols = d.get("numberDetectorCols", 4),
+                _id = d.get("@id", uuid.uuid4())
                 )
 
     def to_dict(self):
+        """ Translate the BasicSensor object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+
+        """
         return dict({
                 "@type": "Basic Sensor",
                 "name":self.name,
-                "acronym":self.acronym,
                 "mass":self.mass,
                 "volume":self.volume,
                 "power":self.power,
-                "fieldOfView":self.fieldOfView.to_dict(),
+                "fieldOfViewGeometry":self.fieldOfViewGeometry.to_dict(),
                 "orientation":self.orientation.to_dict(),
-                "manuverability":self.maneuver.to_dict(),
+                "manuever":self.maneuver.to_dict(),
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "syntheticDataConfig": self.syntheticDataConfig.to_dict(),
@@ -129,73 +153,104 @@ class BasicSensorModel(Entity):
                 "@id": self._id
                 })
 
-    def calc_typ_data_metrics(self, SpacecraftOrbitState, TargetCoords):
-        ''' Calculate typical observation data metrics.
+    def __repr__(self):
+        return "BasicSensorModel.from_dict({})".format(self.to_dict())
 
-            :param SpacecraftOrbitState: Spacecraft state at the time of observation. This is approximately taken to be the middle (or as close as possible to the middle) of the access interval.
+    def calc_typ_data_metrics(self, sc_orbit_state, target_coords):
+        """ Calculate typical observation data metrics. 
+            
+            .. figure:: target_geom_3D.png
+                :scale: 75 %
+                :align: center
+            
+            .. figure:: target_geom_2D.png
+                :scale: 75 %
+                :align: center
+
+            *   :math:`\\mathbf{R = T - S}`
+            *   :math:`\\gamma = \\cos^{-1}(\\mathbf{\\dfrac{R}{|R|}} \\cdot \\mathbf{\\dfrac{-S}{|S|}})`
+            *   :math:`\\theta_i = \\sin^{-1}(\\sin\\gamma  \\hspace{1mm}  \\dfrac{R_E + h}{R_E})`
+
+            Assuming spherical Earth of radius :math:`R_E`
+
+            where,
+
+            * :math:`\\mathbf{S}`: Position-vector of the satellite in the EARTH_CENTERED_INERTIAL frame.
+            * :math:`\\mathbf{T}`: Position-vector of the target ground-point in the EARTH_CENTERED_INERTIAL frame.
+            * :math:`\\mathbf{R}`: Range vector from satellite to target ground point.
+            * :math:`\\gamma`:  Look-angle to target ground point from satellite.
+            * :math:`\\theta_i`: Incidence-angle at the target ground point.
+            * :math:`R_E`: Nominal equatorial radius of Earth.
+            * :math:`h`: Altitude of satellite.
+            
+            
+            Please refer to the :class:`instrupy.util.GeoUtilityFunctions.compute_sun_zenith` function for description of the calculation of the Sun-zenith angle.
+
+            :param sc_orbit_state: Spacecraft state at the time of observation.
 
                                Dictionary keys are: 
                                
-                               * :code:`Time[JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
-                               * :code:`x[km]` (:class:`float`), :code:`y[km]` (:class:`float`), :code:`z[km]` (:class:`float`), Cartesian spatial coordinates of satellite in Earth Centered Inertial frame with equatorial-plane frame at the time of observation.
-                               * :code:`vx[km/s]` (:class:`float`), :code:`vy[km/s]` (:class:`float`), :code:`vz[km/s]` (:class:`float`), Velocity of spacecraft in Earth Centered Inertial frame with equatorial-plane frame at the time of observation.
-            :paramtype SpacecraftOrbitState: dict
+                               * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+                               * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
+                               * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
+            :paramtype sc_orbit_state: dict
 
             
-            :param TargetCoords: Location of the observation.
+            :param target_coords: Location of the observation. Also sometimes called the Point-Of-Interest (POI).
 
                                Dictionary keys are: 
                                 
-                               * :code:`Lat [deg]` (:class:`float`), :code:`Lon [deg]` (:class:`float`), indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
-            :paramtype TargetCoords: dict
+                               * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+            :paramtype target_coords: dict
 
-            :returns: Typical calculated observation data metrics.
+            :returns: Calculated observation data metrics.
                       
                       Dictionary keys are: 
                     
-                      * :code:`Coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event.
-                      * :code:`Incidence angle [deg]` (:class:`float`) Incidence angle in degrees at target point calculated assuming spherical Earth.
-                      * :code:`Look angle [deg]` (:class:`float`) Look angle in degrees at target point calculated assuming spherical Earth.
-                      * :code:`Observation Range [km]` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
-                      * :code:`Solar Zenith [deg]` (:class:`float`) Solar Zenith angle in degrees during observation.
+                      * :code:`coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event. Always true for the :class:`BasicSensor` type.
+                      * :code:`incidence angle [deg]` (:class:`float`) Incidence angle in degrees at target point calculated assuming spherical Earth.
+                      * :code:`look angle [deg]` (:class:`float`) Look angle in degrees at target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
+                      * :code:`observation range [km]` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
+                      * :code:`solar zenith [deg]` (:class:`float`) Solar Zenith angle in degrees during observation.
 
             :rtype: dict                      
-        '''
+        """
         # Observation time in Julian Day UT1
-        tObs_JDUT1 = SpacecraftOrbitState["Time[JDUT1]"]
+        tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]
 
-        # Calculate Target position in ECI-frame
-        TargetPosition_km = MathUtilityFunctions.geo2eci([TargetCoords["Lat [deg]"], TargetCoords["Lon [deg]"], 0.0], tObs_JDUT1)
+        # Calculate Target cartesian position in EARTH_CENTERED_INERTIAL frame
+        target_pos = GeoUtilityFunctions.geo2eci([target_coords["lat [deg]"], target_coords["lon [deg]"], 0.0], tObs_JDUT1)
 
-        # Spacecraft position in Cartesian coordinates ECI-frame
-        SpacecraftPosition_km = numpy.array([SpacecraftOrbitState["x[km]"], SpacecraftOrbitState["y[km]"], SpacecraftOrbitState["z[km]"]])  
-        SpacecraftPosition_vel_kmps = numpy.array([SpacecraftOrbitState["vx[km/s]"], SpacecraftOrbitState["vy[km/s]"], SpacecraftOrbitState["vz[km/s]"]])  
+        # Spacecraft position in Cartesian coordinates in the EARTH_CENTERED_INERTIAL frame
+        sc_pos = np.array([sc_orbit_state["x [km]"], sc_orbit_state["y [km]"], sc_orbit_state["z [km]"]])  
+        sc_vel = np.array([sc_orbit_state["vx [km/s]"], sc_orbit_state["vy [km/s]"], sc_orbit_state["vz [km/s]"]])  
 
-        alt_km = numpy.linalg.norm(SpacecraftPosition_km) - Constants.radiusOfEarthInKM
+        alt_km = np.linalg.norm(sc_pos) - Constants.radiusOfEarthInKM # altitude
 
-        #  Calculate actual range between spacecraft and POI (Target)
-        range_vector_km = TargetPosition_km - SpacecraftPosition_km
+        #  Calculate the range vector between spacecraft and POI (Target)
+        range_vector_km = target_pos - sc_pos
 
-        range_km = numpy.linalg.norm(range_vector_km)
+        range_km = np.linalg.norm(range_vector_km)
 
         # Calculate look angle
-        look_angle = numpy.arccos(numpy.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(SpacecraftPosition_km)))
-        look_angle_deg = numpy.rad2deg(look_angle)
+        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos)))
+        look_angle_deg = np.rad2deg(look_angle)
         
         # Look angle to corresponding incidence angle conversion for spherical Earth
-        incidence_angle = numpy.arcsin(numpy.sin(look_angle)*(Constants.radiusOfEarthInKM +alt_km)/Constants.radiusOfEarthInKM)
-        incidence_angle_deg =  numpy.rad2deg(incidence_angle)
+        incidence_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
+        incidence_angle_deg =  np.rad2deg(incidence_angle)
 
         # Solar zenith angle
-        [solar_zenith, solar_distance] = MathUtilityFunctions.compute_sun_zenith(tObs_JDUT1, TargetPosition_km)
+        [solar_zenith, solar_distance] = GeoUtilityFunctions.compute_sun_zenith(tObs_JDUT1, target_pos)
         if solar_zenith is not None:
-            solar_zenith_deg =  numpy.rad2deg(solar_zenith)
+            solar_zenith_deg =  np.rad2deg(solar_zenith)
         else:
-            solar_zenith_deg = numpy.nan
+            solar_zenith_deg = np.nan
 
-        # assign sign to look-angle. positive sign => look is in opposite direction of the orbit-plane (i.e. the negative of the orbit plane normal vector) and vice-versa
-        neg_orbit_normal = numpy.cross(SpacecraftPosition_vel_kmps, -1*SpacecraftPosition_km)
-        sgn = numpy.sign(numpy.dot(range_vector_km, neg_orbit_normal))
+        # assign sign to look-angle. 
+        # positive sign => Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
+        orbit_normal = np.cross(sc_pos, sc_vel)
+        sgn = np.sign(np.dot(range_vector_km, orbit_normal))
         if(sgn==0):
             sgn = 1
 
@@ -203,72 +258,76 @@ class BasicSensorModel(Entity):
         isCovered = True 
     
         obsv_metrics = {}
-        obsv_metrics["Observation Range [km]"] = range_km
-        obsv_metrics["Look angle [deg]"] = sgn*look_angle_deg
-        obsv_metrics["Incidence angle [deg]"] = incidence_angle_deg
-        obsv_metrics["Solar Zenith [deg]"] = solar_zenith_deg
-        obsv_metrics["Coverage [T/F]"] = isCovered
+        obsv_metrics["observation range [km]"] = range_km
+        obsv_metrics["look angle [deg]"] = sgn*look_angle_deg
+        obsv_metrics["incidence angle [deg]"] = incidence_angle_deg
+        obsv_metrics["solar zenith [deg]"] = solar_zenith_deg
+        obsv_metrics["coverage [T/F]"] = isCovered
 
         return obsv_metrics
-    
-    def synthesize_observation(self, time_JDUT1, pixel_center_pos):        
 
+    def synthesize_observation(self, time_JDUT1, pixel_center_pos):
+        """ Compute the value of the geophysical variable (associated with the instrument) at the 
+            input pixel (center) positions. 
+            
+            The interpolation (in space) of the source data is done using the interpolation method
+            indicated in the synthetic data configuration of the instrument. The data file closest 
+            to the input time of observation is chosen as the source data file.
+
+        :param time_JDUT1: Observation time in Julian Date UT1.
+        :paramtype time_JDUT1: float
+
+        :param pixel_center_pos: Array of 'N' pixel center positions (longitudes, latitudes) of the pixels in the observation.
+        :paramtype pixel_center_pos: array_like, shape (N, 2), float
+        
+        :returns: The interpolated data along with the corresponding pixel-center positions. The geophysical variable is also returned. Contents of the
+                  namestuple are: 
+                  
+                  1. Pixel center positions (lon, lat) 
+                  2. Interpolated data at the Pixel center positions
+                  3. Geophysical variable
+        :rtype: namedtuple, (array_like, shape (N, 2), float), (array_like, shape (N, 1), float), (str)
+
+        """        
         source_fps = self.syntheticDataConfig.sourceFilePaths
-        envvar = self.syntheticDataConfig.environVar
-        interpl_method = self.syntheticDataConfig.interplMethod
+        geophy_var = self.syntheticDataConfig.geophysicalVar
+        interpl = self.syntheticDataConfig.get_interpolator()
         
         # get the source data file closest to the input time
-        dataset_i = 0
-        forecast_time_hrs = []
+        # collect all the datasets at the different forecast times
+        forecast_time_hrs = [] # list of (relative wrt initial_time) forecast times
         for _src_fp in source_fps:
             dataset  = Dataset(_src_fp, "r", format="NETCDF4")
-            _initial_time = dataset[envvar].initial_time
-            _forecast_time = dataset[envvar].forecast_time
-            _forecast_time_units = dataset[envvar].forecast_time_units
+            _initial_abs_time = dataset[geophy_var].initial_time # start of the forecast (absolute time)
+            _forecast_time = dataset[geophy_var].forecast_time # forecast time relative to the initial_time
+            _forecast_time_units = dataset[geophy_var].forecast_time_units
             if(_forecast_time_units != 'hours'):
                 raise Exception('Forecast time units must be of hours')            
             forecast_time_hrs.append(_forecast_time)
-            dataset_i = dataset_i + 1
         
-        # extract the time in UTC from the string (example string is: 12/11/2020 (12:00))
-        t = astropy.time.Time.strptime(_initial_time, '%m/%d/%Y (%H:%M)')
-        initial_time_JDUT1 = astropy.time.Time(t, scale='utc').jd # TODO UTC / UT1?
+        # convert the initial_time in UTC (string format) to JDUT1 (example string is: 12/11/2020 (12:00))
+        t = astropy.time.Time.strptime(_initial_abs_time, '%m/%d/%Y (%H:%M)') 
+        initial_time_UTC = astropy.time.Time(t, scale='utc')
+        initial_time_UT1 = initial_time_UTC.ut1 # convert from UTC to UT1
+        initial_time_JDUT1 = initial_time_UT1.jd # convert to Julian Date format
 
-        required_forecast_time_hrs = (time_JDUT1 - initial_time_JDUT1)*24
+        # required forecast time relative to the initial_time
+        required_forecast_time_hrs = (time_JDUT1 - initial_time_JDUT1)*24 
+
         # find dataset closest to the required forecast time
         idx = (np.abs(forecast_time_hrs - required_forecast_time_hrs)).argmin()
 
         dataset  = Dataset(source_fps[idx], "r", format="NETCDF4")
         lons = dataset.variables['lon_0'][:]
         lats = dataset.variables['lat_0'][:]
-        var = dataset.variables[envvar][:]
+        var_data = dataset.variables[geophy_var][:]
 
         #print(lons)
         #print(lats)
         #print(temperature)
 
-        # interpolate the variable data to the pixel center positions       
-        if interpl_method == 'scipy.interpolate.linear':
-            f = scipy.interpolate.interp2d( lons, lats, var, kind='cubic')
-            interpl_data = []
-            for _pix_p in pixel_center_pos:
-                lon = _pix_p['lon[deg]']
-                lat = _pix_p['lat[deg]']
-                interpl_data.append(f(lon, lat)[0]) # [0] is needed to convert from the single element np.array to float
-            logger.info("Inaccuracy around longitude=0 deg")
-            
-
-        elif interpl_method == 'metpy.interpolate.linear':
-            (X,Y) = np.meshgrid(lons, lats)
-            X = X.reshape((np.prod(X.shape),))
-            Y = Y.reshape((np.prod(Y.shape),))
-            coords = np.dstack((X,Y))[0]
-            temperature = temperature.flatten()
-            
-            interpl_data = metpy.interpolate.interpolate_to_points(coords, temperature, pixel_center_pos, interp_type='linear', 
-                                                    minimum_neighbors=3, gamma=0.25, kappa_star=5.052, 
-                                                    search_radius=None, rbf_func='linear', rbf_smooth=0)
-
+        # interpolate the variable data to the pixel center positions   
+        interpl_data = interpl(lons, lats, var_data, pixel_center_pos)
 
         #print(result)
 
@@ -282,7 +341,12 @@ class BasicSensorModel(Entity):
         '''
         dataset.close()
 
-        # return the interpoalted variable data
-        return [pixel_center_pos, interpl_data, envvar]
+        # return the interpolated variable data
+        syn_data = namedtuple("syn_data", ["pixel_center_pos", "interpl_data", "geophy_var"])
 
+        return syn_data(
+            pixel_center_pos,
+            interpl_data,
+            geophy_var
+        )
 

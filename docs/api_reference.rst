@@ -8,7 +8,8 @@ It should be helpful if you plan to extend InstruPy with custom components.
    
    instrupy
    instrupy.public_library
-   instrupy.basic_sensor
+   instrupy.basic_sensor.basic_sensor
+   instrupy.basic_sensor.basic_sensor_model
    instrupy.passive_optical_scanner
    instrupy.synthetic_aperture_radar
    instrupy.util

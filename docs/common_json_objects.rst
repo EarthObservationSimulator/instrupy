@@ -185,11 +185,11 @@ Example:
                                 "eulerSeq3": 3
                               }
 
-.. _fieldOfView_json_obj:
+.. _fieldOfViewGeometry_json_obj:
 
-:code:`fieldOfView` JSON object format
+:code:`fieldOfViewGeometry` JSON object format
 ========================================
-The :code:`fieldOfView` is characterized by the key :code:`shape` definition. Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR`
+The :code:`fieldOfViewGeometry` is characterized by the key :code:`shape` definition. Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR`
 and :code:`CUSTOM`.
 
 1. :code:`"shape": "CIRCULAR"`
@@ -204,10 +204,10 @@ and :code:`CUSTOM`.
 
     .. code-block:: python
 
-                "fieldOfView": {
-                                    "shape": "CIRCULAR",
-                                    "diameter":10
-                                }
+                "fieldOfViewGeometry": {
+                                          "shape": "CIRCULAR",
+                                          "diameter":10
+                                       }
 
 2. :code:`"shape": "RECTANGULAR"`
 
@@ -225,11 +225,11 @@ and :code:`CUSTOM`.
 
     .. code-block:: python
 
-                "fieldOfView": {
-                                    "shape": "RECTANGULAR",
-                                    "angleHeight":10,
-                                    "angleWidth":30
-                                }
+                "fieldOfViewGeometry": {
+                                          "shape": "RECTANGULAR",
+                                          "angleHeight":10,
+                                          "angleWidth":30
+                                       }
 
 3. :code:`"shape": "CUSTOM"`
 
@@ -257,15 +257,15 @@ Example:
 
 .. code-block:: python
 
-               "fieldOfView": {
-                                "shape": "CUSTOM",
-                                "customConeAnglesVector": [10,10,10,10],
-                                "customClockAnglesVector": [30, 120, 180, 280]
-                              }
+               "fieldOfViewGeometry": {
+                                          "shape": "CUSTOM",
+                                          "customConeAnglesVector": [10,10,10,10],
+                                          "customClockAnglesVector": [30,120,180,280]
+                                       }
 
-.. _maneuverability_json_object:
+.. _maneuver_json_object:
 
-:code:`maneuverability` JSON object
+:code:`maneuver` JSON object
 ========================================
 Total maneuverability of sensor pointing (combining satellite and sensor maneuverability). Three types of 
 maneuvers are accepted: `Circular`, `Single_Roll_Only` and `Double_Roll_Only`. This should be indicated in the 
@@ -286,7 +286,7 @@ Example:
 
 .. code-block:: python
    
-   "maneuverability":{
+   "maneuver":{
         "@type":"Circular",
         "diameter": 25
    }
@@ -309,7 +309,7 @@ Example:
 
 .. code-block:: python
    
-   "maneuverability":{
+   "maneuver":{
         "@type":"RollOnly",
         "A_rollMin": 5,
         "A_rollMax": 15
@@ -334,7 +334,7 @@ Example:
 
 .. code-block:: python
    
-   "maneuverability":{
+   "maneuver":{
         "@type":"RollOnly",
         "A_rollMin": 5,
         "A_rollMax": 15,
@@ -342,3 +342,31 @@ Example:
         "B_rollMax": -5
    }
 
+.. _syntheticDataConfig_json_obj:
+
+:code:`syntheticDataConfig` JSON object
+================================================
+
+This JSON object is used to describe the configuration of the synthetic data to be produced by the instrument models. 
+
+.. csv-table:: Expected parameters
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   sourceFilePaths, list str,, List of absolute filepaths of the science-data files in NetCDF format. Each file corresponds to a specific (forecast/analysis) time.
+   geophysicalVar, str,, Geophysical variable (name as present in the source NetCDF file) to be used for the synthetic data.
+   interpolMethod, str,, Interpolation method to be employed while interpolating the source data onto the pixel-positions.
+
+Example:
+
+.. code-block:: python
+   
+   "syntheticDataConfig":{
+        "sourceFilePaths": ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", 
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc",
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc",
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc,
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"],
+        "geophysicalVar": "TMP_P0_L1_GLL0",
+        "interpolMethod": "SCIPY_LINEAR"
+   }
