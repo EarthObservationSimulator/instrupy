@@ -96,7 +96,7 @@ class BasicSensor(Entity):
         return obsv_metrics
     
     def to_dict(self):
-        """ Format the MissionConfig object into a dictionary. A list of dictionaries with each dict element correspondng 
+        """ Format the MissionConfig object into a dictionary. A list of dictionaries with each dict element corresponding 
             to a subsensor is returned. """
         sensor_dict = []
         for _ssen in self.subsensor:

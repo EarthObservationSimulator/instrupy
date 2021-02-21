@@ -113,9 +113,8 @@ class BasicSensorModel(Entity):
             _id, random string
             
         """
-        default_fov = dict({'sensorGeometry': 'CIRCULAR', 'diameter':25}) # default fov is a 25 deg diameter circular
+        default_fov = dict({'shape': 'CIRCULAR', 'diameter':25}) # default fov is a 25 deg diameter circular
         default_orien = dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}) #  default orientation = referenced and aligned to the SC_BODY_FIXED frame.
-        default_synobsconf = dict({"sourceFilePaths": None, "environVar": None, "interplMethod":None})
         return BasicSensorModel(
                 name = d.get("name", None),
                 mass = d.get("mass", None),
@@ -126,7 +125,7 @@ class BasicSensorModel(Entity):
                 maneuver =  Maneuver.from_json(d.get("maneuver", None)),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
-                syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", default_synobsconf)),
+                syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", None)),
                 numberDetectorRows = d.get("numberDetectorRows", 4),
                 numberDetectorCols = d.get("numberDetectorCols", 4),
                 _id = d.get("@id", uuid.uuid4())
