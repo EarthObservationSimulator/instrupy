@@ -7,6 +7,7 @@ It should be helpful if you plan to extend InstruPy with custom components.
    :maxdepth: 1
    
    instrupy
+   instrupy.base
    instrupy.public_library
    instrupy.basic_sensor.basic_sensor
    instrupy.basic_sensor.basic_sensor_model

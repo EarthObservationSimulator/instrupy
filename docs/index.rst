@@ -45,7 +45,7 @@ Examples
    :maxdepth: 2
    :caption: Contents:
 
-   instruments_description
+   instrument_models_description
    common_json_objects
    api_reference
    miscellaneous

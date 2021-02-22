@@ -9,57 +9,55 @@ This page contains description of the user-configurable JSON objects shared by t
 ================================
 Several modes (in a list) maybe specified within a single instrument. Each mode corresponds to a specific operating point. For example, 
 consider a *Synthetic Aperture Radar* type instrument which operates in both L-band and C-band. Such an instrument is considered
-to be made up of two sensors with each sensor of instrument type *Synthetic Aperture Radar* and operating at L-band
-and C-band. A mode-identifier is to be specified by the user with which the corresponding mode can be referenced.
+to be made up of two modes with one mode operating at L-band and the other mode at C-band. 
+A mode-identifier can be specified by the user with which the corresponding mode can be referenced.
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
    @id, string,, Unique identifier of mode.
-   @type, string,, Mode type. For SAR specify Stripmap or ScanSar.
 
 The parameters outside the mode block are used as the common parameters for all the modes, while the parameters specified
 within a mode list entry are specific to the particular mode.
 
 Example: The example below is that of a *Basic Sensor* type instrument with two modes. The common parameters for both the modes
-are outside the :code:`mode` block. The `NadirObservationMode` has a nadir viewing geometry with a 35 deg Circular FOV. The `SideObservationMode`
-has a side looking geometry (both the side) at 25 deg circular FOV.
+are outside the :code:`mode` block. The `NadirObservationMode` has a nadir orientation while the `SideObservationMode`
+has an off-nadir orientation.
  
 .. code-block:: python
 
-               {        
-                  "@type": "Basic Sensor",
-                  "name": "Atom",
-                  "@id": "senX",  
-                  "mass": 28, 
-                  "volume": 0.12, 
-                  "power": 32, 
-                  "bitsPerPixel": 8, 
-                  "mode":[{
-                        "@id": "NadirObservationMode"
-                        "fieldOfView": {
-                              "sensorGeometry": "CIRCULAR",
-                              "diameter": 35
-                        },
-                        "orientation": {
-                              "convention": "NADIR"
-                        }      
-                  },
-                  {
-                        "@id": "SideObservationMode"
-                        "fieldOfView": {
-                           "sensorGeometry": "CIRCULAR",
-                           "diameter": 25
-                        },
-                        "orientation": {
-                           "convention": "SIDE_LOOK",
-                           "sideLookAngle": 30
-                        }       
-                        }
-                  ]
-               }
+               specs = '{        
+                           "@type": "Basic Sensor",
+                           "name": "Atom",
+                           "@id": "senX",  
+                           "mass": 28, 
+                           "volume": 0.12, 
+                           "power": 32, 
+                           "bitsPerPixel": 8, 
+                           "fieldOfViewGeometry": {
+                                       "sensorGeometry": "CIRCULAR",
+                                       "diameter": 35
+                                 },
+                           "mode":[{
+                                    "@id": "NadirObservationMode",                            
+                                    "orientation": {
+                                          "referenceFrame": "SC_BODY_FIXED",
+                                          "convention": "REF_FRAME_ALIGNED"
+                                    }      
+                                 },
+                                 {
+                                    "@id": "SideObservationMode",
+                                    "orientation": {
+                                       "referenceFrame": "SC_BODY_FIXED",
+                                       "convention": "SIDE_LOOK",
+                                       "sideLookAngle": 30
+                                 }       
+                                 }
+                           ]
+                        }'
 
+               x = Instrument.from_json(specs) 
 
 .. _orientation_json_obj:
 

@@ -2,5 +2,5 @@
     and simulate satellite imagery.
  
 """
-from .base import InstrumentFactory
+from .base import InstrumentModelFactory, Instrument
 

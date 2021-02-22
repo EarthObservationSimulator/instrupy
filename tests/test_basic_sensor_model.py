@@ -131,7 +131,7 @@ class TestBasicSensorModel(unittest.TestCase):
             BasicSensorModel.from_json('{"name": "Atom","mass":10,"volume":12.45, "fieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight": 10 }}')
 
 
-    def test_calc_typ_data_metrics_1(self):
+    def test_calc_data_metrics_1(self):
         """ Simple test involving satellite above POI at (lat = 0,lon = 0). Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
         """
@@ -140,14 +140,14 @@ class TestBasicSensorModel(unittest.TestCase):
         
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], 500, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 0, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], 0, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["solar zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and (lat=0, lon=0) position
 
-    def test_calc_typ_data_metrics_2_1(self):
+    def test_calc_data_metrics_2_1(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to the East.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -163,7 +163,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
@@ -176,7 +176,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': -7.6126} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
@@ -189,14 +189,14 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': 7.6126} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], -1*nadir_angle_deg, delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["solar zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and near the (lat=0, lon=0) position
 
-    def test_calc_typ_data_metrics_2_2(self):
+    def test_calc_data_metrics_2_2(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to the East.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -213,7 +213,7 @@ class TestBasicSensorModel(unittest.TestCase):
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': orbital_speed(alt*1e-3), 'vz [km/s]': 0}
         print(SpacecraftOrbitState)
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*poi_lon_deg, delta = 0.15)
@@ -225,7 +225,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*poi_lon_deg)))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': -1*orbital_speed(alt*1e-3)}
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*poi_lon_deg, delta = 0.15)
@@ -236,13 +236,13 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*poi_lon_deg)))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]':  orbital_speed(alt*1e-3)}
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*poi_lon_deg, delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], -1*poi_lon_deg, delta = 0.15)
 
-    def test_calc_typ_data_metrics_3_1(self):
+    def test_calc_data_metrics_3_1(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to the West.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -258,7 +258,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15) 
@@ -271,7 +271,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': 7.6126} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15) 
@@ -284,14 +284,14 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': -7.6126} # altitude 500 km
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15) 
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], -1*nadir_angle_deg, delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["solar zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and near the (lat=0, lon=0) position
 
-    def test_calc_typ_data_metrics_3_2(self):
+    def test_calc_data_metrics_3_2(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to the West.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -307,7 +307,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*abs(poi_lon_deg))))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': orbital_speed(alt*1e-3), 'vz [km/s]': 0} 
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lon_deg), delta = 0.15)
@@ -319,7 +319,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*abs(poi_lon_deg))))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': orbital_speed(alt*1e-3)} 
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lon_deg), delta = 0.15)
@@ -331,13 +331,13 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*abs(poi_lon_deg))))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': -1*orbital_speed(alt*1e-3)} 
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lon_deg), delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], -1*abs(poi_lon_deg), delta = 0.15)
 
-    def test_calc_typ_data_metrics_4_1(self):
+    def test_calc_data_metrics_4_1(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to South.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -353,7 +353,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': -7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
@@ -366,7 +366,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
@@ -379,14 +379,14 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': 7.6126} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], nadir_angle_deg, delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["solar zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and near the (lat=0, lon=0) position
 
-    def test_calc_typ_data_metrics_4_2(self):
+    def test_calc_data_metrics_4_2(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to South.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -402,7 +402,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*poi_lat_deg)))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': -1*orbital_speed(alt*1e-3), 'vz [km/s]': 0}
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
@@ -414,7 +414,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*poi_lat_deg)))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': orbital_speed(alt*1e-3), 'vz [km/s]': 0} 
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
@@ -426,13 +426,13 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*poi_lat_deg)))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': orbital_speed(alt*1e-3)} 
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], abs(poi_lat_deg), delta = 0.15)
         
-    def test_calc_typ_data_metrics_5_1(self):
+    def test_calc_data_metrics_5_1(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to North.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -448,7 +448,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta =  0.15)
@@ -461,7 +461,7 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': -7.6126, 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta =  0.15)
@@ -474,14 +474,14 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = 500/np.cos(np.deg2rad(nadir_angle_deg))
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': 7.6126} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], nadir_angle_deg, delta =  0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], nadir_angle_deg, delta =  0.15)
         self.assertAlmostEqual(obsv_metrics["solar zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and near the (lat=0, lon=0) position
 
-    def test_calc_typ_data_metrics_5_2(self):
+    def test_calc_data_metrics_5_2(self):
         """ Test with satellite above POI at (lat = 0,lon = 0), and making observation to North.
             Date chosen so that ECEF and ECI frames are aligned.
             Sensor specs do not influence the below calcs. They do however shall influence the coverage calcs (which is not covered by this test).
@@ -497,7 +497,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*abs(poi_lat_deg))))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': orbital_speed(alt*1e-3), 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
@@ -509,7 +509,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*abs(poi_lat_deg))))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': -1*orbital_speed(alt*1e-3), 'vz [km/s]': 0} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
@@ -521,7 +521,7 @@ class TestBasicSensorModel(unittest.TestCase):
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*abs(poi_lat_deg))))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 0, 'vz [km/s]': orbital_speed(alt*1e-3)} # altitude 500 km
         TargetCoords = {'lat [deg]': poi_lat_deg, 'lon [deg]': 0}
-        obsv_metrics = o.calc_typ_data_metrics(SpacecraftOrbitState, TargetCoords)
+        obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)

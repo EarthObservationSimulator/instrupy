@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../tests/'))
 # -- Project information -----------------------------------------------------
 
 project = 'InstruPy'
-copyright = '2020, BAERI'
+copyright = '2021, BAERI'
 author = 'BAERI'
 
 # The short X.Y version
