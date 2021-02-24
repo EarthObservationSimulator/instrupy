@@ -134,7 +134,7 @@ class BasicSensorModel(Entity):
                 syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", None)),
                 numberDetectorRows = d.get("numberDetectorRows", 4),
                 numberDetectorCols = d.get("numberDetectorCols", 4),
-                _id = d.get("@id", uuid.uuid4())
+                _id = d.get("@id", str(uuid.uuid4()))
                 )
 
     def to_dict(self):
@@ -144,18 +144,22 @@ class BasicSensorModel(Entity):
         :rtype: dict
 
         """
+        fieldOfViewGeometry_dict = self.fieldOfViewGeometry.to_dict() if self.fieldOfViewGeometry is not None and isinstance(self.fieldOfViewGeometry, SphericalGeometry) else None
+        orientation_dict = self.orientation.to_dict() if self.orientation is not None and isinstance(self.orientation, Orientation) else None
+        maneuver_dict = self.maneuver.to_dict() if self.maneuver is not None and isinstance(self.maneuver, Maneuver) else None
+        syntheticDataConfig_dict = self.syntheticDataConfig.to_dict() if self.syntheticDataConfig is not None and isinstance(self.syntheticDataConfig, SyntheticDataConfiguration) else None
         return dict({
                 "@type": "Basic Sensor",
                 "name":self.name,
                 "mass":self.mass,
                 "volume":self.volume,
                 "power":self.power,
-                "fieldOfViewGeometry":self.fieldOfViewGeometry.to_dict(),
-                "orientation":self.orientation.to_dict(),
-                "manuever":self.maneuver.to_dict(),
+                "fieldOfViewGeometry":fieldOfViewGeometry_dict,
+                "orientation":orientation_dict,
+                "maneuver":maneuver_dict,
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
-                "syntheticDataConfig": self.syntheticDataConfig.to_dict(),
+                "syntheticDataConfig": syntheticDataConfig_dict,
                 "numberDetectorRows": self.numberDetectorRows,
                 "numberDetectorCols": self.numberDetectorCols,
                 "@id": self._id
@@ -366,6 +370,12 @@ class BasicSensorModel(Entity):
 
         """
         return self._id
+    
+    def get_field_of_view(self):
+        return self.fieldOfView
+
+    def get_orientation(self):
+        return self.orientation
     
     def get_pixel_config(self):
         """ Get pixel-configuration.

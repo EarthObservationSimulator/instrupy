@@ -913,9 +913,9 @@ class ViewGeometry(Entity):
             return NotImplemented
     
     def __repr__(self):
-        return "ViewGeometry(orien=Orientation.from_dict({}), sph_geom=.from_dict({}))".format(self.orien.to_dict(), self.sph_geom.to_dict())
-
-
+        orien_dict = self.orien.to_dict() if self.orien is not None and isinstance(self.orien, Orientation) else None
+        sph_geom_dict = self.sph_geom.to_dict() if self.sph_geom is not None and isinstance(self.sph_geom, SphericalGeometry) else None
+        return "ViewGeometry(orien=Orientation.from_dict({}), sph_geom=.from_dict({}))".format(orien_dict, sph_geom_dict)
 
 class Maneuver(Entity):
     """ Class handling the maneuverability of the satellite and/or sensor. 

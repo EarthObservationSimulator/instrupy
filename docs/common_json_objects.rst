@@ -308,7 +308,7 @@ Example:
 .. code-block:: python
    
    "maneuver":{
-        "@type":"RollOnly",
+        "@type":"Single_Roll_Only",
         "A_rollMin": 5,
         "A_rollMax": 15
    }
@@ -333,7 +333,7 @@ Example:
 .. code-block:: python
    
    "maneuver":{
-        "@type":"RollOnly",
+        "@type":"Double_Roll_Only",
         "A_rollMin": 5,
         "A_rollMax": 15,
         "B_rollMin": -15,

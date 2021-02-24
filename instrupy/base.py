@@ -9,10 +9,11 @@
 from instrupy.util import Entity
 import uuid
 from collections import namedtuple
+import copy
 
 from .basic_sensor_model import BasicSensorModel
-#from .passive_optical_scanner import PassiveOpticalScanner
-#from .synthetic_aperture_radar import SyntheticApertureRadar
+#from .passive_optical_scanner_model import PassiveOpticalScannerModel
+#from .synthetic_aperture_radar_model import SyntheticApertureRadarModel
 
 class InstrumentModelFactory:
     """ Factory class which allows to register and invoke the appropriate instrument-model instance. 
@@ -37,8 +38,8 @@ class InstrumentModelFactory:
     def __init__(self):
         self._creators = {}
         self.register_instrument_model('Basic Sensor', BasicSensorModel)
-        #self.register_instrument('Passive Optical Scanner', PassiveOpticalScannerModel)
-        #self.register_instrument('Synthetic Aperture Radar', SyntheticApertureRadarModel)
+        #self.register_instrument_model('Passive Optical Scanner', PassiveOpticalScannerModel)
+        #self.register_instrument_model('Synthetic Aperture Radar', SyntheticApertureRadarModel)
 
     def register_instrument_model(self, _type, creator):
         """ Function to register instruments.
@@ -68,7 +69,7 @@ class InstrumentModelFactory:
         creator = self._creators.get(_type)
         if not creator:
             raise ValueError(_type)
-        return creator(specs)
+        return creator.from_dict(specs)
 
 class Instrument(Entity):
     """Main class used to initialize instruments with consideration of multiple operating modes. 
@@ -104,7 +105,7 @@ class Instrument(Entity):
     def __init__(self, _type=None, name=None, mode=None, _id=None):
         """ Initialization.
         """
-        self._type = str(_type) if _type is not None else None
+        self._type = str(_type) if _type is not None else None        
         self.name = str(name) if name is not None else None
         self.mode = mode if mode is not None else None
 
@@ -114,7 +115,7 @@ class Instrument(Entity):
             for m in self.mode:
                 self.mode_id.append(m.get_id())
 
-        super(Instrument,self).__init__(_id, "Instrument")        
+        super(Instrument,self).__init__(_id, self._type)     
 
     @staticmethod
     def from_dict(d):
@@ -136,24 +137,24 @@ class Instrument(Entity):
         if("@id" in d):
             _id = d["@id"]
         else:
-            _id = uuid.uuid4() # assign a random id.
+            _id = str(uuid.uuid4()) # assign a random id.
             d.update({"@id":_id})
 
         fac = InstrumentModelFactory()
         if(d.get("mode", None)): # multiple modes may exist
             mode_specs = d["mode"] # a list
             mode = [] # list of instrument objects with the corresponding mode-spec
-            for idx, _spec in enumerate(mode_specs): # iterate over list of mode-d
+            for idx, _spec in enumerate(mode_specs): # iterate over list of modes
                 
                 ##### Start create mode specifications dict by combining the data specific to the mode and common data #####
 
                 _mode = {key:val for key, val in d.items() if key != 'mode'} # copy all common d to new dict                 
                 # ensure valid mode id
                 if(_spec.get("@id", None) is not None): # check if mode id is specified by user
-                   _mode_id = str(_spec["@id"])      
+                   _mode_id = _spec["@id"]   
                    del _spec['@id']              
                 else: 
-                   _mode_id = str(idx) # assign a mode-id
+                   _mode_id =str(uuid.uuid4()) # assign a mode-id
                 
                 _mode.update({"@id":_mode_id})                
                 # update and copy the mode specific specifications to the mode dict   
@@ -161,11 +162,14 @@ class Instrument(Entity):
 
                 ##### End create mode specifications dict #####       
                 
-                mode.append(fac.get_instrument_model(d))
+                mode.append(fac.get_instrument_model(_mode))
                 
         else:
             # no mode definition => default single mode of operation is to be considered
-            mode = [fac.get_instrument_model(d)]
+            mode_dict = copy.deepcopy(d)
+            mode_dict.update({"@id":"0"}) # assign mode_id different from instrument id
+            del mode_dict["name"] # delete name from dictionary since it is name of instrument
+            mode = [fac.get_instrument_model(mode_dict)]            
         
         return Instrument( _type = _type,
                            name = d.get('name', None),
@@ -212,7 +216,37 @@ class Instrument(Entity):
         """
         return self._type
 
-    def get_fov(self, mode_id = None):
+    def get_mode_id(self):
+        """ Return the list of mode identifiers.
+
+        :returns: Mode identifiers.
+        :rtype: list, str
+
+        """
+        return self.mode_id
+
+    def get_mode(self, mode_id=None):
+        """ Return instrument mode corresponding to the input mode identifier. In case of invalid or no input mode ids, 
+            the first mode in the list of modes is returned.
+
+            :param mode_id: Mode identifer.
+            :paramtype mode_id: str
+
+            :returns: Instrument model object initialized to the corresponding mode specifications.
+            :rtype: :class:`instrupy.BasicSensorModel` (or) :class:`instrupy.PassiveOpticalScannerModel` (or) :class:`instrupy.SyntheticApertureRadarModel` (or) user-defined instrument model class
+        """
+        if mode_id is not None:
+            try:
+                _mode_id_indx = self.mode_id.index(mode_id)
+            except:
+                print('Invalid instrument mode-id {}, defaulting to the first mode in the list of modes.'.format(mode_id))
+                _mode_id_indx = 0
+            _mode = self.mode[_mode_id_indx]
+        else:
+            _mode = self.mode[0]
+        return _mode
+
+    def get_field_of_view(self, mode_id=None):
         """ Get field-of-view (of a specific instrument mode). If no mode identifier is specified, the 
             the first mode in the list of modes of the instrument is considered.
 
@@ -223,15 +257,10 @@ class Instrument(Entity):
         :rtype: :class:`instrupy.util.ViewGeometry`
         
         """ 
-        if mode_id is not None:
-            _mode_id_indx = self.mode_id.index(mode_id)
-            _mode = self.mode[_mode_id_indx]
-        else:
-            _mode = self.mode[0]
-        
-        return _mode.fieldOfView
+        _mode = self.get_mode(mode_id)
+        return _mode.get_field_of_view()
 
-    def get_orien(self, mode_id = None):
+    def get_orientation(self, mode_id=None):
         """ Get orientation (of a specific instrument mode). If no mode identifier is specified, the 
             the first mode in the list of modes of the instrument is considered.
 
@@ -242,15 +271,10 @@ class Instrument(Entity):
         :rtype: :class:`instrupy.util.Orientation`
         
         """
-        if mode_id is not None:
-            _mode_id_indx = self.mode_id.index(mode_id)
-            _mode = self.mode[_mode_id_indx]
-        else:
-            _mode = self.mode[0]
-        
-        return _mode.orientation
+        _mode = self.get_mode(mode_id)
+        return _mode.get_orientation()
     
-    def get_pixel_config(self, mode_id = None):
+    def get_pixel_config(self, mode_id=None):
         """ Get pixel-configuration (of a specific instrument mode). If no mode identifier is specified, the 
             the first mode in the list of modes of the instrument is considered.
 
@@ -261,12 +285,7 @@ class Instrument(Entity):
         :rtype: namedtuple, (int, int)
         
         """
-        if mode_id is not None:
-            _mode_id_indx = self.mode_id.index(mode_id)
-            _mode = self.mode[_mode_id_indx]
-        else:
-            _mode = self.mode[0]
-
+        _mode = self.get_mode(mode_id)
         return _mode.get_pixel_config()
 
     def calc_data_metrics(self, mode_id=None, *args, **kwargs):
@@ -281,13 +300,8 @@ class Instrument(Entity):
         :param \**kwargs: Keyword arguments. Refer to the ``calc_data_metrics(...)`` function of the instrument model class of interest. 
             
         """       
-        if mode_id is not None:
-            _mode_id_indx = self.mode_id.index(mode_id)
-            _mode = self.mode[_mode_id_indx]
-        else:
-            _mode = self.mode[0]
-        
-        obsv_metrics = _mode.calc_typ_data_metrics(*args, **kwargs)
+        _mode = self.get_mode(mode_id)
+        obsv_metrics = _mode.calc_data_metrics(*args, **kwargs)
         return obsv_metrics    
     
     def synthesize_observation(self, mode_id=None, *args, **kwargs):
@@ -301,11 +315,6 @@ class Instrument(Entity):
         :param \**kwargs: Keyword arguments. Refer to the ``synthesize_observation(...)`` function of the instrument-model class of interest. 
             
         """
-        if mode_id is not None:
-            _mode_id_indx = self.mode_id.index(mode_id)
-            _mode = self.mode[_mode_id_indx]
-        else:
-            _mode = self.mode[0]
-        
+        _mode = self.get_mode(mode_id)
         return _mode.synthesize_observation(*args, **kwargs)
 

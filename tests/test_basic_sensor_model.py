@@ -1,25 +1,18 @@
 """Unit tests for instrupy.basic_sensor.basic_sensor_model.
 """
-
 import unittest
-import json
 import numpy as np
-import sys, os
 import random
 
-from instrupy.basic_sensor.basic_sensor_model import BasicSensorModel
+from instrupy.basic_sensor_model import BasicSensorModel
 from instrupy.util import Orientation, ViewGeometry, SphericalGeometry, ReferenceFrame, SyntheticDataConfiguration, Maneuver
 
 RE = 6378.137 # [km] radius of Earth
 
-
 def orbital_speed(alt_km):
     return np.sqrt(398600.5/(RE + alt_km))
-class TestBasicSensorModel(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        # 
-        super(TestBasicSensorModel, self).__init__(*args, **kwargs)
+class TestBasicSensorModel(unittest.TestCase):
 
     def test_from_json_basic(self):
         """ Test initialization of basic sensor in the many different ways allowed.
@@ -526,3 +519,28 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], range_km, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 2*abs(poi_lat_deg), delta = 0.15)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], abs(poi_lat_deg), delta = 0.15)
+
+    def test_get_id(self): #@TODO
+        pass
+
+    def test_get_field_of_view(self): #@TODO
+        pass
+
+    def test_get_orientation(self): #@TODO
+        pass
+
+    def test_get_pixel_config(self): #@TODO
+        o = BasicSensorModel.from_json('{}')
+        self.assertEqual(o.get_pixel_config().numberDetectorRows,4)
+        self.assertEqual(o.get_pixel_config().numberDetectorCols,4)
+
+        o = BasicSensorModel.from_json('{"numberDetectorRows":5, "numberDetectorCols":10}')
+        self.assertEqual(o.get_pixel_config().numberDetectorRows,5)
+        self.assertEqual(o.get_pixel_config().numberDetectorCols,10)
+
+        o = BasicSensorModel.from_json('{"numberDetectorCols":10}')
+        self.assertEqual(o.get_pixel_config().numberDetectorRows,4)
+        self.assertEqual(o.get_pixel_config().numberDetectorCols,10)
+    
+    def test_synthesize_observation(self): #@TODO
+        pass
