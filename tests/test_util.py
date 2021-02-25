@@ -652,7 +652,7 @@ class TestManeuver(unittest.TestCase):
   
     def test_from_json_CIRCULAR(self):
 
-        o = Maneuver.from_json('{"@type": "CIRCULAR", "diameter":10.3}')
+        o = Maneuver.from_json('{"maneuverType": "CIRCULAR", "diameter":10.3}')
         self.assertIsInstance(o, Maneuver)
         self.assertEqual(o.maneuver_type, Maneuver.Type.CIRCULAR)
         self.assertEqual(o.diameter, 10.3)
@@ -662,7 +662,7 @@ class TestManeuver(unittest.TestCase):
         self.assertIsNone(o.B_roll_max)
         self.assertIsNone(o._id)
 
-        o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        o = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
         self.assertIsInstance(o, Maneuver)
         self.assertEqual(o.maneuver_type, Maneuver.Type.CIRCULAR)
         self.assertIsInstance(o.diameter, float)
@@ -673,20 +673,20 @@ class TestManeuver(unittest.TestCase):
         self.assertEqual(o._id, "123")
         
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "CIRCULAR"}')
+            o = Maneuver.from_json('{"maneuverType": "CIRCULAR"}')
         
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "CIRCULAR", "diameter":-10}')
+            o = Maneuver.from_json('{"maneuverType": "CIRCULAR", "diameter":-10}')
         
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "CIRCULAR", "diameter":190}')
+            o = Maneuver.from_json('{"maneuverType": "CIRCULAR", "diameter":190}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "CIRC", "diameter":10}')
+            o = Maneuver.from_json('{"maneuverType": "CIRC", "diameter":10}')
     
     def test_from_json_SINGLE_ROLL_ONLY(self):
 
-        o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30}')
+        o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30}')
         self.assertIsInstance(o, Maneuver)
         self.assertEqual(o.maneuver_type, Maneuver.Type.SINGLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
@@ -696,7 +696,7 @@ class TestManeuver(unittest.TestCase):
         self.assertIsNone(o.B_roll_max)
         self.assertIsNone(o._id)
 
-        o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "@id":123}')
+        o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "@id":123}')
         self.assertIsInstance(o, Maneuver)
         self.assertEqual(o.maneuver_type, Maneuver.Type.SINGLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
@@ -707,23 +707,23 @@ class TestManeuver(unittest.TestCase):
         self.assertEqual(o._id, 123)
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY"}')
+            o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY"}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":10}')
+            o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin":10}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMax": 0}')
+            o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMax": 0}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":190, "A_rollMax": 200}')
+            o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin":190, "A_rollMax": 200}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": -190}')
+            o = Maneuver.from_json('{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": -190}')
     
     def test_from_json_DOUBLE_ROLL_ONLY(self):
 
-        o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30, "B_rollMin":-30, "B_rollMax": 0}')
+        o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30, "B_rollMin":-30, "B_rollMax": 0}')
         self.assertIsInstance(o, Maneuver)
         self.assertEqual(o.maneuver_type, Maneuver.Type.DOUBLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
@@ -733,7 +733,7 @@ class TestManeuver(unittest.TestCase):
         self.assertEqual(o.B_roll_max, 0)
         self.assertIsNone(o._id)
 
-        o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60, "@id":"123"}')
+        o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60, "@id":"123"}')
         self.assertIsInstance(o, Maneuver)
         self.assertEqual(o.maneuver_type, Maneuver.Type.DOUBLE_ROLL_ONLY)
         self.assertIsNone(o.diameter)
@@ -744,43 +744,43 @@ class TestManeuver(unittest.TestCase):
         self.assertEqual(o._id, "123")
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY"}')
+            o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY"}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":10, "A_rollMax": 50}')
+            o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":10, "A_rollMax": 50}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "B_rollMin":10, "B_rollMax": 60}')
+            o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "B_rollMin":10, "B_rollMax": 60}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":30, "A_rollMax": 0, "B_rollMin":-30, "B_rollMax": 0}')
+            o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":30, "A_rollMax": 0, "B_rollMin":-30, "B_rollMax": 0}')
 
         with self.assertRaises(Exception):
-            o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30, "B_rollMin":-30, "B_rollMax": -60}')
+            o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":0, "A_rollMax": 30, "B_rollMin":-30, "B_rollMax": -60}')
 
     def test_to_dict(self):
         
         # CIRCULAR
-        o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        o = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
         d = o.to_dict()
-        self.assertEqual(d["@type"], "CIRCULAR")
+        self.assertEqual(d["maneuverType"], "CIRCULAR")
         self.assertEqual(d["diameter"], 10.0)
         self.assertEqual(d["@id"], "123")
 
         # SINGLE_ROLL_ONLY
         o = Maneuver.from_json(
-            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30, "@id": 123}')
+            '{"maneuverType": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30, "@id": 123}')
         d = o.to_dict()
-        self.assertEqual(d["@type"], "SINGLE_ROLL_ONLY")
+        self.assertEqual(d["maneuverType"], "SINGLE_ROLL_ONLY")
         self.assertEqual(d["A_rollMin"], 0.0)
         self.assertEqual(d["A_rollMax"], 30.0)
         self.assertEqual(d["@id"], 123)
 
         # DOUBLE_ROLL_ONLY
         o = Maneuver.from_json(
-            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+            '{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         d = o.to_dict()
-        self.assertEqual(d["@type"], "DOUBLE_ROLL_ONLY")
+        self.assertEqual(d["maneuverType"], "DOUBLE_ROLL_ONLY")
         self.assertEqual(d["A_rollMin"], -10.0)
         self.assertEqual(d["A_rollMax"], 0.0)
         self.assertEqual(d["B_rollMin"], 10.0)
@@ -790,47 +790,47 @@ class TestManeuver(unittest.TestCase):
     def test___eq__(self):
 
         # CIRCULAR
-        o1 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
-        o2 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"abc"}')
+        o1 = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
+        o2 = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"abc"}')
         self.assertTrue(o1==o2)
-        o1 = Maneuver.from_json('{"@type": "circular", "diameter":20, "@id":"123"}')
-        o2 = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        o1 = Maneuver.from_json('{"maneuverType": "circular", "diameter":20, "@id":"123"}')
+        o2 = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
         self.assertFalse(o1==o2)
 
         # SINGLE_ROLL_ONLY
         o1 = Maneuver.from_json(
-            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+            '{"maneuverType": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
         o2 = Maneuver.from_json(
-            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+            '{"maneuverType": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
         self.assertTrue(o1==o2)
         o1 = Maneuver.from_json(
-            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
+            '{"maneuverType": "single_Roll_only", "A_rollMin":0, "A_rollMax": 30}')
         o2 = Maneuver.from_json(
-            '{"@type": "single_Roll_only", "A_rollMin":0, "A_rollMax": 20.1}')
+            '{"maneuverType": "single_Roll_only", "A_rollMin":0, "A_rollMax": 20.1}')
         self.assertFalse(o1==o2)
 
         # DOUBLE_ROLL_ONLY
         o1 = Maneuver.from_json(
-            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+            '{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         o2 = Maneuver.from_json(
-            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+            '{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         self.assertTrue(o1==o2)
         o1 = Maneuver.from_json(
-            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 10, "B_rollMin":10, "B_rollMax": 60}')
+            '{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 10, "B_rollMin":10, "B_rollMax": 60}')
         o2 = Maneuver.from_json(
-            '{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+            '{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         self.assertFalse(o1==o2)
 
     def test_calc_field_of_regard(self):
 
         # CIRCULAR Maneuver
         # circular input fov
-        o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        o = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
         self.assertEqual(x[0], ViewGeometry(orien=Orientation(ref_frame="Nadir_pointing"), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":15})))
 
         # rectangular input fov
-        o = Maneuver.from_json('{"@type": "circular", "diameter":10, "@id":"123"}')
+        o = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":5, "angleHeight":5}))
         self.assertEqual(x[0].orien, Orientation(ref_frame="Nadir_pointing"))
         proxy_fov_geom = x[0].sph_geom
@@ -839,14 +839,14 @@ class TestManeuver(unittest.TestCase):
         
         # SINGLE_ROLL_ONLY
         # circular input fov
-        o = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
+        o = Maneuver.from_json('{"maneuverType": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
         self.assertEqual(x[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}), 
                                             sph_geom=SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5})))
 
 
         # rectangular input fov
-        o = Maneuver.from_json('{"@type": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
+        o = Maneuver.from_json('{"maneuverType": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":5, "angleHeight":5}))
         self.assertEqual(x[0].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}))
         proxy_fov_geom = x[0].sph_geom
@@ -856,7 +856,7 @@ class TestManeuver(unittest.TestCase):
 
         # DOUBLE_ROLL_ONLY
         # circular input fov
-        o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":7.5}))
         self.assertEqual(x[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}), 
                                             sph_geom=SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5})))
@@ -864,7 +864,7 @@ class TestManeuver(unittest.TestCase):
                                             sph_geom=SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5})))
 
         # rectangular input fov
-        o = Maneuver.from_json('{"@type": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
+        o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":7.5, "angleHeight":7.5}))
         self.assertEqual(x[0].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}))
         self.assertEqual(x[1].orien, Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}))

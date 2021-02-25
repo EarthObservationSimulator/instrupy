@@ -1059,7 +1059,7 @@ class Maneuver(Entity):
     def from_dict(d):
         """Parses an maneuverability object from a normalized JSON dictionary."""
         return Maneuver(
-                maneuver_type = d.get("@type", None),
+                maneuver_type = d.get("maneuverType", None),
                 A_roll_min = d.get("A_rollMin", None),
                 A_roll_max = d.get("A_rollMax", None),
                 B_roll_min = d.get("B_rollMin", None),
@@ -1070,11 +1070,11 @@ class Maneuver(Entity):
 
     def to_dict(self):
         if self.maneuver_type == Maneuver.Type.CIRCULAR:
-            specs_dict= dict({"@type": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
+            specs_dict= dict({"maneuverType": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
         elif self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY:
-            specs_dict= dict({"@type": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "@id": self._id})
+            specs_dict= dict({"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "@id": self._id})
         elif self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY:
-            specs_dict= dict({"@type": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max, "@id": self._id})
+            specs_dict= dict({"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max, "@id": self._id})
         else:
             raise Exception("Invalid or no Manuever type specification.")
         

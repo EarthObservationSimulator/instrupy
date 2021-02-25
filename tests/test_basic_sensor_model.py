@@ -21,7 +21,7 @@ class TestBasicSensorModel(unittest.TestCase):
         o = BasicSensorModel.from_json('{"name": "Atom", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
                                   "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, \
                                   "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
-                                  "maneuver":{"@type": "CIRCULAR", "diameter":10}, \
+                                  "maneuver":{"maneuverType": "CIRCULAR", "diameter":10}, \
                                   "numberDetectorRows":5, "numberDetectorCols":10, "@id": "bs1", \
                                   "syntheticDataConfig": {"sourceFilePaths":   ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
                                                                                 "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
@@ -64,7 +64,7 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertEqual(o.fieldOfView, ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":5})))
 
         self.assertIsInstance(o.maneuver, Maneuver)
-        self.assertEqual(o.maneuver, Maneuver.from_dict({"@type": "CIRCULAR", "diameter":10}))
+        self.assertEqual(o.maneuver, Maneuver.from_dict({"maneuverType": "CIRCULAR", "diameter":10}))
 
         self.assertIsInstance(o.fieldOfRegard[0], ViewGeometry)
         self.assertEqual(o.fieldOfRegard[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":15})))

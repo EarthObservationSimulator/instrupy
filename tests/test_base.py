@@ -57,13 +57,13 @@ class TestInstrument(unittest.TestCase):
     bs1 = Instrument.from_json('{"name": "Alpha", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
                                   "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, \
                                   "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
-                                  "maneuver":{"@type": "CIRCULAR", "diameter":10}, \
+                                  "maneuver":{"maneuverType": "CIRCULAR", "diameter":10}, \
                                   "numberDetectorRows":5, "numberDetectorCols":10, "@id":"bs1", "@type":"Basic Sensor" \
                                   }')
 
     bs2 = Instrument.from_json('{"name": "Beta", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
                                   "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
-                                  "maneuver":{"@type": "SINGLE_ROLL_ONLY", "A_rollMin":10, "A_rollMax":15}, \
+                                  "maneuver":{"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin":10, "A_rollMax":15}, \
                                   "mode": [{"@id":101, "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}} \
                                           ], \
                                   "numberDetectorRows":5, "numberDetectorCols":10, "@type":"Basic Sensor" \
@@ -71,7 +71,7 @@ class TestInstrument(unittest.TestCase):
 
     bs3 = Instrument.from_json('{"name": "Gamma", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
                                   "fieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }, \
-                                  "maneuver":{"@type": "Double_Roll_Only", "A_rollMin":10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}, \
+                                  "maneuver":{"maneuverType": "Double_Roll_Only", "A_rollMin":10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}, \
                                   "mode": [{"@id":0, "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}}, \
                                            {"@id":1, "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25}}, \
                                            { "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25}}  \
@@ -98,7 +98,7 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.numberDetectorCols, 10)
         self.assertEqual(mode0.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'))
         self.assertEqual(mode0.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}'))
-        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"@type": "CIRCULAR", "diameter": 10}'))        
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "CIRCULAR", "diameter": 10}'))        
         
         # test initialization with single mode specification
         self.assertEqual(TestInstrument.bs2.name, "Beta")
@@ -118,7 +118,7 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.numberDetectorCols, 10)
         self.assertEqual(mode0.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'))
         self.assertEqual(mode0.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}'))
-        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"@type": "single_ROLL_ONLY", "A_rollMin": 10, "A_rollMax":15}'))   
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "single_ROLL_ONLY", "A_rollMin": 10, "A_rollMax":15}'))   
 
         # test initialization with multiple mode specifications
         self.assertEqual(TestInstrument.bs3.name, "Gamma")
@@ -139,7 +139,7 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.numberDetectorCols, 10)
         self.assertEqual(mode0.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'))
         self.assertEqual(mode0.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}'))
-        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"@type": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))   
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))   
         # mode1
         mode1 = TestInstrument.bs3.mode[1]
         self.assertEqual(mode1._id, 1)
@@ -152,7 +152,7 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode1.numberDetectorCols, 10)
         self.assertEqual(mode1.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25}'))
         self.assertEqual(mode1.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}'))
-        self.assertEqual(mode1.maneuver, Maneuver.from_json('{"@type": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))          
+        self.assertEqual(mode1.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))          
         # mode2
         mode2 = TestInstrument.bs3.mode[2]
         self.assertIsNotNone(mode2._id)
@@ -165,7 +165,7 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode2.numberDetectorCols, 10)
         self.assertEqual(mode2.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25}'))
         self.assertEqual(mode2.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}'))
-        self.assertEqual(mode2.maneuver, Maneuver.from_json('{"@type": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))   
+        self.assertEqual(mode2.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))   
     
     def test_get_type(self):
         self.assertEqual(TestInstrument.bs1.get_type(), 'Basic Sensor')

@@ -267,9 +267,9 @@ Example:
 ========================================
 Total maneuverability of sensor pointing (combining satellite and sensor maneuverability). Three types of 
 maneuvers are accepted: `Circular`, `Single_Roll_Only` and `Double_Roll_Only`. This should be indicated in the 
-:code:`@type` name, value pair. Please refer to :ref:`maneuv_desc` for a complete description of the options.
+:code:`maneuverType` name, value pair. Please refer to :ref:`maneuv_desc` for a complete description of the options.
 
-1. :code:`"@type":"Circular"`
+1. :code:`"maneuverType":"Circular"`
 
 This option indicates that the instrument pointing axis can be maneuvered about the nadir vector inside a circular region of diameter as indicated
 by the :code:`diameter` name, value pair.
@@ -285,11 +285,11 @@ Example:
 .. code-block:: python
    
    "maneuver":{
-        "@type":"Circular",
+        "maneuverType":"Circular",
         "diameter": 25
    }
 
-2. :code:`"@type":"Single_Roll_Only"`
+2. :code:`"maneuverType":"Single_Roll_Only"`
 
 This option indicates that the instrument can be maneuvered only about the roll axis (of the nadir-pointing frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
@@ -308,12 +308,12 @@ Example:
 .. code-block:: python
    
    "maneuver":{
-        "@type":"Single_Roll_Only",
+        "maneuverType":"Single_Roll_Only",
         "A_rollMin": 5,
         "A_rollMax": 15
    }
 
-3. :code:`"@type":"Double_Roll_Only"`
+3. :code:`"maneuverType":"Double_Roll_Only"`
 
 This option is similar to the :code:`Single_Roll_Only` option, except that it allows for definition of two set of roll-ranges (labelled as A and B).
 This option is useful to model manuever by purely side-looking (look at the nadir is prohibited) instruments which may be pointed on either 'side' (i.e. positive roll region
@@ -333,7 +333,7 @@ Example:
 .. code-block:: python
    
    "maneuver":{
-        "@type":"Double_Roll_Only",
+        "maneuverType":"Double_Roll_Only",
         "A_rollMin": 5,
         "A_rollMax": 15,
         "B_rollMin": -15,
