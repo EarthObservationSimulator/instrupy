@@ -204,9 +204,12 @@ class SyntheticDataConfiguration(Entity):
     @staticmethod
     def from_dict(d):
         """ Construct an SyntheticDataConfiguration object from a dictionary.
-        
-            :return: Parsed python object. 
-            :rtype: :class:`instrupy.util.SyntheticDataConfiguration`
+
+        :param d: Dictionary containing the synthetic data config specifications.
+        :paramtype d: dict
+    
+        :return: Parsed python object. 
+        :rtype: :class:`instrupy.util.SyntheticDataConfiguration`
         """
         return SyntheticDataConfiguration(sourceFilePaths   = d.get("sourceFilePaths", None), 
                                            geophysicalVar   = d.get("geophysicalVar", None),
@@ -505,6 +508,9 @@ class Orientation(Entity):
     def from_dict(d):
         """Parses orientation specifications from a dictionary.
         
+            :param d: Dictionary containing the orientation specifications.
+            :paramtype d: dict
+
             :return: Parsed python object. 
             :rtype: :class:`instrupy.util.Orientation`
         """
@@ -653,6 +659,9 @@ class SphericalGeometry(Entity):
             self.angle_width = None
             if(self.shape==SphericalGeometry.Shape.CIRCULAR):
                 self.diameter = 2 * self.cone_angle_vec[0]
+                self.angle_height = self.diameter
+                self.angle_width = self.diameter
+
             elif(self.shape==SphericalGeometry.Shape.RECTANGULAR):
                 [self.angle_height, self.angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(self.cone_angle_vec, self.clock_angle_vec)
                 
@@ -1057,7 +1066,15 @@ class Maneuver(Entity):
 
     @staticmethod
     def from_dict(d):
-        """Parses an maneuverability object from a normalized JSON dictionary."""
+        """Parses an manuever object from a normalized JSON dictionary.
+        
+        :param d: Dictionary with the manuever specifications.
+        :paramtype d: dict
+
+        :return: Maneuver object.
+        :rtype: :class:`instrupy.util.Maneuver`
+
+        """
         return Maneuver(
                 maneuver_type = d.get("maneuverType", None),
                 A_roll_min = d.get("A_rollMin", None),
@@ -1069,6 +1086,12 @@ class Maneuver(Entity):
                 )
 
     def to_dict(self):
+        """ Translate the Maneuver object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        
+        :return: Maneuver object as python dictionary
+        :rtype: dict
+
+        """
         if self.maneuver_type == Maneuver.Type.CIRCULAR:
             specs_dict= dict({"maneuverType": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
         elif self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY:
@@ -1081,18 +1104,18 @@ class Maneuver(Entity):
         return specs_dict
     
     def __repr__(self):
-            return "Maneuver.from_dict({})".format(self.to_dict())
+        return "Maneuver.from_dict({})".format(self.to_dict())
 
     def __eq__(self, other):
-            # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
-            # the Maneuver is physically the same.
-            # note that _id data attribute may be different
-            if(isinstance(self, other.__class__)):
-                return (self.maneuver_type==other.maneuver_type) and (self.diameter==other.diameter) and (self.A_roll_min==other.A_roll_min) and \
-                       (self.A_roll_max==other.A_roll_max) and (self.B_roll_min==other.B_roll_min) and (self.B_roll_max==other.B_roll_max)
-                    
-            else:
-                return NotImplemented
+        # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+        # the Maneuver is physically the same.
+        # note that _id data attribute may be different
+        if(isinstance(self, other.__class__)):
+            return (self.maneuver_type==other.maneuver_type) and (self.diameter==other.diameter) and (self.A_roll_min==other.A_roll_min) and \
+                    (self.A_roll_max==other.A_roll_max) and (self.B_roll_min==other.B_roll_min) and (self.B_roll_max==other.B_roll_max)
+                
+        else:
+            return NotImplemented
 
     def calc_field_of_regard(self, fov_sph_geom):
         """ Calculate the field-of-regard (FOR) in terms of a *proxy sensor setup* for an input sensor FOV/ scene-FOV. 

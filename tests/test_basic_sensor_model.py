@@ -526,6 +526,9 @@ class TestBasicSensorModel(unittest.TestCase):
     def test_get_field_of_view(self): #@TODO
         pass
 
+    def test_get_field_of_regard(self): #@TODO
+        pass
+
     def test_get_orientation(self): #@TODO
         pass
 
@@ -543,4 +546,7 @@ class TestBasicSensorModel(unittest.TestCase):
         self.assertEqual(o.get_pixel_config().numberDetectorCols,10)
     
     def test_synthesize_observation(self): #@TODO
+        pass
+    
+    def test___eq__(self): #TODO
         pass

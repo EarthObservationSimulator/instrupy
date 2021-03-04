@@ -10,12 +10,12 @@ from instrupy.util import SphericalGeometry, Orientation, ViewGeometry, Maneuver
 
 class TestInstrumentModelFactory(unittest.TestCase):
     
-    class DummyDopplerRadar:
+    class DummyNewInstrument:
         def __init__(self, *args, **kwargs):
             pass
             
         def from_dict(self):
-            return TestInstrumentModelFactory.DummyDopplerRadar()
+            return TestInstrumentModelFactory.DummyNewInstrument()
 
     def test___init__(self):
         factory = InstrumentModelFactory()
@@ -27,9 +27,9 @@ class TestInstrumentModelFactory(unittest.TestCase):
     
     def test_register_instrument_model(self):
         factory = InstrumentModelFactory()
-        factory.register_instrument_model('Doppler Radar 2021', TestInstrumentModelFactory.DummyDopplerRadar)
-        self.assertIn('Doppler Radar 2021', factory._creators)
-        self.assertEqual(factory._creators['Doppler Radar 2021'], TestInstrumentModelFactory.DummyDopplerRadar)
+        factory.register_instrument_model('New Instrument 2021', TestInstrumentModelFactory.DummyNewInstrument)
+        self.assertIn('New Instrument 2021', factory._creators)
+        self.assertEqual(factory._creators['New Instrument 2021'], TestInstrumentModelFactory.DummyNewInstrument)
         # test the built-in instrumnet models remain registered
         self.assertIn('Basic Sensor', factory._creators)
         self.assertEqual(factory._creators['Basic Sensor'], BasicSensorModel)
@@ -38,7 +38,7 @@ class TestInstrumentModelFactory(unittest.TestCase):
     def test_get_instrument_model(self):
         factory = InstrumentModelFactory()
         # register a dummy instrument model
-        factory.register_instrument_model('Doppler Radar 2021', TestInstrumentModelFactory.DummyDopplerRadar)
+        factory.register_instrument_model('New Instrument 2021', TestInstrumentModelFactory.DummyNewInstrument)
         # test the instrument model classes can be obtained depending on the input specifications
         # basic sensor model
         specs = {"@type": 'Basic Sensor'} # in practice additional instrument specs shall be present in the dictionary
@@ -47,10 +47,10 @@ class TestInstrumentModelFactory(unittest.TestCase):
         
         # @TODO: Add checks of PassiveOpticalScannerModel, SyntheticApertureRadarModel
 
-        # DummyDopplerRadar
-        specs = {"@type": 'Doppler Radar 2021'} # in practice additional instrument specs shall be present in the dictionary
-        dp_model = factory.get_instrument_model(specs)
-        self.assertIsInstance(dp_model, TestInstrumentModelFactory.DummyDopplerRadar)
+        # DummyNewInstrument
+        specs = {"@type": 'New Instrument 2021'} # in practice additional instrument specs shall be present in the dictionary
+        di_model = factory.get_instrument_model(specs)
+        self.assertIsInstance(di_model, TestInstrumentModelFactory.DummyNewInstrument)
 
 class TestInstrument(unittest.TestCase):
 
@@ -183,6 +183,39 @@ class TestInstrument(unittest.TestCase):
     def test_get_mode(self): #@TODO
         pass    
 
+    def test_get_field_of_regard(self): #@TODO
+        # bs1
+        # no input mode-id
+        self.assertEqual(TestInstrument.bs1.get_field_of_regard(), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}')))
+        # input correct mode-id
+        self.assertEqual(TestInstrument.bs1.get_field_of_regard(mode_id="0"), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}')))
+        # input incorrect mode-id, should default to first mode
+        self.assertEqual(TestInstrument.bs1.get_field_of_regard(mode_id="abc"), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}')))
+
+        # bs2
+        # no input mode-id
+        self.assertEqual(TestInstrument.bs2.get_field_of_regard(), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}')))
+        # input correct mode-id
+        self.assertEqual(TestInstrument.bs2.get_field_of_regard(mode_id=101), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}')))
+        # input incorrect mode-id, should default to first mode
+        self.assertEqual(TestInstrument.bs2.get_field_of_regard(mode_id="abc"), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}')))
+
+        # bs3
+        # no input mode-id
+        self.assertEqual(TestInstrument.bs3.get_field_of_regard(), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }')))
+        # input correct mode-id
+        self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id=0), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }')))
+        # input incorrect mode-id, should default to first mode
+        self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id="abc"), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'), sph_geom=SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }')))
+        # next mode
+        self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id=1), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25}'), sph_geom=SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }')))
+        # next mode
+        mode_id = TestInstrument.bs3.mode_id[2]
+        self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id=mode_id), ViewGeometry(orien=Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25}'), sph_geom=SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }')))
+        
+        # bs4
+        # no maneuver specification
+        
     def test_get_field_of_view(self):
         # bs1
         # no input mode-id

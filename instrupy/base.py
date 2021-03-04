@@ -16,7 +16,7 @@ from .basic_sensor_model import BasicSensorModel
 #from .synthetic_aperture_radar_model import SyntheticApertureRadarModel
 
 class InstrumentModelFactory:
-    """ Factory class which allows to register and invoke the appropriate instrument-model instance. 
+    """ Factory class which allows to register and invoke the appropriate instrument-model class. 
     
     :class:`BasicSensorModel`, :class:`PassiveOpticalScannerModel` and :class:`SyntheticApertureRadarModel`
     instrument-model classes are registered in the factory. Additional user-defined instrument-model classes
@@ -58,7 +58,7 @@ class InstrumentModelFactory:
 
         :var specs: Instrument-model specifications which also contains a valid instrument
                     type in the "@type" dict key. The instrument type is valid if it has been
-                    registered with the instrument factory instance.
+                    registered with the ``InstrumentModelFactory`` instance.
         :vartype _type: dict
         
         """
@@ -168,7 +168,10 @@ class Instrument(Entity):
             # no mode definition => default single mode of operation is to be considered
             mode_dict = copy.deepcopy(d)
             mode_dict.update({"@id":"0"}) # assign mode_id different from instrument id
-            del mode_dict["name"] # delete name from dictionary since it is name of instrument
+            try:
+                del mode_dict["name"] # delete name from dictionary (if present) since it is name of instrument
+            except:
+                pass
             mode = [fac.get_instrument_model(mode_dict)]            
         
         return Instrument( _type = _type,
@@ -259,6 +262,20 @@ class Instrument(Entity):
         """ 
         _mode = self.get_mode(mode_id)
         return _mode.get_field_of_view()
+    
+    def get_field_of_regard(self, mode_id=None):
+        """ Get field-of-regard (of a specific instrument mode). If no mode identifier is specified, the 
+            the first mode in the list of modes of the instrument is considered. 
+
+        :param mode_id: Identifier of the mode.
+        :paramtype mode_id: str
+        
+        :returns: Field-of-regard (of a specific instrument mode).
+        :rtype: :class:`instrupy.util.ViewGeometry`
+        
+        """ 
+        _mode = self.get_mode(mode_id)
+        return _mode.get_field_of_regard()
 
     def get_orientation(self, mode_id=None):
         """ Get orientation (of a specific instrument mode). If no mode identifier is specified, the 

@@ -38,13 +38,14 @@ class BasicSensorModel(Entity):
         :ivar fieldOfViewGeometry: Field of view spherical geometry specification of the instrument. 
         :vartype fieldOfViewGeometry: :class:`instrupy.util.SphericalGeometry`   
 
-        :ivar fieldOfView: Field of view of instrument (spherical geometry and Orientation)
+        :ivar fieldOfView: Field of view of instrument (spherical geometry and Orientation).
         :vartype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
-        :ivar maneuver: Maneuver specification of the instrument
+        :ivar maneuver: Maneuver specification of the instrument. TODO: Modify behavior to have FOR =FOV when no maneuver is specified (hence fixed pointing).
         :vartype maneuver: :class:`instrupy.util.Maneuver`  
 
-        :ivar fieldOfRegard: Field of regard of the instrument taking into account the sensor FOV and manueverability of the satellite-sensor system. Note that this shall be a list.
+        :ivar fieldOfRegard: Field of regard of the instrument taking into account the sensor FOV and manueverability of the satellite-sensor system. 
+                             Note that this shall be a list in order to accommodate non-intersecting view geometries.
         :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
         :ivar dataRate: Rate of data recorded (Mega bits per sec) during nominal operations.
@@ -56,13 +57,13 @@ class BasicSensorModel(Entity):
         :ivar bitsPerPixel: Number of bits encoded per pixel of image.
         :vartype bitsPerPixel: int        
 
-        :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). Default is 4.
+        :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame).
         :vartype numberDetectorRows: int
 
-        :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). Default is 4.
+        :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame).
         :vartype numberDetectorCols: int
 
-        :ivar _id: Unique instrument identifier. If :class:`None`, a default random string shall be assigned as the identifier.
+        :ivar _id: Unique instrument identifier.
         :vartype _id: str
 
         .. figure:: detector_config.png
@@ -167,6 +168,15 @@ class BasicSensorModel(Entity):
 
     def __repr__(self):
         return "BasicSensorModel.from_dict({})".format(self.to_dict())
+
+    def __eq__(self, other):
+        """ Simple equality check. Returns True if the class attributes are equal, else returns False. 
+            The derived attributes ``fieldOfView`` and ``fieldOfRegard`` are not checked.
+            Note that the ``_id`` data attribute could be different.
+        """
+        return (self.name == other.name and self.mass == other.mass and self.volume == other.volume and self.power==other.power and self.fieldOfViewGeometry == other.fieldOfViewGeometry and
+                self.orientation == other.orientation and self.maneuver == other.maneuver and self.dataRate == other.dataRate and self.bitsPerPixel ==other.bitsPerPixel and 
+                self.syntheticDataConfig == other.syntheticDataConfig and self.numberDetectorCols == other.numberDetectorCols and self.numberDetectorRows == other.numberDetectorRows)
 
     def calc_data_metrics(self, sc_orbit_state, target_coords):
         """ Calculate typical observation data metrics. 
@@ -373,6 +383,15 @@ class BasicSensorModel(Entity):
     
     def get_field_of_view(self):
         return self.fieldOfView
+
+    def get_field_of_regard(self):
+        """ Get the instrument field of regard.
+
+        :returns: Field of regard. 
+        :rtype: list, :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.fieldOfRegard
 
     def get_orientation(self):
         return self.orientation

@@ -430,8 +430,8 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertEqual(o.cone_angle_vec, [15.28])
         self.assertIsNone(o.clock_angle_vec)
         self.assertEqual(o.diameter, 30.56)
-        self.assertIsNone(o.angle_height)
-        self.assertIsNone(o.angle_width)
+        self.assertEqual(o.angle_height, 30.56)
+        self.assertEqual(o.angle_width, 30.56)
         self.assertIsNone(o._id)        
 
         o = SphericalGeometry.from_json(
@@ -442,8 +442,8 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.clock_angle_vec)
         self.assertEqual(o.diameter, 15.4242)
-        self.assertIsNone(o.angle_height)
-        self.assertIsNone(o.angle_width)
+        self.assertEqual(o.angle_height, 15.4242)
+        self.assertEqual(o.angle_width, 15.4242)
         self.assertEqual(o._id, 123)
 
         o = SphericalGeometry.from_json(
@@ -454,8 +454,8 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsNone(o.clock_angle_vec)
         self.assertIsNone(o.clock_angle_vec)
         self.assertEqual(o.diameter, 25)
-        self.assertIsNone(o.angle_height)
-        self.assertIsNone(o.angle_width)
+        self.assertEqual(o.angle_height, 25)
+        self.assertEqual(o.angle_width, 25)
         self.assertEqual(o._id, "123")
         # Test for incomplete specification
         with self.assertRaises(Exception):
