@@ -340,6 +340,32 @@ Example:
         "B_rollMax": -5
    }
 
+.. _pointing_opt_json_obj:
+
+:code:`pointingOption` JSON object
+========================================
+List of orientations to which the instrument axis can be manuevered. Only the NADIR_POINTING reference frame is supported.
+This input specification is required to perform coverage calculations involving pointing-options.
+
+Example:
+
+.. code-block:: python
+   
+   "pointingOption":[{
+      "referenceFrame": "NADIR_POINTING",
+      "convention": "XYZ",
+      "xRotation":0,
+      "yRotation":20,
+      "zRotation":0
+   },
+   {
+      "referenceFrame": "NADIR_POINTING",
+      "convention": "XYZ",
+      "xRotation":0,
+      "yRotation":40,
+      "zRotation":0
+   }]
+
 .. _syntheticDataConfig_json_obj:
 
 :code:`syntheticDataConfig` JSON object

@@ -358,7 +358,6 @@ class TestOrientation(unittest.TestCase):
             '{"referenceFrame": "SC_BODY_FIXED", "convention": "EULER","eulerAngle1":400,"eulerAngle2":1345.8, \
               "eulerAngle3":-45,"eulerSeq1":1, "eulerSeq2":2, "eulerSeq3":3, "@id":123}')
         self.assertFalse(o1==o2)
-
                 
     def test___repr__(self):
         # _id = None
@@ -647,6 +646,8 @@ class TestSphericalGeometry(unittest.TestCase):
         with self.assertRaises(Exception):
              self.assertTrue(o1==o2)
 
+class TestViewGeometry(unittest.TestCase): #TODO
+    pass
 
 class TestManeuver(unittest.TestCase):
   
@@ -827,7 +828,8 @@ class TestManeuver(unittest.TestCase):
         # circular input fov
         o = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
-        self.assertEqual(x[0], ViewGeometry(orien=Orientation(ref_frame="Nadir_pointing"), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":15})))
+        self.assertEqual(x[0], ViewGeometry.from_dict({"orientation":{"referenceFrame":"Nadir_pointing", "convention":"REF_FRAME_ALIGNED"}, 
+                                                       "sphericalGeometry":{"shape":"Circular", "diameter":15}}))
 
         # rectangular input fov
         o = Maneuver.from_json('{"maneuverType": "circular", "diameter":10, "@id":"123"}')
@@ -841,9 +843,8 @@ class TestManeuver(unittest.TestCase):
         # circular input fov
         o = Maneuver.from_json('{"maneuverType": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":5}))
-        self.assertEqual(x[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}), 
-                                            sph_geom=SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":25, "angleHeight":5})))
-
+        self.assertEqual(x[0], ViewGeometry.from_dict({"orientation":{"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 20}, 
+                                                       "sphericalGeometry":{"shape":"rectangular", "angleWidth":25, "angleHeight":5}}))
 
         # rectangular input fov
         o = Maneuver.from_json('{"maneuverType": "single_Roll_only", "A_rollMin":10, "A_rollMax": 30}')
@@ -858,10 +859,10 @@ class TestManeuver(unittest.TestCase):
         # circular input fov
         o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')
         x = o.calc_field_of_regard(SphericalGeometry.from_dict({"shape":"Circular", "diameter":7.5}))
-        self.assertEqual(x[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}), 
-                                            sph_geom=SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5})))
-        self.assertEqual(x[1], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}), 
-                                            sph_geom=SphericalGeometry.from_dict({"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5})))
+        self.assertEqual(x[0], ViewGeometry.from_dict({"orientation":{"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": -5}, 
+                                                       "sphericalGeometry":{"shape":"rectangular", "angleWidth":17.5, "angleHeight":7.5}}))
+        self.assertEqual(x[1], ViewGeometry.from_dict({"orientation":{"referenceFrame":"Nadir_pointing", "convention": "SIDE_LOOK", "sideLookAngle": 35}, 
+                                                       "sphericalGeometry":{"shape":"rectangular", "angleWidth":57.5, "angleHeight":7.5}}))
 
         # rectangular input fov
         o = Maneuver.from_json('{"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin":-10, "A_rollMax": 0, "B_rollMin":10, "B_rollMax": 60}')

@@ -291,6 +291,20 @@ class Instrument(Entity):
         _mode = self.get_mode(mode_id)
         return _mode.get_orientation()
     
+    def get_pointing_option(self, mode_id=None):
+        """ Get pointing-options (associated with a specific instrument mode). If no mode identifier is specified, the 
+            the first mode in the list of modes of the instrument is considered.
+
+        :param mode_id: Identifier of the mode.
+        :paramtype mode_id: str
+
+        :returns: List of pointing-options (Orientation objects) associated with the specified instrument mode.
+        :rtype: list, :class:`instrupy.util.Orientation`
+        
+        """
+        _mode = self.get_mode(mode_id)
+        return _mode.get_pointing_option()
+
     def get_pixel_config(self, mode_id=None):
         """ Get pixel-configuration (of a specific instrument mode). If no mode identifier is specified, the 
             the first mode in the list of modes of the instrument is considered.

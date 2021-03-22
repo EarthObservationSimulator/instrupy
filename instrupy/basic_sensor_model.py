@@ -12,6 +12,7 @@ import numpy as np
 import scipy.interpolate
 import metpy.interpolate
 import astropy.time
+import json
 import uuid
 from collections import namedtuple
 import logging
@@ -48,6 +49,10 @@ class BasicSensorModel(Entity):
                              Note that this shall be a list in order to accommodate non-intersecting view geometries.
         :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
+        :ivar pointing_option: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
+                               The orientation must be specified in the NADIR_POINTING frame.
+        :vartype pointing_option: list, :class:`orbitpy.util.Orientation`
+
         :ivar dataRate: Rate of data recorded (Mega bits per sec) during nominal operations.
         :vartype dataRate: float  
 
@@ -73,7 +78,7 @@ class BasicSensorModel(Entity):
     """
 
     def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None,
-                 fieldOfViewGeometry=None, maneuver=None, dataRate=None, syntheticDataConfig=None, bitsPerPixel=None, 
+                 fieldOfViewGeometry=None, maneuver=None, pointingOption=None, dataRate=None, syntheticDataConfig=None, bitsPerPixel=None, 
                  numberDetectorRows=None, numberDetectorCols=None, _id=None):
         """Initialization
 
@@ -87,6 +92,12 @@ class BasicSensorModel(Entity):
         self.fieldOfView = ViewGeometry(orien=self.orientation, sph_geom=self.fieldOfViewGeometry) if self.orientation is not None and self.fieldOfViewGeometry is not None else None
         self.maneuver = copy.deepcopy(maneuver) if maneuver is not None and isinstance(maneuver, Maneuver) else None
         self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfViewGeometry) if (self.maneuver is not None and self.fieldOfViewGeometry is not None) else None
+        self.pointingOption = None
+        if isinstance(pointingOption, list):
+            if all(isinstance(x, Orientation) for x in pointingOption):
+                self.pointingOption = pointingOption 
+        elif isinstance(pointingOption, Orientation):
+            self.pointingOption = [pointingOption] # make into single-element list
         self.dataRate = float(dataRate) if dataRate is not None else None
         self.syntheticDataConfig = copy.deepcopy(syntheticDataConfig) if syntheticDataConfig is not None and isinstance(syntheticDataConfig, SyntheticDataConfiguration) else None
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None                
@@ -122,6 +133,16 @@ class BasicSensorModel(Entity):
         """
         default_fov = dict({'shape': 'CIRCULAR', 'diameter':25}) # default fov is a 25 deg diameter circular
         default_orien = dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}) #  default orientation = referenced and aligned to the SC_BODY_FIXED frame.
+        
+        pnt_opt_dict = d.get("pointingOption", None)
+        _pointing_option = None
+        if pnt_opt_dict:
+            # translate to a list of Orientation objects
+            if isinstance(pnt_opt_dict, list):
+                _pointing_option = [Orientation.from_dict(x) for x in pnt_opt_dict]
+            else:
+                _pointing_option = [Orientation.from_dict(pnt_opt_dict)]
+        
         return BasicSensorModel(
                 name = d.get("name", None),
                 mass = d.get("mass", None),
@@ -135,6 +156,7 @@ class BasicSensorModel(Entity):
                 syntheticDataConfig = SyntheticDataConfiguration.from_json(d.get("syntheticDataConfig", None)),
                 numberDetectorRows = d.get("numberDetectorRows", 4),
                 numberDetectorCols = d.get("numberDetectorCols", 4),
+                pointingOption = _pointing_option,
                 _id = d.get("@id", str(uuid.uuid4()))
                 )
 
@@ -149,6 +171,7 @@ class BasicSensorModel(Entity):
         orientation_dict = self.orientation.to_dict() if self.orientation is not None and isinstance(self.orientation, Orientation) else None
         maneuver_dict = self.maneuver.to_dict() if self.maneuver is not None and isinstance(self.maneuver, Maneuver) else None
         syntheticDataConfig_dict = self.syntheticDataConfig.to_dict() if self.syntheticDataConfig is not None and isinstance(self.syntheticDataConfig, SyntheticDataConfiguration) else None
+        pointing_opt_dict = [Orientation.to_dict(x) for x in self.pointingOption] if self.pointingOption is not None else None
         return dict({
                 "@type": "Basic Sensor",
                 "name":self.name,
@@ -158,6 +181,7 @@ class BasicSensorModel(Entity):
                 "fieldOfViewGeometry":fieldOfViewGeometry_dict,
                 "orientation":orientation_dict,
                 "maneuver":maneuver_dict,
+                "pointingOption": pointing_opt_dict,
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "syntheticDataConfig": syntheticDataConfig_dict,
@@ -396,6 +420,9 @@ class BasicSensorModel(Entity):
     def get_orientation(self):
         return self.orientation
     
+    def get_pointing_option(self):
+        return self.pointingOption
+
     def get_pixel_config(self):
         """ Get pixel-configuration.
         

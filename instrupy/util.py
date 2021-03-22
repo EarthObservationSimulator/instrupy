@@ -23,6 +23,7 @@ import json
 import copy
 import scipy.interpolate
 import metpy.interpolate
+from collections import namedtuple
 
 from math import radians, cos, sin, asin, sqrt
 #import lowtran #TEMPORARY: PLEASE REMOVE if commented
@@ -441,7 +442,7 @@ class Orientation(Entity):
         super(Orientation, self).__init__(_id, "Orientation")
     
     class Convention(EnumEntity):
-        """ Enumeration of recognized orientation conventions. The rotations below can be specified with respect to 
+        """ Enumeration of recognized orientation conventions with which an object can be initialized. The rotations below can be specified with respect to 
             any of the reference frames given in :class:`instrupy.util.ReferenceFrame`.
 
         :cvar XYZ: Rotations about the X, Y and Z axis in the order 123.
@@ -529,15 +530,15 @@ class Orientation(Entity):
         else:
             raise Exception("Invalid or no Orientation convention specification")
     
-    def to_list(self):
-        """ Return data members of the instance as list,
+    def to_tuple(self): # TODO: remove this function
+        """ Return data members of the instance as a tuple.
         
-            :return: Orientation object data attributes as list.
-            :rtype: list
+            :return: Orientation object data attributes as namedtuple.
+            :rtype: namedtuple, (str, int, int, int, float, float, float)
 
-            .. todo:: Remove this function
         """
-        return [self.ref_frame, self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3]
+        orientation = namedtuple("orientation", ["ref_frame", "euler_seq1", "euler_seq2", "euler_seq3", "euler_angle1", "euler_angle2", "euler_angle3"])
+        return orientation(self.ref_frame, self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3)
 
     def to_dict(self):
         """ Return data members of the instance as python dictionary. 
@@ -910,21 +911,57 @@ class ViewGeometry(Entity):
 
     """
 
-    def __init__(self, orien=None, sph_geom=None):
+    def __init__(self, orien=None, sph_geom=None, _id=None):
 
         self.orien = copy.deepcopy(orien) if orien is not None and isinstance(orien, Orientation) else None
         self.sph_geom = copy.deepcopy(sph_geom) if sph_geom is not None and isinstance(sph_geom, SphericalGeometry) else None
+        super(ViewGeometry, self).__init__(_id, "ViewGeometry")
     
+    @staticmethod
+    def from_dict(d):
+        """ Parses an ViewGeometry object from a normalized JSON dictionary.
+        
+        :param d: Dictionary with the GridCoverage specifications.
+
+                Following keys are to be specified.
+                
+                * "orientation":            (dict) Refer to :class:`instrupy.util.Orientation.from_dict`
+                * "sphericalGeometry":      (dict) Refer to :class:`instrupy.util.SphericalGeometry.from_dict`
+                * "@id":                    (str or int) Unique identifier of the ``ViewGeometry`` object.
+
+        :paramtype d: dict
+
+        :return: ViewGeometry object.
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
+        orien_dict = d.get('orientation', None)
+        sph_geom_dict = d.get('sphericalGeometry', None)
+        return ViewGeometry(orien = Orientation.from_dict(orien_dict) if orien_dict else None, 
+                            sph_geom = SphericalGeometry.from_dict(sph_geom_dict) if sph_geom_dict else None, 
+                            _id  = d.get('@id', None))
+
     def __eq__(self, other):
+        # Equality test is simple one which compares the data attributes.
         if(isinstance(self, other.__class__)):
             return (self.orien==other.orien) and (self.sph_geom==other.sph_geom)
         else:
             return NotImplemented
     
+    def to_dict(self):
+        """ Translate the ViewGeometry object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+
+        :return: ViewGeometry object as python dictionary
+        :rtype: dict
+
+        """
+        return {"orientation": self.orien.to_dict(), "sphericalGeometry": self.sph_geom.to_dict(), "@id": self._id}
+
     def __repr__(self):
-        orien_dict = self.orien.to_dict() if self.orien is not None and isinstance(self.orien, Orientation) else None
-        sph_geom_dict = self.sph_geom.to_dict() if self.sph_geom is not None and isinstance(self.sph_geom, SphericalGeometry) else None
-        return "ViewGeometry(orien=Orientation.from_dict({}), sph_geom=.from_dict({}))".format(orien_dict, sph_geom_dict)
+        #orien_dict = self.orien.to_dict() if self.orien is not None and isinstance(self.orien, Orientation) else None
+        #sph_geom_dict = self.sph_geom.to_dict() if self.sph_geom is not None and isinstance(self.sph_geom, SphericalGeometry) else None
+        #return "ViewGeometry(orien=Orientation.from_dict({}), sph_geom=SphericalGeometry.from_dict({}))".format(orien_dict, sph_geom_dict)
+        return "ViewGeometry.from_dict({})".format(self.to_dict())
 
 class Maneuver(Entity):
     """ Class handling the maneuverability of the satellite and/or sensor. 
@@ -1023,6 +1060,10 @@ class Maneuver(Entity):
 
         :vartype DOUBLE_ROLL_ONLY: str
 
+        :cvar POINTING_OPTION: In this maneuver option a list of orientations of the instrument pointing-axis (to which it can be manuevered) is specified. 
+                                The pointing options must be specified in NADIR_POINTING reference frame. 
+        :vartype POINTING_OPTION: str
+
 
         """
         CIRCULAR = "CIRCULAR"
@@ -1037,7 +1078,6 @@ class Maneuver(Entity):
         self.B_roll_min =  float(B_roll_min) if B_roll_min is not None else None
         self.B_roll_max = float(B_roll_max) if B_roll_max is not None else None
         self.diameter = float(diameter) if diameter is not None else None
-
         # basic checks for inputs
         if(self.maneuver_type is None):
             raise Exception("Please input valid maneuver type.")
@@ -1074,7 +1114,7 @@ class Maneuver(Entity):
         :return: Maneuver object.
         :rtype: :class:`instrupy.util.Maneuver`
 
-        """
+        """                
         return Maneuver(
                 maneuver_type = d.get("maneuverType", None),
                 A_roll_min = d.get("A_rollMin", None),

@@ -23,6 +23,10 @@ class TestBasicSensorModel(unittest.TestCase):
                                   "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
                                   "maneuver":{"maneuverType": "CIRCULAR", "diameter":10}, \
                                   "numberDetectorRows":5, "numberDetectorCols":10, "@id": "bs1", \
+                                  "pointingOption": [{"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}, \
+                                                     {"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK","sideLookAngle":10}, \
+                                                     {"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK","sideLookAngle":-10} \
+                                                    ], \
                                   "syntheticDataConfig": {"sourceFilePaths":   ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", \
                                                                                 "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc", \
                                                                                 "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc", \
@@ -65,6 +69,14 @@ class TestBasicSensorModel(unittest.TestCase):
 
         self.assertIsInstance(o.maneuver, Maneuver)
         self.assertEqual(o.maneuver, Maneuver.from_dict({"maneuverType": "CIRCULAR", "diameter":10}))
+
+        self.assertIsInstance(o.pointingOption, list)
+        self.assertIsInstance(o.pointingOption[0], Orientation)
+        self.assertIsInstance(o.pointingOption[1], Orientation)
+        self.assertIsInstance(o.pointingOption[2], Orientation)
+        self.assertEqual(o.pointingOption[0], Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}))
+        self.assertEqual(o.pointingOption[1], Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK","sideLookAngle":10}))
+        self.assertEqual(o.pointingOption[2], Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK","sideLookAngle":-10}))
 
         self.assertIsInstance(o.fieldOfRegard[0], ViewGeometry)
         self.assertEqual(o.fieldOfRegard[0], ViewGeometry(orien=Orientation.from_dict({"referenceFrame":"NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}), sph_geom=SphericalGeometry.from_dict({"shape":"Circular", "diameter":15})))
@@ -204,7 +216,6 @@ class TestBasicSensorModel(unittest.TestCase):
         range_km = RE # fix range to RE, an isosceles triangle forms
         alt = np.sqrt(RE*RE*(2-2*np.cos(np.deg2rad(180-2*poi_lon_deg)))) - RE
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6378.137+alt, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': orbital_speed(alt*1e-3), 'vz [km/s]': 0}
-        print(SpacecraftOrbitState)
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': poi_lon_deg}
         obsv_metrics = o.calc_data_metrics(SpacecraftOrbitState, TargetCoords)
         self.assertTrue(obsv_metrics["coverage [T/F]"])
@@ -548,5 +559,8 @@ class TestBasicSensorModel(unittest.TestCase):
     def test_synthesize_observation(self): #@TODO
         pass
     
+    def test_get_pointing_option(self): #TODO
+        pass
+
     def test___eq__(self): #TODO
         pass

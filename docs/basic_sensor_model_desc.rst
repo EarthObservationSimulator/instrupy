@@ -17,6 +17,7 @@ Input JSON format specifications description
     orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument.
     fieldOfView, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
     maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
+    pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
     syntheticDataConfig, :ref:`syntheticDataConfig_json_obj`, , Synthetic data configuration.
     dataRate, float, Mega-bits-per-s, Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
