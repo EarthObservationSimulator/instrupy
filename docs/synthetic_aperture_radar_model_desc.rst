@@ -30,7 +30,7 @@ SAR Configurations
    :scale: 75 %
    :align: center
 
-   Possible SAR configurations. 
+   Supported SAR configurations. 
 
 Input JSON format specifications description
 ===============================================
@@ -59,9 +59,9 @@ Input JSON format specifications description
    minimumPRF, float, Hertz, "The minimum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF specification is considered taking all pulses into account (i.e. is considered as the PRFmaster))."
    maximumPRF, float,  Hertz, "The maximum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF specification is considered taking all pulses into account (i.e. is considered as the PRFmaster))."
    sceneNoiseTemp, float, Kelvin, Nominal scene noise temperature.
-   systemNoiseFigure, float, decibels, System noise figure for the receiver. See [Pg.15, 1].
-   radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere. See [Pg.15, 1].
-   atmosLoss, float, decibels, 2-way atmospheric loss of electromagnetic energy (see [Pg.16, 1]).
+   systemNoiseFigure, float, decibels, System noise figure for the receiver. See Pg.15 in [1].
+   radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere. See Pg.15 in [1].
+   atmosLoss, float, decibels, 2-way atmospheric loss of electromagnetic energy (see Pg.16 in [1]).
    altitude, float, km, Altitude at which the instrument is flown
    maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
    pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.    
@@ -84,7 +84,7 @@ Tne entire illuminated swath by the main-lobe of the antenna is considered. No o
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
    "swathConfig":{
           "@type": "full"
@@ -104,7 +104,7 @@ swath size shall be considered.
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
    "swathConfig":{
           "@type": "fixed",     
@@ -130,6 +130,14 @@ Single transmit and receive polarization.
    txPol, str, ,Transmit polarization (eg: H)
    rxPol, str, ,Receive polarization (eg: H)
 
+.. code-block:: python
+   
+   "polarization":{
+          "@type": "single",
+          "txPol": "H",
+          "rxPol": "V"
+    }
+
 2. :code:`"@type":"compact"` 
 
 Single transmit and dual receive polarization.
@@ -140,6 +148,14 @@ Single transmit and dual receive polarization.
 
    txPol, str, ,Transmit polarization (eg: 45degLinPol)
    rxPol, str, ,Receive polarization (eg: H and V)
+
+.. code-block:: python
+   
+   "polarization":{
+          "@type": "single",
+          "txPol": "H",
+          "rxPol": "H,V"
+    }
 
 3. :code:`"@type":"dual"` 
 
@@ -164,6 +180,17 @@ i. :code:`@type: "AIRSAR"`
 This pulse configuration is the same as the one implemented by the NASA/JPL AIRSAR systems (see Pg.32, Fig.2-5 in [4]). It consists of transmitting alternating pulses of orthogonal
 polarization and filtering the received signal into separate orthogonal polarizations.
 
+.. code-block:: python
+   
+   "polarization":{
+          "@type": "dual",
+          "txPol": "H,V",
+          "rxPol": "H,V",
+          "pulseConfig":{
+            "@type": "AIRSAR"
+          }
+    }
+
 ii. :code:`"@type":"SMAP"` 
 
 This pulse configuration is the same as the one implemented by the SMAP radar (see Pg.41, Fig.26 in [5]). It consists of two slightly separated pulses of 
@@ -179,15 +206,15 @@ between the pulses of the two orthogonal polarizations. If not specified a defau
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
    "polarization":{
           "@type": "dual",     
-          "txPol": "H, V",
-          "rxPol": "H, V",
+          "txPol": "H,V",
+          "rxPol": "H,V",
           "pulseConfig":{
-          "@type": "SMAP",
-          "pulseSeparation": 9e-6
+            "@type": "SMAP",
+            "pulseSeparation": 9e-6
     }
 
 .. _synthetic_aperture_radar_calc:
@@ -209,15 +236,15 @@ Output observation metrics calculation
 Viewing geometry
 -----------------
 
-See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewing geometry parameters.
+See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewing geometry parameters (i.e. range, incidence angle, etc).
 
-(Nominal) Swath-width
-----------------------
-.. warning:: While calculating swath width the instrument look angle (not look angle to the target ground-pixel) 
-             must be used. Since the calculation below uses the *nominal* instrument look-angle, the result is 
-             labelled as (Nominal) Swath-width.     
+Swath-width
+--------------
+.. note:: While calculating swath width the instrument look angle (not the look angle to the target ground-pixel) must be used. 
 
-*See [2] Pg 23 and 24 (Fig. 5.1.3.1)*
+Illuminated (FULL) swath-width
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Illuminated swath refers to the swath seen by the antenna main beam (3-dB beamwidth). *See [2] Pg 23 and 24 (Fig. 5.1.3.1)*
 
 :math:`R_S = R_E + h`   
 
@@ -236,6 +263,27 @@ See :ref:`satellite_to_target_viewing_geometry` for the calculation of the viewi
 :math:`\alpha_s = \alpha_f - \alpha_n`
 
 :math:`W_{gr} = R_E \alpha_s`   
+
+ScanSAR with multiple sub-swaths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Substitute :math:`\theta_{elv}` with :math:`n_{ss} \theta_{elv}` and calculate the swath-width using the equations above. Note that only
+FULL swath configuration for each sub-swath is allowed.
+
+Desired (FIXED) swath-width
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Desired swath refers to the swath corresponding to the desired portion of the echo from the (longer) echo of the antenna main-lobe.
+
+:math:`\alpha_s = W_{gr}/R_E`
+
+:math:`\theta_{im} = \sin^{-1}(\sin(\gamma_I) R_S/R_E)`
+
+:math:`\alpha_m = \theta_{im} - \gamma_m` [2] equation 5.1.3.5
+
+:math:`\alpha_n =  \alpha_m - 0.5 \alpha_s` [2] equation 5.1.3.7
+
+:math:`\alpha_f =  \alpha_m + 0.5 \alpha_s` [2] equation 5.1.3.8
+
 
 Ground pixel resolution calculations
 -------------------------------------
@@ -258,13 +306,13 @@ From *[2] equation (5.3.6.3)* we get the minimum (# looks = 1) possible azimuth 
 
 Use *[1] equation (17)* to find average transmit power :math:`P_{avg}`
 
-:math:`T_{eff} = \tau_p` (approximate effective pulse duration to be actual pulse duration, as in case of matched filter processing)
+:math:`T_{eff} = \tau_p` (approximate the effective pulse duration to be equal to the actual pulse duration, as in case of matched filter processing)
 
 :math:`d = T_{eff} \hspace{1mm} f_P` 
 
 :math:`P_{avg} = d \hspace{1mm} P_T`
 
-Use *[1] equation 8*, find :math:`G_A`
+Use *[1] equation 8*, find antenna gain :math:`G_A`
 
 :math:`A_A = D_{elv} \hspace{1mm} D_{az}`
 
@@ -278,7 +326,7 @@ Use *[1] equation 8*, find :math:`G_A`
 
 Following default values are used, :math:`L_{atmos}=2 dB`, :math:`L_r = L_a = a_{wr} = a_{wa} = 1.2`   
 
-.. note:: :math:`v_s` is to be used here. See [2] for more explanation.
+.. note:: :math:`v_s` is to be used here and not :math:`v_g`. See [2] for more explanation.
 
 .. note:: The :math:`NESZ` calculation is the same for the case of ScanSAR and Stripmap.
 
@@ -303,16 +351,18 @@ In case of Stripmap :math:`n_{ss} = 1` and in case of ScanSAR :math:`n_{ss} > 1`
 Checking validity of pulse repetition frequency (PRF)
 ------------------------------------------------------
 
-The user supplies a range of operable PRFs of the SAR instrument. Depending on the orbit conditions (the altitude of satellite
-in our case) a usable/ valid PRF has to be selected for target observation. [2] is the primary reference for this formulation, although some errors have been found (and corrected for the current
-implementation) in the text.
+The user supplies a range of PRF of the SAR instrument. Depending on the viewing geometry a usable/ valid PRF has to be selected for target observation. 
+[2] is the primary reference for this formulation, although some errors have been found (and corrected in the current
+implementation). [3] contains the corrections. The referenced formulation is further modified to incorporate the PRF constraints
+involving observations of multiple polarizations and fixed-swath (desired echo vs complete echo). 
 
-.. warning:: The nominal orientation of the instrument is considered while evaluating the near range and far range and hence the operable PRF. If
-             the actual instrument look-angle is different, the selected PRF may not be correct.  
+Of all the available valid PRFs, the highest PRF is chosen since it improves the NESZ observation data-metric.
+
+.. note:: The instrument look-angle is considered while evaluating the near range and far range and hence the operable PRF.
 
 The below conditions need to be satisfied:
 
-1. The length of the echo from 3-dB antenna beam illuminated swath is less than inter-pulse period. See [2] Pg 22, 23 and 24.
+1. The length of the echo from illuminated/ desired swath is less than inter-pulse period. See [2] Pg 22, 23 and 24.
 
     :math:`R_n = \sqrt(R_E^2 + R_S^2 - 2 R_E R_S \cos\alpha_n)` 
 
@@ -324,23 +374,22 @@ The below conditions need to be satisfied:
 
     :math:`PRF_{MAX} = 1.0/(2.0\hspace{1mm}\tau_p + \tau_{far} - \tau_{near})` 
 
-2. The PRFs are high enough to allow for unambiguous detection of doppler shifts.
+2. The PRF should be high enough to allow for unambiguous detection of doppler shifts.
 
     :math:`PRF_{MIN} = \dfrac{v_s}{\rho_{a}}` *[2] equation 5.4.4.2*
 
-    .. note:: The :math:`PRF_{MIN}` calculation is unchangthe same for the case of ScanSAR and Stripmap.
+    .. note:: The :math:`PRF_{MIN}` calculation is same for the case of ScanSAR and Stripmap.
 
-3. The echos from target doesn't overlap with a transmit pulse (in the future).
+3. A transmit pulse does not overlap with the desired echo.
 
     :math:`N = int(f_P \dfrac{2 R_n}{c}) + 1`
 
     :math:`\dfrac{N-1}{\tau_{near}-\tau_p} < f_P  < \dfrac{N}{\tau_{far} + \tau_p}` *[2] inequality 5.1.4.1*
 
-4. The echo from Nadir (or a previous transmit pulse) doesn't overlap with the desired echo. Nadir echo is strong
+4. The echo from Nadir doesn't overlap with the desired echo. Nadir echo is strong
    (even though the antenna gain in the Nadir direction maybe small) since the range to Nadir is small.
 
-    .. warning:: [2] inequality 5.1.5.2 which gives the Nadir interference condition seems wrong. 
-                      Refer to [3] Appendix Section A for the corrected version (R2 in eqn(38) is a type, and must be replaced by Rn).            
+    .. warning:: [2] inequality 5.1.5.2 which gives the Nadir interference condition seems wrong. Refer to [3] Appendix Section A for the corrected version (R2 in eqn(38) is a type, and must be replaced by Rn).            
 
     :math:`\tau_{nadir} = \dfrac{2 h}{c}`
 
@@ -357,15 +406,15 @@ image signal-to-noise-ratio increases.
 
 .. note:: The chosen PRF must satisfy all the above PRF constraints over the entire swath. However, InstruPy only verifies the validity of the PRF at the
          middle of the swath (determined by the instrument look angle). In case of ScanSAR the farthest (off-nadir) sub-swath is chosen and the
-         validity is verified at the middle of this sub-swath. 
+         validity is verified at the middle of this sub-swath. In ScanSAR the different sub-swaths usually have different associated PRFs.
 
 Dual-pol (AIRSAR/ SMAP) considerations:
 -----------------------------------------
 
-In case of dual-polarization additional considerations must be taken into account while calculating the PRF, PRF validity and :math:`NESZ`.
+In case of dual-polarization additional considerations must be taken into account while calculating the PRF validity and :math:`NESZ`.
 
-AIRSAR dual-pol config
-^^^^^^^^^^^^^^^^^^^^^^^^
+AIRSAR dual-pol config [4]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The PRF range specified by the user refers to the range of the master PRF (:math:`PRF_{master}`), i.e. the PRF calculated 
 considering pulses from both the channels. 
@@ -375,22 +424,21 @@ The PRF minimum constraint as calculated in the single-pol/ compact-pol apply, a
 where :math:`PRF_{ch}` is the channel PRF.
 
 The PRF maximum constraint as calculated in the single-pol/ compact-pol needs to be applied on the :math:`PRF_{master}`. 
-Thus :math:`PRF_{master}` needs to satisfy the PRF maximum constraint. Likewise for the transmit-pulse overlap and nadir-echo
-overlap conditions. 
+Thus :math:`PRF_{master}` needs to satisfy the PRF maximum constraint. Likewise the :math:`PRF_{master}` needs to satisfy 
+the transmit-pulse non-overlap and nadir-echo non-overlap conditions. 
 
-The :math:`NESZ` calculation is done by considering
-the PRF of each channel i.e. :math:`PRF_{ch}`.
+The :math:`NESZ` calculation is done by considering the PRF of each channel i.e. :math:`PRF_{ch}`.
 
-SMAP dual-pol config
-^^^^^^^^^^^^^^^^^^^^^
+SMAP dual-pol config [5]
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The PRF constraint calculations must be done by considering that the
+The PRF constraint calculations must be evaluated by considering that the
 total-pulse-width = 2 * :code:`pulseWidth` + :code:`pulseSeparation`
 
 where :code:`pulseWidth` is the user input pulse width per polarization and :code:`pulseSeparation` is the 
 separation between the pulses of the orthogonal polarization.
 
-The :math:`NESZ` calculation is done with the pulse-width = :code:`pulseWidth`
+The :math:`NESZ` calculation is to be done with the pulse-width = :code:`pulseWidth`
 
 .. _synthetic_aperture_radar_glossary:
 
@@ -400,48 +448,56 @@ Glossary
 .. note:: The same variable names as in the references are followed as much as possible. However it becomes difficult when merging the formulation in
           case of multiple references. 
 
-* :math:`\mathbf{R_S}`: Distance to the satellite from origin in the ECI (equatorial-plane) frame 
-* :math:`\theta_i`: Incidence angle at the target ground pixel
-* :math:`R_E`: Nominal equatorial radius of Earth
-* :math:`c`: speed of light
-* :math:`h`: altitude of satellite
-* :math:`D_{az}`: Dimension of antenna in along-track direction
-* :math:`D_{elv}`: Dimension of antenna in cross-track direction
-* :math:`\lambda`: Operating center wavelength of the radar
-* :math:`\theta_{az}`: Beamwidth of antenna in along-track direction
-* :math:`\theta_{elv}`: Beamwidth of antenna in cross-track direction
-* :math:`\theta_{AT}`: Along-track FOV
-* :math:`\theta_{CT}`: Cross-track FOV
-* :math:`\gamma_I`: Instrument look angle 
-* :math:`R_n`: Slant-range to near edge of swath
-* :math:`R_f`: Slant-range to far edge of swath
-* :math:`\gamma_n`: Look angle to nearest part of swath
-* :math:`\gamma_f`: Look angle to farthest part of swath
-* :math:`\theta_{in}`: Incidence angle to nearest part of swath
-* :math:`\theta_{if}`: Incidence angle to farthest part of swath
-* :math:`\alpha_n`: Core angle of nearest part of swath
-* :math:`\alpha_f`: Core angle of farthest part of swath
-* :math:`W_{gr}`: Swath-width 
-* :math:`\rho_a`: Azimuth resolution
-* :math:`\rho_y`: Ground (projected) cross-range resolution
-* :math:`\psi_g`: Grazing angle to target ground pixel
-* :math:`T_{eff}`: Effective pulse width 
-* :math:`f_P`: pulse-repetition-frequency
-* :math:`d`: Duty-cycle
-* :math:`P_T`: Peak transmit power 
-* :math:`P_{avg}`: Average transmit power
-* :math:`A_A`: Area of antenna
-* :math:`\eta_{ap}`: aperture efficiency of antenna
-* :math:`G_A`: Gain of antenna
-* :math:`v_s`: Velocity of satellite
-* :math:`v_g`: Ground velocity of satellite footprint
-* :math:`\tau_{near}`: Time of return of echo (from transmit time) from the near end of swath
-* :math:`\tau_{far}`:  Time of return of echo (from transmit time) from the far end of swath
-* :math:`PRF_{MAX}`: Maximum allowable PRF
-* :math:`PRF_{MIN}`: Maximum allowable PRF
-* :math:`PRF_{ch}`: Channel (per polarization) PRF
-* :math:`PRF_{master}`: Master PRF (becomes significant in case of dual-pol)
-* :math:`N`: The number of transmit pulses after which echo from desired swath is received
-* :math:`\tau_{nadir}`: Time of return of pulse from Nadir
-* :math:`M`: Maximum number of transmit pulses after which echo from desired region completes
-* :math:`n_{ss}`: Number of subswaths (relevant in case of ScanSAR)
+* :math:`\mathbf{R_S}`: Distance to the satellite from origin in an Earth centered frame. 
+* :math:`\theta_i`: Incidence angle at the target ground pixel.
+* :math:`R_E`: Nominal equatorial radius of Earth.
+* :math:`c`: Speed of light.
+* :math:`h`: Altitude of satellite.
+* :math:`D_{az}`: Dimension of antenna in along-track direction.
+* :math:`D_{elv}`: Dimension of antenna in cross-track direction.
+* :math:`\lambda`: Operating center wavelength of the radar.
+* :math:`\theta_{az}`: Beamwidth of antenna in along-track direction.
+* :math:`\theta_{elv}`: Beamwidth of antenna in cross-track direction.
+* :math:`\theta_{AT}`: Along-track FOV.
+* :math:`\theta_{CT}`: Cross-track FOV.
+* :math:`\gamma_I`: Instrument look angle. 
+* :math:`R_n`: Slant-range to near edge of swath.
+* :math:`R_f`: Slant-range to far edge of swath.
+* :math:`\gamma_n`: Look angle to nearest (to the satellite) part of swath.
+* :math:`\gamma_f`: Look angle to farthest (to the satellite) part of swath.
+* :math:`\theta_{in}`: Incidence angle to nearest (to the satellite) part of swath.
+* :math:`\theta_{if}`: Incidence angle to farthest (to the satellite) part of swath.
+* :math:`\theta_{im}`: Incidence angle at ground corresponding to the instrument look-angle (~middle of swath).
+* :math:`\alpha_n`: Core angle of nearest part of swath.
+* :math:`\alpha_f`: Core angle of farthest part of swath.
+* :math:`\alpha_m`: Core angle corresponding to the instrument look-angle (~middle of swath).
+* :math:`W_{gr}`: Illuminated/ desired swath-width.
+* :math:`\rho_a`: Azimuth resolution.
+* :math:`\rho_y`: Ground (projected) cross-range resolution.
+* :math:`\psi_g`: Grazing angle to target ground pixel.
+* :math:`B_T`: Chirp Bandwidth.
+* :math:`T_{eff}`: Effective pulse width. 
+* :math:`\tau_p`: Pulse duration.
+* :math:`f_P`: pulse-repetition-frequency.
+* :math:`d`: Duty-cycle.
+* :math:`P_T`: Peak transmit power.
+* :math:`P_{avg}`: Average transmit power.
+* :math:`A_A`: Area of antenna.
+* :math:`\eta_{ap}`: aperture efficiency of antenna.
+* :math:`G_A`: Gain of antenna.
+* :math:`v_s`: Speed of satellite.
+* :math:`v_g`: Ground speed of satellite footprint.
+* :math:`\tau_{near}`: Time of return of echo (from transmit time) from the near end of swath.
+* :math:`\tau_{far}`:  Time of return of echo (from transmit time) from the far end of swath.
+* :math:`PRF_{MAX}`: Maximum allowable PRF.
+* :math:`PRF_{MIN}`: Minimum allowable PRF.
+* :math:`PRF_{ch}`: Channel (per polarization) PRF.
+* :math:`PRF_{master}`: Master PRF (becomes significant in case of dual-pol).
+* :math:`N`: The number of transmit pulses after which echo from desired swath is received.
+* :math:`\tau_{nadir}`: Time of return of pulse from Nadir.
+* :math:`M`: Maximum number of transmit pulses after which echo from desired region completes.
+* :math:`n_{ss}`: Number of sub-swaths (relevant in case of ScanSAR).
+* :math:`L_r`: Reduction in SNR gain due to non-ideal range filtering (see [Pg.9, 1]). Default value is 1.2.
+* :math:`L_a`: Reduction in SNR gain due to non-ideal azimuth filtering (see [Pg.10, 1]). Default value is 1.2.
+* :math:`a_{wa}`:  Azimuth impulse response broadening factor (see [Pg.9, 1]). Default value is 1.2.
+* :math:`a_{wr}`: Range impulse response broadening factor (see [Pg.10, 1]). Default value is 1.2.

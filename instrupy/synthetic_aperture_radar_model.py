@@ -8,10 +8,14 @@
         1. Performance Limits for Synthetic Aperture Radar - second edition SANDIA Report 2006. ----> Main reference.
         2. Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993. ----> Reference for PRF validity calculations, corrections for spaceborne radar.
         3. V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020, pp. 1-20, doi: 10.1109/AERO47225.2020.9172705.
+        
         Polarimetry concepts:
+        
         4. *Synthetic Aperture Radar Polarimetry,  Jakob Van Zyl* ----> Reference for compact-pol and AIRSAR implementation for dual-pol.
         5. *SMAP Handbook* ----> Reference for SMAP implementation of dual-pol.
+        
         ScanSAR concepts
+        
         6. Tomiyasu, Kiyo. "Conceptual performance of a satellite borne, wide swath synthetic aperture radar." IEEE Transactions on Geoscience and Remote Sensing 2 (1981): 108-116.
         7. Moore, Richard K., John P. Claassen, and Y. H. Lin. "Scanning spaceborne synthetic aperture radar with integrated radiometer." IEEE Transactions on Aerospace and Electronic Systems 3 (1981): 410-421.
         8. Currie, A., and Ma A. Brown. "Wide-swath SAR." In IEE Proceedings F (Radar and Signal Processing), vol. 139, no. 2, pp. 122-135. IET Digital Library, 1992.
@@ -482,23 +486,24 @@ class SyntheticApertureRadarModel(Entity):
 
 
     def calc_data_metrics_impl2(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle=False):
-        ''' Calculate observation data metrics.
+        """ Calculate observation data metrics.
 
         :param sc_orbit_state: Spacecraft state at the time of observation.
 
-                        Dictionary keys are: 
-                        
-                        * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
-                        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
-                        * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        Dictionary keys are: 
+        
+        * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        
         :paramtype sc_orbit_state: dict
-
         
         :param target_coords: Location of the observation. Also sometimes called the Point-Of-Interest (POI).
 
-                            Dictionary keys are: 
-                            
-                            * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+        Dictionary keys are: 
+        
+        * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+
         :paramtype target_coords: dict
 
         :param instru_look_angle_from_target_inc_angle: Flag (True or False) to indicate if the look angle to the middle of the swath is to be considered:  (1) using the nominal look-angle 
@@ -506,22 +511,23 @@ class SyntheticApertureRadarModel(Entity):
                                                         OR
                                                         (2) the incidence angle at the target. 
                                                         Default is False.
+        
         :paramtype instru_look_angle_from_target_inc_angle: bool
 
         :returns: Calculated observation data metrics.
 
-                    Dictionary keys are: 
-                
-                    * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final
-                    image is equal to the noise power level (units: decibels). **Numerically lesser is better.**
-                    * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point.
-                    * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point.
-                    * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
-                    * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
-                    * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
+        Dictionary keys are: 
+    
+        * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final image is equal to the noise power level (units: decibels). **Numerically lesser is better.**
+        * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point.
+        * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point.
+        * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
+        * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
+        * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
+
         :rtype: dict
                         
-        '''        
+        """       
         # Observation time in Julian Day UT1
         tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]
 
@@ -572,17 +578,7 @@ class SyntheticApertureRadarModel(Entity):
                                                         Default is False.
         :paramtype instru_look_angle_from_target_inc_angle: bool
 
-        :returns: Calculated observation data metrics.
-
-                    Dictionary keys are: 
-                
-                    * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final
-                    image is equal to the noise power level (units: decibels). 
-                    * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point
-                    * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point
-                    * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
-                    * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
-                    * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
+        :returns: Calculated observation data metrics. Refer to the return value of the function ``calc_data_metrics_impl2(.)``.
 
         :rtype: dict
 
@@ -624,7 +620,7 @@ class SyntheticApertureRadarModel(Entity):
         #print(fc)
         #print(self.polType)
         # Note that the nominal look angle is considered to evaluate the operable PRF.
-        (f_P, W_gr_obs) = SyntheticApertureRadarModel.prf_constraint_eval(PRFmin_Hz, PRFmax_Hz, sc_speed_kmps, sc_gnd_speed_kmps, alt_km, 
+        (f_P_master, W_gr_obs) = SyntheticApertureRadarModel.prf_constraint_eval(PRFmin_Hz, PRFmax_Hz, sc_speed_kmps, sc_gnd_speed_kmps, alt_km, 
                                                                              instru_look_angle_rad, tau_p, D_az, D_elv, fc,
                                                                              self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
                                                                              self.swathType, self.fixedSwathSize, self.numSubSwaths)
@@ -633,9 +629,9 @@ class SyntheticApertureRadarModel(Entity):
         sigma_N_dB = None
         theta_i = None
 
-        #print("f_P", f_P)
+        #print("f_P_master", f_P_master)
 
-        if (f_P is not None): # Observation is (perhaps (since determined at nominal instrument look-angle, some parts of the swath may not be observable)) possible at PRF = f_P        
+        if (f_P_master is not None): # Observation is (perhaps (since determined at nominal instrument look-angle, some parts of the swath may not be observable)) possible at PRF = f_P        
             
             R = range_km*1e3
 
@@ -648,7 +644,12 @@ class SyntheticApertureRadarModel(Entity):
             
             # [1] equation 17, find P_avg (average transmit power)
             T_eff = tau_p # approximate effective pulse duration to be the actual pulse duration, as in case of matched filter processing
-            d = T_eff * f_P # [1] equation 17
+            # In case of AIRSAR dual-pol configuration, the channel PRF is half of the master PRF.
+            if (self.polType == PolTypeSAR.DUAL and self.dualPolPulseConfig == DualPolPulseConfig.AIRSAR):
+                f_P_ch = 0.5*f_P_master
+            else:
+                f_P_ch = f_P_master
+            d = T_eff * f_P_ch # [1] equation 17
             P_avg = d*P_T
             
             # [1] equation 8, find G_A
@@ -673,7 +674,7 @@ class SyntheticApertureRadarModel(Entity):
         obsv_metrics["NESZ [dB]"] = round(sigma_N_dB, 2)
         obsv_metrics["incidence angle [deg]"] = round(np.rad2deg(theta_i), 2) if theta_i is not None else np.nan
         obsv_metrics["swath-width [km]"] = round(W_gr_obs/1e3, 1) if W_gr_obs is not None else np.nan        
-        obsv_metrics["PRF [Hz]"] = f_P
+        obsv_metrics["PRF [Hz]"] = f_P_master
 
         return obsv_metrics
 
@@ -687,8 +688,8 @@ class SyntheticApertureRadarModel(Entity):
             shall allow observation of target. Not all PRFs are valid and a valid PRF has to be chosen so that it meets all
             the below conditions:
 
-            1. The length of the echo from 3-dB antenna beam illuminated/ desired swath is less than inter-pulse period.
-            2. The PRFs are high enough to allow for unambiguous detection of Doppler shifts.
+            1. The length of the echo from illuminated/ desired swath is less than inter-pulse period.
+            2. The PRFs should be high enough to allow for unambiguous detection of Doppler shifts.
             3. A transmit pulse does not overlap with the desired echo.
             4. The Nadir echoes from other transmit pulses do not overlap with the desired echo.
 
@@ -747,8 +748,8 @@ class SyntheticApertureRadarModel(Entity):
         :param num_sub_swath: Number of subswaths (default = 1). In case of ScanTech.SCANSAR the number of sub-swaths maybe more than 1.
         :paramtype num_sub_swath: int
 
-        :returns: Tuple with the highest possible PRF which can be used for observation and observed swath-width.
-        :rtype: tuple, (int, float)
+        :returns: Tuple with the highest possible master PRF which can be used for observation and observed swath-width.
+        :rtype: tuple (int, float)
 
         """
         h = alt_km * 1e3
@@ -854,7 +855,7 @@ class SyntheticApertureRadarModel(Entity):
         #print("PRFmax: ", PRFmax)
         #print("PRFmin: ", PRFmin)
         
-        f_P = None    
+        f_P = None   # Note that this is the Master PRF
         # Find the highest possible prf within the input prf range which allows for unambiguous echo detection. 
         for _f_P in range(int(f_P_max), int(f_P_min), -1): # step down in steps of 1 Hz
             PRFOK = True
@@ -968,6 +969,5 @@ class SyntheticApertureRadarModel(Entity):
             
         else:
             raise RuntimeError("Unknown condition reached.")
-            
-            
+                        
         return (f_P, swath_size)
