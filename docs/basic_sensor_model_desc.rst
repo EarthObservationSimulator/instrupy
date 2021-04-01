@@ -15,7 +15,8 @@ Input JSON format specifications description
     volume, float, :math:`m^3`, Total volume of this entity.
     power, float, Watts, Nominal operating power.
     orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument.
-    fieldOfView, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
+    fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
+    sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument.
     maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
     pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
     syntheticDataConfig, :ref:`syntheticDataConfig_json_obj`, , Synthetic data configuration.
@@ -35,11 +36,10 @@ The following data metrics at a target location (also referred to as a grid-poin
     :widths: 8,4,4,20
     :header: Metric,Data Type,Units,Description 
      
-    Coverage [T/F], string,, Indicates if observation was possible during the access event *(Always True)*. 
-    Incidence angle [deg], float,  degrees, Incidence-angle at target point calculated assuming spherical Earth.
-    Look angle [deg], float,  degrees, Look-angle to the target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
-    Observation Range [km], float, kilometers, Distance from satellite to ground-point during the observation. 
-    Solar Zenith [deg], float, degrees, Solar-zenith-angle during observation
+    incidence angle [deg], float,  degrees, Incidence-angle at target point calculated assuming spherical Earth.
+    look angle [deg], float,  degrees, Look-angle to the target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
+    observation range [km], float, kilometers, Distance from satellite to ground-point during the observation. 
+    solar zenith [deg], float, degrees, Solar-zenith-angle during observation.
 
 Viewing geometry
 ------------------

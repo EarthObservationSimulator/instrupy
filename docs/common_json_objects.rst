@@ -261,6 +261,17 @@ Example:
                                           "customClockAnglesVector": [30,120,180,280]
                                        }
 
+.. _sceneFieldOfViewGeometry_json_obj:
+
+:code:`sceneFieldOfViewGeometry`
+===================================
+The scene field-of-view (sceneFOV) spherical geometry specification. The sceneFOV characterizes a (approximate) FOV representation of an image 'scene'. 
+For example, in the case of stripmap SARs, or pushbroom optical scanners, a scene consists of multiple concatenated narrow (in the along-track direction) strips. An 
+approximate FOV representation is built to represent the observation. The sceneFOV is considered for coverage calculations. If the sceneFOV geometry is not defined, 
+the sceneFOV geometry is assigned to be equal to the instrument FOV geometry. In case of Matrix imagers this bodes well. 
+
+The json structure is identical to the :code:`fieldOfViewGeometry` JSON (see :ref:`fieldOfViewGeometry_json_obj`).
+
 .. _maneuver_json_object:
 
 :code:`maneuver` JSON object

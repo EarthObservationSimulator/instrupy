@@ -1,5 +1,5 @@
-Synthetic Aperture Radar Description
-*************************************                
+Synthetic Aperture Radar Model Description
+********************************************                
 
 **References:**
 
@@ -9,7 +9,7 @@ Synthetic Aperture Radar Description
 2. Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993. ----> Reference for PRF validity calculations, corrections for spaceborne radar.
 3. V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020.
 
-*Polarimetery concepts:*
+*Polarimetry concepts:*
 
 4. *Synthetic Aperture Radar Polarimetry,  Jakob Van Zyl* ----> Reference for compact-pol and AIRSAR implementation for dual-pol.
 5. *SMAP Handbook* ----> Reference for SMAP implementation of dual-pol.
@@ -42,32 +42,32 @@ Input JSON format specifications description
    @type, string, ,Must be *Synthetic Aperture Radar*
    @id, string, , Unique identifier for the instrument.
    name, string, ,Full name of the instrument 
-   acronym, string, ,Acronym or initialism or abbreviation.
    mass, float, kilograms,Total mass of this entity.
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
-   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
-   numStripsInScene, int, , Number of consequetive scanned strips in a scene. See :ref:`ifov_fov_scenefov_for_desc`.
-   dataRate, float, Megabits per s,Rate of data recorded during nominal operations.
+   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
+   dataRate, float, Megabits per sec,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
+   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument.
    pulseWidth, float, seconds, Actual pulse width (per channel/polarization).
-   antennaAlongTrackDim, float, meters, Antenna size in the along-track direction.
-   antennaCrossTrackDim, float, meters, Antenna size in the cross-track direction.
+   antennaHeight, float, meters, Antenna height (in the along-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
+   antennaWidth, float, meters, Antenna width (in the cross-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
    antennaApertureEfficiency, float, ,Aperture efficiency of antenna (:math:`0 < \eta_{ap} < 1`).
    operatingFrequency, float, Hertz, Operating radar center frequency.
    peakTransmitPower, float, Watts, Peak transmit power.
    chirpBandwidth, float, Hertz, Bandwidth of radar operation (per channel/polarization).
-   minimumPRF, float, Hertz, "The minimum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF is considered taking all pulses into account (i.e. PRFmaster))."
-   maximumPRF, float,  Hertz, "The maximum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF is considered taking all pulses into account (i.e. PRFmaster))."
+   minimumPRF, float, Hertz, "The minimum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF specification is considered taking all pulses into account (i.e. is considered as the PRFmaster))."
+   maximumPRF, float,  Hertz, "The maximum pulse-repetition-frequency of operation (if dual-pol with alternating pol pulses, the PRF specification is considered taking all pulses into account (i.e. is considered as the PRFmaster))."
    sceneNoiseTemp, float, Kelvin, Nominal scene noise temperature.
-   systemNoiseFigure, float, decibels, System noise figure for the receiver. 
-   radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere.
+   systemNoiseFigure, float, decibels, System noise figure for the receiver. See [Pg.15, 1].
+   radarLosses, float, decibels, These include a variety of losses primarily over the microwave signal path but doesn't include the atmosphere. See [Pg.15, 1].
+   atmosLoss, float, decibels, 2-way atmospheric loss of electromagnetic energy (see [Pg.16, 1]).
    altitude, float, km, Altitude at which the instrument is flown
-   NESZthreshold, float, decibels, "The :math:`NESZ` threshold for classification as a valid observation. (Optional)"
-   maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)       
+   maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
+   pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.    
    polarization, :ref:`sar_pol_json_object`, ,Polarization configuration. Default is single polarization.
-   swathConfig, :ref:`sar_swath_config_json_object`, ,Swath Configuration. Default is full-swath.       
-   scanTechnique, str, ,Accepted values are "Stripmap" or "ScanSAR". Default in Stripmap.
+   swathConfig, :ref:`sar_swath_config_json_object`, ,Swath Configuration. Default is "FULL" swath.       
+   scanTechnique, str, , Scanning technique. Accepted values are "Stripmap" or "ScanSAR". Default in Stripmap.
    numSubSwaths, int, , Number of sub-swaths (required in case of ScanSAR). Default is 1.  
 
 .. _sar_swath_config_json_object:
@@ -75,17 +75,25 @@ Input JSON format specifications description
 :code:`swathConfig` JSON object
 ----------------------------------
 
-Swath configuration. Two types are accepted: `Full` and `Fixed`. This should be indicated 
+Imaged/ processed swath configuration. Two types are accepted: `Full` and `Fixed`. This should be indicated 
 in the :code:`@type` name, value pair. If this JSON object is absent, `Full` swath configuration is assumed.
 
 1. :code:`"@type":"Full"` 
 
-Tne entire illumintated swath by the main-lobe of the antenna is considered. No other parameters are required.
+Tne entire illuminated swath by the main-lobe of the antenna is considered. No other parameters are required.
+
+Example:
+
+.. code-block:: javascript
+   
+   "swathConfig":{
+          "@type": "full"
+    }
 
 2. :code:`"@type":"Fixed"` 
 
 A fixed swath size (less than the swath illuminated by the main-lobe) is considered. The swath size to be used is to be
-input by the user. Deafult is 10km. If the specified fixed-swath size is more then the illuminated swath size, the illuminated
+input by the user. Default is 10km. If the specified fixed-swath size is more then the illuminated swath size, the illuminated
 swath size shall be considered.
 
 .. csv-table:: Expected parameters
@@ -113,7 +121,7 @@ in the :code:`@type` name, value pair. If this JSON object is absent, (default) 
 
 1. :code:`"@type":"single"` 
 
-Single transmit and receive polarization
+Single transmit and receive polarization.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
@@ -153,21 +161,21 @@ train used to enable dual-pol. Default is `AIRSAR` configuration.
 
 i. :code:`@type: "AIRSAR"`
 
-This pulse configuration is the same as the one implemented by the NASA/JPL AIRSAR systems (see Pg.32, Fig.2-5 in [3]). It consists of transmiting alternatng pulses of orthogonal
-polarization and filtering the received signal into seperate orthogonal polarizations.
+This pulse configuration is the same as the one implemented by the NASA/JPL AIRSAR systems (see Pg.32, Fig.2-5 in [4]). It consists of transmitting alternating pulses of orthogonal
+polarization and filtering the received signal into separate orthogonal polarizations.
 
 ii. :code:`"@type":"SMAP"` 
 
-This pulse configuration is the same as the one implemented by the SMAP radar (see Pg.41, Fig.26 in [4]). It consists of two slightly separated pulses of 
-orthogonal polarizations at different frequency bands. The received signal is seperated into the respective band and the orthgonal 
-polarizations measured. This requires an additional parameter called as the :code:`pulseSeperation` to indicate the seperation 
+This pulse configuration is the same as the one implemented by the SMAP radar (see Pg.41, Fig.26 in [5]). It consists of two slightly separated pulses of 
+orthogonal polarizations at different frequency bands. The received signal is separated into the respective band and the orthogonal 
+polarizations measured. This requires an additional parameter called as the :code:`pulseSeparation` to indicate the separation 
 between the pulses of the two orthogonal polarizations. If not specified a default value of 50% of the pulse-width (:code:`pulseWidth`) is considered.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   pulseSeperation, float, seconds, Separation between orthogonal polarized pulses. Default: 0.5*pulse-width.
+   pulseSeparation, float, seconds, Separation between orthogonal polarized pulses. Default: 0.5*pulse-width.
 
 Example:
 
@@ -179,7 +187,7 @@ Example:
           "rxPol": "H, V",
           "pulseConfig":{
           "@type": "SMAP",
-          "pulseSeperation": 9e-6
+          "pulseSeparation": 9e-6
     }
 
 .. _synthetic_aperture_radar_calc:
@@ -191,12 +199,12 @@ Output observation metrics calculation
     :widths: 8,4,4,20
     :header: Metric/Aux data,Data Type,Units,Description
                                                                                                                                                                                                                                                                                                                                                           
-    Coverage [T/F], string,, Indicates if observation was possible during the access event (True/ False).                                                                           
-    Incidence Angle [deg], float, degrees, Incidence angle at target point calculated assuming spherical Earth.                                                                                                                       
-    (Nominal) Swath-Width [m], float, meters, Swath-width of the strip of which the imaged pixel is part-off. Corresponding to the nominal instrument orientation.                                                                                         
-    NESZ [dB], float, decibels, The backscatter coefficient of a target for which the signal power level in final image is equal to the noise power level.**Lesser is better.**       
-    Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                             
-    Ground Pixel Cross-Track Resolution [m], float, meters, Cross-track pixel resolution    
+    incidence angle [deg], float, degrees, Incidence angle at target point calculated assuming spherical Earth.                                                                                                                       
+    swath-width [m], float, meters, Swath-width of the strip of which the imaged pixel is part-off.                                                                                        
+    NESZ [dB], float, decibels, The backscatter coefficient of a target for which the signal power level in final image is equal to the noise power level.**Numerically lesser is better.**       
+    ground pixel along-track resolution [m], float, meters, Along-track resolution of an ground-pixel centered about observation point.                                                                                                                        
+    Ground Pixel Cross-Track Resolution [m], float, meters, Cross-track pixel resolution of an ground-pixel centered about observation point.     
+    PRF [Hz], float, Hertz, Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
 
 Viewing geometry
 -----------------
@@ -377,10 +385,10 @@ SMAP dual-pol config
 ^^^^^^^^^^^^^^^^^^^^^
 
 The PRF constraint calculations must be done by considering that the
-total-pulse-width = 2 * :code:`pulseWidth` + :code:`pulseSeperation`
+total-pulse-width = 2 * :code:`pulseWidth` + :code:`pulseSeparation`
 
-where :code:`pulseWidth` is the user input pulse width per polarization and :code:`pulseSeperation` is the 
-seperation between the pulses of the orthogonal polarization.
+where :code:`pulseWidth` is the user input pulse width per polarization and :code:`pulseSeparation` is the 
+separation between the pulses of the orthogonal polarization.
 
 The :math:`NESZ` calculation is done with the pulse-width = :code:`pulseWidth`
 

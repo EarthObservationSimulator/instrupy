@@ -13,7 +13,7 @@ import copy
 
 from .basic_sensor_model import BasicSensorModel
 #from .passive_optical_scanner_model import PassiveOpticalScannerModel
-#from .synthetic_aperture_radar_model import SyntheticApertureRadarModel
+from .synthetic_aperture_radar_model import SyntheticApertureRadarModel
 
 class InstrumentModelFactory:
     """ Factory class which allows to register and invoke the appropriate instrument-model class. 
@@ -39,7 +39,7 @@ class InstrumentModelFactory:
         self._creators = {}
         self.register_instrument_model('Basic Sensor', BasicSensorModel)
         #self.register_instrument_model('Passive Optical Scanner', PassiveOpticalScannerModel)
-        #self.register_instrument_model('Synthetic Aperture Radar', SyntheticApertureRadarModel)
+        self.register_instrument_model('Synthetic Aperture Radar', SyntheticApertureRadarModel)
 
     def register_instrument_model(self, _type, creator):
         """ Function to register instruments.
@@ -263,6 +263,20 @@ class Instrument(Entity):
         _mode = self.get_mode(mode_id)
         return _mode.get_field_of_view()
     
+    def get_scene_field_of_view(self, mode_id=None):
+        """ Get the scene-field-of-view (of a specific instrument mode). If no mode identifier is specified, the 
+            the first mode in the list of modes of the instrument is considered.
+
+        :param mode_id: Identifier of the mode.
+        :paramtype mode_id: str
+        
+        :returns: Scene-field-of-view (of a specific instrument mode).
+        :rtype: :class:`instrupy.util.ViewGeometry`
+        
+        """ 
+        _mode = self.get_mode(mode_id)
+        return _mode.get_scene_field_of_view()
+
     def get_field_of_regard(self, mode_id=None):
         """ Get field-of-regard (of a specific instrument mode). If no mode identifier is specified, the 
             the first mode in the list of modes of the instrument is considered. 

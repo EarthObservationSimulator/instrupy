@@ -36,17 +36,17 @@ class BasicSensorModel(Entity):
         :ivar orientation: Orientation of the instrument.
         :vartype orientation: :class:`instrupy.util.Orientation`
 
-        :ivar fieldOfViewGeometry: Field of view spherical geometry specification of the instrument. 
-        :vartype fieldOfViewGeometry: :class:`instrupy.util.SphericalGeometry`   
+        :ivar fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
+        :vartype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
-        :ivar fieldOfView: Field of view of instrument (spherical geometry and Orientation).
+        :ivar sceneFieldOfView: Scene field of view specification (SphericalGeometry and Orientation).
         :vartype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
         :ivar maneuver: Maneuver specification of the instrument. TODO: Modify behavior to have FOR =FOV when no maneuver is specified (hence fixed pointing).
         :vartype maneuver: :class:`instrupy.util.Maneuver`  
 
         :ivar fieldOfRegard: Field of regard of the instrument taking into account the sensor FOV and manueverability of the satellite-sensor system. 
-                             Note that this shall be a list in order to accommodate non-intersecting view geometries.
+                             Note that this shall be a list in order to accommodate non-intersecting view-geometries.
         :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
         :ivar pointing_option: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
@@ -78,9 +78,18 @@ class BasicSensorModel(Entity):
     """
 
     def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None,
-                 fieldOfViewGeometry=None, maneuver=None, pointingOption=None, dataRate=None, syntheticDataConfig=None, bitsPerPixel=None, 
+                 fieldOfViewGeometry=None, sceneFieldOfViewGeometry=None, maneuver=None, pointingOption=None, dataRate=None, syntheticDataConfig=None, bitsPerPixel=None, 
                  numberDetectorRows=None, numberDetectorCols=None, _id=None):
-        """Initialization
+        """ Initialization. All except the below two parameters have identical description as that of the corresponding class instance variables.
+
+        :param fieldOfViewGeometry: Instrument field-of-view spherical geometry.
+        :paramtype fieldOfViewGeometry: :class:`instrupy.util.SphericalGeometry`
+
+        :param sceneFieldOfViewGeometry: Scene field-of-view spherical geometry.
+        :paramtype sceneFieldOfViewGeometry: :class:`instrupy.util.SphericalGeometry`
+
+        :return: None
+        :rtype: None
 
         """
         self.name = str(name) if name is not None else None
@@ -88,10 +97,10 @@ class BasicSensorModel(Entity):
         self.volume = float(volume) if volume is not None else None
         self.power = float(power) if power is not None else None
         self.orientation = copy.deepcopy(orientation) if orientation is not None and isinstance(orientation, Orientation) else None
-        self.fieldOfViewGeometry = copy.deepcopy(fieldOfViewGeometry) if fieldOfViewGeometry is not None and isinstance(fieldOfViewGeometry, SphericalGeometry) else None
-        self.fieldOfView = ViewGeometry(orien=self.orientation, sph_geom=self.fieldOfViewGeometry) if self.orientation is not None and self.fieldOfViewGeometry is not None else None
+        self.fieldOfView = ViewGeometry(orien=self.orientation, sph_geom=fieldOfViewGeometry) if self.orientation is not None and fieldOfViewGeometry is not None and isinstance(fieldOfViewGeometry, SphericalGeometry) else None
+        self.sceneFieldOfView = ViewGeometry(orien=self.orientation, sph_geom=sceneFieldOfViewGeometry) if self.orientation is not None and sceneFieldOfViewGeometry is not None and isinstance(sceneFieldOfViewGeometry, SphericalGeometry) else None
         self.maneuver = copy.deepcopy(maneuver) if maneuver is not None and isinstance(maneuver, Maneuver) else None
-        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.fieldOfViewGeometry) if (self.maneuver is not None and self.fieldOfViewGeometry is not None) else None
+        self.fieldOfRegard = self.maneuver.calc_field_of_regard(self.sceneFieldOfView.sph_geom) if (self.maneuver is not None and self.sceneFieldOfView is not None) else None
         self.pointingOption = None
         if isinstance(pointingOption, list):
             if all(isinstance(x, Orientation) for x in pointingOption):
@@ -119,7 +128,8 @@ class BasicSensorModel(Entity):
             :widths: 10,40
 
             orientation, Referenced and aligned to the SC_BODY_FIXED frame.
-            fieldOfView, CIRCULAR shape with 25 deg diameter.
+            fieldOfViewGeometry, CIRCULAR shape with 25 deg diameter.
+            sceneFieldOfViewGeometry, fieldOfViewGeometry
             numberDetectorRows, 4
             numberDetectorRows, 4
             _id, random string
@@ -131,7 +141,8 @@ class BasicSensorModel(Entity):
         :rtype: :class:`instrupy.BasicSensorModel`
             
         """
-        default_fov = dict({'shape': 'CIRCULAR', 'diameter':25}) # default fov is a 25 deg diameter circular
+        instru_fov_geom = d.get("fieldOfViewGeometry", {'shape': 'CIRCULAR', 'diameter':25})  # default instrument FOV geometry is a 25 deg diameter circular shape
+        scene_fov_geom = d.get("sceneFieldOfViewGeometry", instru_fov_geom)  # default sceneFOV geometry is the instrument FOV geometry
         default_orien = dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}) #  default orientation = referenced and aligned to the SC_BODY_FIXED frame.
         
         pnt_opt_dict = d.get("pointingOption", None)
@@ -149,7 +160,8 @@ class BasicSensorModel(Entity):
                 volume = d.get("volume", None),
                 power = d.get("power", None),
                 orientation = Orientation.from_json(d.get("orientation", default_orien)),
-                fieldOfViewGeometry =  SphericalGeometry.from_json(d.get("fieldOfViewGeometry", default_fov)),
+                fieldOfViewGeometry =  SphericalGeometry.from_json(instru_fov_geom),
+                sceneFieldOfViewGeometry = SphericalGeometry.from_json(scene_fov_geom),
                 maneuver =  Maneuver.from_json(d.get("maneuver", None)),
                 dataRate = d.get("dataRate", None),
                 bitsPerPixel = d.get("bitsPerPixel", None),
@@ -167,7 +179,8 @@ class BasicSensorModel(Entity):
         :rtype: dict
 
         """
-        fieldOfViewGeometry_dict = self.fieldOfViewGeometry.to_dict() if self.fieldOfViewGeometry is not None and isinstance(self.fieldOfViewGeometry, SphericalGeometry) else None
+        fieldOfViewGeometry_dict = self.fieldOfView.sph_geom.to_dict() if self.fieldOfView is not None and isinstance(self.fieldOfView, ViewGeometry) else None
+        sceneFieldOfViewGeometry_dict = self.sceneFieldOfView.sph_geom.to_dict() if self.sceneFieldOfView is not None and isinstance(self.sceneFieldOfView, ViewGeometry) else None
         orientation_dict = self.orientation.to_dict() if self.orientation is not None and isinstance(self.orientation, Orientation) else None
         maneuver_dict = self.maneuver.to_dict() if self.maneuver is not None and isinstance(self.maneuver, Maneuver) else None
         syntheticDataConfig_dict = self.syntheticDataConfig.to_dict() if self.syntheticDataConfig is not None and isinstance(self.syntheticDataConfig, SyntheticDataConfiguration) else None
@@ -179,6 +192,7 @@ class BasicSensorModel(Entity):
                 "volume":self.volume,
                 "power":self.power,
                 "fieldOfViewGeometry":fieldOfViewGeometry_dict,
+                "sceneFieldOFViewGeometry": sceneFieldOfViewGeometry_dict,
                 "orientation":orientation_dict,
                 "maneuver":maneuver_dict,
                 "pointingOption": pointing_opt_dict,
@@ -203,7 +217,7 @@ class BasicSensorModel(Entity):
                 self.syntheticDataConfig == other.syntheticDataConfig and self.numberDetectorCols == other.numberDetectorCols and self.numberDetectorRows == other.numberDetectorRows)
 
     def calc_data_metrics(self, sc_orbit_state, target_coords):
-        """ Calculate typical observation data metrics. 
+        """ Calculate typical observation data metrics. This function is invoked by the function ``Instrument.calc_data_metrics(.)`` class in the ``base`` module.
             
             .. figure:: target_geom_3D.png
                 :scale: 75 %
@@ -253,7 +267,6 @@ class BasicSensorModel(Entity):
                     
                     Dictionary keys are: 
                 
-                    * :code:`coverage [T/F]` (:class:`bool`) indicating if observation was possible during the access event. Always true for the :class:`BasicSensor` type.
                     * :code:`incidence angle [deg]` (:class:`float`) Incidence angle in degrees at target point calculated assuming spherical Earth.
                     * :code:`look angle [deg]` (:class:`float`) Look angle in degrees at target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
                     * :code:`observation range [km]` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
@@ -299,16 +312,12 @@ class BasicSensorModel(Entity):
         sgn = np.sign(np.dot(range_vector_km, orbit_normal))
         if(sgn==0):
             sgn = 1
-
-        # For a basic-sensor, coverage is true for all access-events
-        isCovered = True 
     
         obsv_metrics = {}
-        obsv_metrics["observation range [km]"] = range_km
-        obsv_metrics["look angle [deg]"] = sgn*look_angle_deg
-        obsv_metrics["incidence angle [deg]"] = incidence_angle_deg
-        obsv_metrics["solar zenith [deg]"] = solar_zenith_deg
-        obsv_metrics["coverage [T/F]"] = isCovered
+        obsv_metrics["observation range [km]"] = round(range_km,1)
+        obsv_metrics["look angle [deg]"] = round(sgn*look_angle_deg, 2)
+        obsv_metrics["incidence angle [deg]"] = round(incidence_angle_deg, 2)
+        obsv_metrics["solar zenith [deg]"] = round(solar_zenith_deg, 2)
 
         return obsv_metrics
 
@@ -407,6 +416,9 @@ class BasicSensorModel(Entity):
     
     def get_field_of_view(self):
         return self.fieldOfView
+
+    def get_scene_field_of_view(self):
+        return self.sceneFieldOfView
 
     def get_field_of_regard(self):
         """ Get the instrument field of regard.

@@ -103,6 +103,8 @@ IFOV, FOV, Scene-FOV, FOR description
   2.  Specifying :code:`numStripsInScene = 101` gives the along-track sceneFOV = 0.8185 deg.
       185km x 10km scene size.  Scan time is 1.4s. 
 
+  The SceneFOV is used for coverage calculations and is set to be equal to the instrument FOV if the sceneFOV is not defined.
+
 .. note:: Even though the original FOV of the instrument maybe rectangular, the resulting SceneFOV is only approximately rectangular
           due to the rotation of the Earth. The approximation is good for small scan times.
 

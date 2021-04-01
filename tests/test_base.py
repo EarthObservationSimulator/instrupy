@@ -56,7 +56,8 @@ class TestInstrument(unittest.TestCase):
 
     bs1 = Instrument.from_json('{"name": "Alpha", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
                                   "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, \
-                                  "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
+                                  "fieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":2.5 }, \
+                                  "sceneFieldOfViewGeometry": {"shape": "CIRCULAR", "diameter":5 }, \
                                   "maneuver":{"maneuverType": "CIRCULAR", "diameter":10}, \
                                   "pointingOption": [{"referenceFrame": "NADIR_POINTING", "convention": "XYZ", "xRotation":0, "yRotation":2.5, "zRotation":0}, \
                                                      {"referenceFrame": "NADIR_POINTING", "convention": "XYZ", "xRotation":0, "yRotation":-2.5, "zRotation":0}  \
@@ -73,7 +74,8 @@ class TestInstrument(unittest.TestCase):
                                   }')
 
     bs3 = Instrument.from_json('{"name": "Gamma", "mass":10, "volume":12.45, "dataRate": 40, "bitsPerPixel": 8, "power": 12, \
-                                  "fieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }, \
+                                  "fieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10 }, \
+                                  "sceneFieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }, \
                                   "maneuver":{"maneuverType": "Double_Roll_Only", "A_rollMin":10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}, \
                                   "pointingOption": [{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":10}, \
                                                      {"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":15}  \
@@ -103,8 +105,13 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.numberDetectorRows, 5)
         self.assertEqual(mode0.numberDetectorCols, 10)
         self.assertEqual(mode0.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'))
-        self.assertEqual(mode0.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}'))
-        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "CIRCULAR", "diameter": 10}'))        
+        self.assertEqual(mode0.fieldOfView, ViewGeometry.from_dict({"orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
+                                                                    "sphericalGeometry": {"shape": "CIRCULAR", "diameter":2.5 }}))
+        self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
+                                                                         "sphericalGeometry": {"shape": "CIRCULAR", "diameter":5 }}))
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "CIRCULAR", "diameter": 10}'))
+        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation": {"referenceFrame": "NADIR_POINTING", "convention": "REF_FRAME_ALIGNED"}, 
+                                                                       "sphericalGeometry": {"shape": "CIRCULAR", "diameter":15 }})])        
         self.assertEqual(mode0.pointingOption, [Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "XYZ", "xRotation":0, "yRotation":2.5, "zRotation":0}),
                                                  Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "XYZ", "xRotation":0, "yRotation":-2.5, "zRotation":0})])
 
@@ -125,7 +132,9 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.numberDetectorRows, 5)
         self.assertEqual(mode0.numberDetectorCols, 10)
         self.assertEqual(mode0.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'))
-        self.assertEqual(mode0.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "CIRCULAR", "diameter": 5}'))
+        self.assertEqual(mode0.fieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                     "sphericalGeometry":{"shape": "CIRCULAR", "diameter": 5}}))
+        self.assertEqual(mode0.sceneFieldOfView, mode0.fieldOfView)
         self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "single_ROLL_ONLY", "A_rollMin": 10, "A_rollMax":15}'))
         self.assertIsNone(mode0.pointingOption)   
 
@@ -147,10 +156,18 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.numberDetectorRows, 5)
         self.assertEqual(mode0.numberDetectorCols, 10)
         self.assertEqual(mode0.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}'))
-        self.assertEqual(mode0.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}'))
-        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))  
+        self.assertEqual(mode0.fieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                    "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10}}))
+        self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                        "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}}))
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))
+        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
+                                                                      "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}}),
+                                               ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
+                                                                      "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}})
+                                              ])
         self.assertEqual(mode0.pointingOption, [Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":10}),
-                                                 Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":15})]) 
+                                                Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":15})]) 
         # mode1
         mode1 = TestInstrument.bs3.mode[1]
         self.assertEqual(mode1._id, 1)
@@ -161,9 +178,16 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode1.power, 12)
         self.assertEqual(mode1.numberDetectorRows, 5)
         self.assertEqual(mode1.numberDetectorCols, 10)
-        self.assertEqual(mode1.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25}'))
-        self.assertEqual(mode1.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}'))
-        self.assertEqual(mode1.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))  
+        self.assertEqual(mode0.fieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                   "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10}}))
+        self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                        "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}}))
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))
+        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
+                                                                      "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}}),
+                                               ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
+                                                                      "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}})
+                                              ])
         self.assertEqual(mode1.pointingOption, mode0.pointingOption)        
         # mode2
         mode2 = TestInstrument.bs3.mode[2]
@@ -176,8 +200,16 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode2.numberDetectorRows, 5)
         self.assertEqual(mode2.numberDetectorCols, 10)
         self.assertEqual(mode2.orientation, Orientation.from_json('{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25}'))
-        self.assertEqual(mode2.fieldOfViewGeometry, SphericalGeometry.from_json('{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}'))
-        self.assertEqual(mode2.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))   
+        self.assertEqual(mode0.fieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                   "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10}}))
+        self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+                                                                        "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}}))
+        self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))
+        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
+                                                                      "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}}),
+                                               ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
+                                                                      "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}})
+                                              ])
         self.assertEqual(mode2.pointingOption, mode0.pointingOption)   
     
     def test_get_type(self):
@@ -195,7 +227,7 @@ class TestInstrument(unittest.TestCase):
 
     def test_get_mode(self): #@TODO
         pass    
-
+    
     def test_get_field_of_regard(self): #@TODO
         # bs1
         # no input mode-id
@@ -234,11 +266,11 @@ class TestInstrument(unittest.TestCase):
     def test_get_field_of_view(self):
         # bs1
         # no input mode-id
-        self.assertEqual(TestInstrument.bs1.get_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        self.assertEqual(TestInstrument.bs1.get_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 2.5}}))
         # input correct mode-id
-        self.assertEqual(TestInstrument.bs1.get_field_of_view(mode_id="0"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        self.assertEqual(TestInstrument.bs1.get_field_of_view(mode_id="0"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 2.5}}))
         # input incorrect mode-id, should default to first mode
-        self.assertEqual(TestInstrument.bs1.get_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        self.assertEqual(TestInstrument.bs1.get_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 2.5}}))
 
         # bs2
         # no input mode-id
@@ -250,17 +282,48 @@ class TestInstrument(unittest.TestCase):
 
         # bs3
         # no input mode-id
-        self.assertEqual(TestInstrument.bs3.get_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        self.assertEqual(TestInstrument.bs3.get_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10 }}))
         # input correct mode-id
-        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id=0), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id=0), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10 }}))
         # input incorrect mode-id, should default to first mode
-        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10 }}))
         # next mode
-        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id=1), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id=1), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10 }}))
         # next mode
         mode_id = TestInstrument.bs3.mode_id[2]
-        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id=mode_id), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        self.assertEqual(TestInstrument.bs3.get_field_of_view(mode_id=mode_id), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":0.25, "angleWidth":10 }}))
         
+    def test_get_scene_field_of_view(self):
+        # bs1
+        # no input mode-id
+        self.assertEqual(TestInstrument.bs1.get_scene_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        # input correct mode-id
+        self.assertEqual(TestInstrument.bs1.get_scene_field_of_view(mode_id="0"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        # input incorrect mode-id, should default to first mode
+        self.assertEqual(TestInstrument.bs1.get_scene_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+
+        # bs2
+        # no input mode-id
+        self.assertEqual(TestInstrument.bs2.get_scene_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        # input correct mode-id
+        self.assertEqual(TestInstrument.bs2.get_scene_field_of_view(mode_id=101), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+        # input incorrect mode-id, should default to first mode
+        self.assertEqual(TestInstrument.bs2.get_scene_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "CIRCULAR", "diameter": 5}}))
+
+        # bs3
+        # no input mode-id
+        self.assertEqual(TestInstrument.bs3.get_scene_field_of_view(), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        # input correct mode-id
+        self.assertEqual(TestInstrument.bs3.get_scene_field_of_view(mode_id=0), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        # input incorrect mode-id, should default to first mode
+        self.assertEqual(TestInstrument.bs3.get_scene_field_of_view(mode_id="abc"), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        # next mode
+        self.assertEqual(TestInstrument.bs3.get_scene_field_of_view(mode_id=1), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": 25},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+        # next mode
+        mode_id = TestInstrument.bs3.mode_id[2]
+        self.assertEqual(TestInstrument.bs3.get_scene_field_of_view(mode_id=mode_id), ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle": -25},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10 }}))
+       
+
     def test_get_orientation(self):
         # bs1
         # no input mode-id
@@ -333,7 +396,7 @@ class TestInstrument(unittest.TestCase):
 
     def test_get_pointing_option(self): #@TODO
         pass  
-
+    
 
 
 

@@ -1305,7 +1305,7 @@ class GeoUtilityFunctions:
 
     @staticmethod
     def compute_satellite_footprint_speed(r,v):
-        """ *Compute satellite footprint (**at Nadir** on ground-plane) linear speed*
+        """ Compute satellite footprint (**at nadir** on ground-plane) linear speed in [m/s].
 
             :param r: [distance] postion vector of satellite in ECI equatorial frame
             :paramtype r: list, float
