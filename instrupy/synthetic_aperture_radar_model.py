@@ -343,7 +343,7 @@ class SyntheticApertureRadarModel(Entity):
                         dualPolPulseSep = None
                     else:
                         raise RuntimeError("Unknown/ invalid pulse configuration in dual-polarization specification.")
-            elif(polType == PolTypeSAR.SINGLE):
+            elif(polType == PolTypeSAR.SINGLE or polType == PolTypeSAR.COMPACT):
                 pass
             else:
                 raise RuntimeError("Unknown/ invalid polarization specification.")
@@ -438,7 +438,7 @@ class SyntheticApertureRadarModel(Entity):
                         scanTechnique = _scan,
                         fixedSwathSize=fixedSwathSize,
                         numSubSwaths=numSubSwaths,
-                        _id = d.get("@id", None)
+                        _id = d.get("@id", uuid.uuid4())
                         )
 
     def to_dict(self):
@@ -480,8 +480,8 @@ class SyntheticApertureRadarModel(Entity):
                 "sceneNoiseTemp": self.sceneNoiseTemp,
                 "systemNoiseFigure": self.systemNoiseFigure,
                 "polType": self.polType.value,
-                "dualPolPulseConfig": self.dualPolPulseConfig.value,
-                "dualPolPulseSep": self.dualPolPulseSep,
+                "pulseConfig": self.dualPolPulseConfig.value,
+                "pulseSeparation": self.dualPolPulseSep,
                 "swathType": self.swathType.value,
                 "scanTechnique":self.scanTechnique.value,
                 "fixedSwathSize": self.fixedSwathSize,
@@ -722,9 +722,9 @@ class SyntheticApertureRadarModel(Entity):
             rho_a = rho_a*self.numSubSwaths
              
         obsv_metrics = {}
-        obsv_metrics["ground pixel along-track resolution [m]"] = round(rho_a, 2)
-        obsv_metrics["ground pixel cross-track resolution [m]"] = round(rho_y, 2)
-        obsv_metrics["NESZ [dB]"] = round(sigma_N_dB, 2)
+        obsv_metrics["ground pixel along-track resolution [m]"] = round(rho_a, 2) if rho_a is not None else np.nan
+        obsv_metrics["ground pixel cross-track resolution [m]"] = round(rho_y, 2) if rho_y is not None else np.nan
+        obsv_metrics["NESZ [dB]"] = round(sigma_N_dB, 2) if sigma_N_dB is not None else np.nan
         obsv_metrics["incidence angle [deg]"] = round(np.rad2deg(theta_i), 2) if theta_i is not None else np.nan
         obsv_metrics["swath-width [km]"] = round(W_gr_obs/1e3, 1) if W_gr_obs is not None else np.nan        
         obsv_metrics["PRF [Hz]"] = f_P_master
