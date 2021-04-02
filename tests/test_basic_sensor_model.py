@@ -14,7 +14,7 @@ def orbital_speed(alt_km):
 
 class TestBasicSensorModel(unittest.TestCase):
 
-    def test_from_json_basic(self):
+    def test_from_json(self):
         """ Test initialization of basic sensor in the many different ways allowed.
         """
         # Typical case
@@ -551,7 +551,4 @@ class TestBasicSensorModel(unittest.TestCase):
         pass
     
     def test_get_pointing_option(self): #TODO
-        pass
-
-    def test___eq__(self): #TODO
         pass

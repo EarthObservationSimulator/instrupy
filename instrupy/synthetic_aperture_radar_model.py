@@ -31,7 +31,7 @@ import numpy as np
 import warnings
 from instrupy.util import Entity, EnumEntity, Orientation, SphericalGeometry, ViewGeometry, Maneuver, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
 
-class ScanTech(EnumEntity):
+class ScanTechSAR(EnumEntity):
     """Enumeration of recognized SAR scanning techniques.
     
     :cvar STRIPMAP: Stripmap imaging operation.
@@ -203,7 +203,7 @@ class SyntheticApertureRadarModel(Entity):
         :ivar scanTechnique: Scanning technique. Accepted values are "Stripmap" or "ScanSAR".
         :vartype scanTechnique: str
 
-        :ivar swathType: SAR polarization type
+        :ivar swathType: Swath configuration.
         :vartype swathType: :class:`SwathTypeSAR`       
 
         :ivar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath in kilometers.
@@ -277,7 +277,7 @@ class SyntheticApertureRadarModel(Entity):
         self.polType = PolTypeSAR.get(polType) if polType is not None else None  
         self.dualPolPulseConfig = DualPolPulseConfig.get(dualPolPulseConfig) if dualPolPulseConfig is not None else None  
         self.dualPolPulseSep = float(dualPolPulseSep) if dualPolPulseSep is not None else None  
-        self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None
+        self.scanTechnique = ScanTechSAR.get(scanTechnique) if scanTechnique is not None else None
         self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
         self.numSubSwaths = int(numSubSwaths) if numSubSwaths is not None else None
@@ -295,7 +295,7 @@ class SyntheticApertureRadarModel(Entity):
             :header: Parameter, Default Value
             :widths: 10,40
 
-            scanTech, ScanTech.STRIPMAP
+            scanTech, ScanTechSAR.STRIPMAP
             orientation, Orientation.Convention.SIDE_LOOK at 25 deg
             sceneFieldOfViewGeometry, (Instrument) fieldOfViewGeometry
             polType, PolTypeSAR.SINGLE (single transmit and single receive)
@@ -350,17 +350,17 @@ class SyntheticApertureRadarModel(Entity):
         else: # assign default polarization
             polType = PolTypeSAR.SINGLE            
 
-        _scan = ScanTech.get(d.get("scanTechnique", None))
+        _scan = ScanTechSAR.get(d.get("scanTechnique", None))
         if _scan is None:
-            _scan = ScanTech.STRIPMAP # default scan technique
+            _scan = ScanTechSAR.STRIPMAP # default scan technique
         # Only stripmap and scansar techniques are supported
-        if(_scan == ScanTech.STRIPMAP) or (_scan == ScanTech.SCANSAR):
+        if(_scan == ScanTechSAR.STRIPMAP) or (_scan == ScanTechSAR.SCANSAR):
             
-            if(_scan == ScanTech.SCANSAR):
+            if(_scan == ScanTechSAR.SCANSAR):
                 numSubSwaths = d.get("numSubSwaths",None)                
                 if numSubSwaths is None:
                     numSubSwaths = 1 # default
-            elif(_scan == ScanTech.STRIPMAP):
+            elif(_scan == ScanTechSAR.STRIPMAP):
                 numSubSwaths = d.get("numSubSwaths",None)               
                 if numSubSwaths is not None:
                     warnings.warn("numSubSwaths parameter is not considered for Stripmap operation. It shall be ignored.")
@@ -373,7 +373,7 @@ class SyntheticApertureRadarModel(Entity):
             # calculate antenna beamwidth and hence instrument FOV [eqn41, 1].
             along_track_fov_deg = np.rad2deg(opWavelength/ D_az_m)
             cross_track_fov_deg = numSubSwaths*np.rad2deg(opWavelength/ D_elv_m) # number of subswaths x antenna cross-track beamwidth
-            instru_fov_geom_dict = { "sensorGeometry": "RECTANGULAR", "alongTrackFieldOfView":along_track_fov_deg, "crossTrackFieldOfView": cross_track_fov_deg } 
+            instru_fov_geom_dict = { "shape": "RECTANGULAR", "angleHeight":along_track_fov_deg, "angleWidth": cross_track_fov_deg } 
             
             scene_fov_geom_dict = d.get("sceneFieldOfViewGeometry", instru_fov_geom_dict)  # default sceneFOV geometry is the instrument FOV geometry
             # initialize the swath configuration
@@ -386,7 +386,7 @@ class SyntheticApertureRadarModel(Entity):
                 if(swathType == SwathTypeSAR.FIXED):
                     
                     fixedSwathSize = swathConfig.get("fixedSwathSize") if swathConfig.get("fixedSwathSize", None) is not None else 10 # default to 10km
-                    if(_scan == ScanTech.SCANSAR):
+                    if(_scan == ScanTechSAR.SCANSAR):
                         fixedSwathSize = None
                         swathConfig = SwathTypeSAR.FULL  
                         warnings.warn("ScanSAR operation supports only FULL swath configuration. Specified FIXED swath configuration is ignored.")
@@ -441,6 +441,57 @@ class SyntheticApertureRadarModel(Entity):
                         _id = d.get("@id", None)
                         )
 
+    def to_dict(self):
+        """ Translate the SyntheticApertureRadarModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+
+        :returns: SyntheticApertureRadarModel specifications as python dictionary.
+        :rtype: dict
+
+        """
+        fieldOfViewGeometry_dict = self.fieldOfView.sph_geom.to_dict() if self.fieldOfView is not None and isinstance(self.fieldOfView, ViewGeometry) else None
+        sceneFieldOfViewGeometry_dict = self.sceneFieldOfView.sph_geom.to_dict() if self.sceneFieldOfView is not None and isinstance(self.sceneFieldOfView, ViewGeometry) else None
+        orientation_dict = self.orientation.to_dict() if self.orientation is not None and isinstance(self.orientation, Orientation) else None
+        maneuver_dict = self.maneuver.to_dict() if self.maneuver is not None and isinstance(self.maneuver, Maneuver) else None
+        pointing_opt_dict = [Orientation.to_dict(x) for x in self.pointingOption] if self.pointingOption is not None else None
+        return dict({
+                "@type": "Synthetic Aperture Radar",
+                "name":self.name,
+                "mass":self.mass,
+                "volume":self.volume,
+                "power":self.power,
+                "orientation":orientation_dict,
+                "fieldOfViewGeometry":fieldOfViewGeometry_dict,
+                "sceneFieldOFViewGeometry": sceneFieldOfViewGeometry_dict,                
+                "maneuver":maneuver_dict,
+                "pointingOption": pointing_opt_dict,
+                "dataRate":self.dataRate,
+                "bitsPerPixel": self.bitsPerPixel,
+                "pulseWidth": self.pulseWidth,
+                "antennaHeight": self.antennaHeight,
+                "antennaWidth": self.antennaWidth,
+                "antennaApertureEfficiency": self.antennaApertureEfficiency,
+                "operatingFrequency": self.operatingFrequency,
+                "peakTransmitPower": self.peakTransmitPower,
+                "chirpBandwidth": self.chirpBandwidth,
+                "minimumPRF": self.minimumPRF,
+                "maximumPRF": self.maximumPRF,
+                "radarLoss": self.radarLoss,
+                "atmosLoss": self.atmosLoss,
+                "sceneNoiseTemp": self.sceneNoiseTemp,
+                "systemNoiseFigure": self.systemNoiseFigure,
+                "polType": self.polType.value,
+                "dualPolPulseConfig": self.dualPolPulseConfig.value,
+                "dualPolPulseSep": self.dualPolPulseSep,
+                "swathType": self.swathType.value,
+                "scanTechnique":self.scanTechnique.value,
+                "fixedSwathSize": self.fixedSwathSize,
+                "numSubSwaths": self.numSubSwaths,
+                "@id": self._id
+                })
+
+    def __repr__(self):
+        return "SyntheticApertureRadarModel.from_dict({})".format(self.to_dict())
+
     @staticmethod
     def get_azimuthal_resolution(sc_speed, sc_gnd_speed, D_az):
         """ Calculate azimuthal resolution taking into consideration difference in spacecraft and footprint velocities.
@@ -462,15 +513,17 @@ class SyntheticApertureRadarModel(Entity):
         return (D_az/2.0)*(sc_gnd_speed/ sc_speed)
 
 
-    def calc_data_metrics(self, sc_orbit_state = None, target_coords = None, 
-                          alt_km = None, sc_speed_kmps = None, sc_gnd_speed_kmps = None, inc_angle_deg = None, 
-                          instru_look_angle_from_target_inc_angle = False):
+    def calc_data_metrics(self, sc_orbit_state=None, target_coords=None, 
+                          alt_km=None, sc_speed_kmps=None, sc_gnd_speed_kmps=None, inc_angle_deg=None, 
+                          instru_look_angle_from_target_inc_angle=False):
         """ A wrapper function for calling the appropriate (depending on the input arguments) implementation of the data metrics calculator.
             Refer to the functions ``calc_data_metrics_impl1`` and ``calc_data_metrics_impl2`` for description of the function parameters.
             This function is invoked by the function ``Instrument.calc_data_metrics(.)`` class in the ``base`` module.
 
-        """
-        
+        :returns: Calculated observation data metrics.
+        :rtype: dict
+
+        """        
         if(sc_orbit_state is not None and target_coords is not None):
         
             obsv_metrics = SyntheticApertureRadarModel.calc_data_metrics_impl2(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle)
@@ -745,7 +798,7 @@ class SyntheticApertureRadarModel(Entity):
         :param fixed_swath_size_km: In case of fixed swath configuration this parameter indicates the size of the fixed swath. Not applicable for ScanSAR.
         :paramtype fixed_swath_size_km: float
 
-        :param num_sub_swath: Number of subswaths (default = 1). In case of ScanTech.SCANSAR the number of sub-swaths maybe more than 1.
+        :param num_sub_swath: Number of subswaths (default = 1). In case of ScanTechSAR.SCANSAR the number of sub-swaths maybe more than 1.
         :paramtype num_sub_swath: int
 
         :returns: Tuple with the highest possible master PRF which can be used for observation and observed swath-width.
@@ -971,3 +1024,57 @@ class SyntheticApertureRadarModel(Entity):
             raise RuntimeError("Unknown condition reached.")
                         
         return (f_P, swath_size)
+
+    def get_id(self):
+        """ Get the instrument identifier.
+
+        :returns: instrument identifier.
+        :rtype: str
+
+        """
+        return self._id
+    
+    def get_field_of_view(self):
+        """ Get the instrument field-of-view.
+
+        :returns: Instrument field-of-view. 
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.fieldOfView
+
+    def get_scene_field_of_view(self):
+        """ Get the scene-field-of-view (sceneFOV).
+
+        :returns: Scene-field-of-view.
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.sceneFieldOfView
+
+    def get_field_of_regard(self):
+        """ Get the instrument field of regard. 
+
+        :returns: Field of regard (list of ``ViewGeometry`` objects). 
+        :rtype: list, :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.fieldOfRegard
+
+    def get_orientation(self):
+        """ Get the instrument orientation.
+
+        :returns: Instrument orientation.
+        :rtype: :class:`instrupy.util.Orientation`
+
+        """
+        return self.orientation
+    
+    def get_pointing_option(self):
+        """ Get the list of pointing options.
+
+        :returns: List of pointing options.
+        :rtype: list, :class:`instrupy.util.Orientation`
+
+        """
+        return self.pointingOption

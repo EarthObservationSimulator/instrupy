@@ -1,119 +1,82 @@
-"""Unit tests for instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model
+"""Unit tests for instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model.
 """
 
 import unittest
 import json
-import numpy
+import numpy as np
 import sys, os
 
 
-from instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model import *
-from instrupy.util import Orientation, FieldOfView, FileUtilityFunctions
+from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel, ScanTechSAR, PolTypeSAR, DualPolPulseConfig, SwathTypeSAR
+from instrupy.util import Orientation, SphericalGeometry, ViewGeometry, FileUtilityFunctions, Maneuver
 
+############# Some SAR JSON definitions to be used in the tests. #############
+# MICROXSAR
+# H. Saito et al., “Compact x-band synthetic aperture radar for 100kg class satellite,” IEICE Transactions on
+# Communications, vol. E100.B, no. 9, pp. 1653–1660, 2017
+microxsar_json_str =   '{"@type": "Synthetic Aperture Radar",' \
+                        '"name": "MiroXSAR",'  \
+                        '"mass": 130,' \
+                        '"volume": 0.343,' \
+                        '"power": 1100,' \
+                        '"orientation": {' \
+                        '    "convention": "SIDE_LOOK",' \
+                        '    "sideLookAngle": 30' \
+                        '},' \
+                        '"dataRate": 2000,' \
+                        '"bitsPerPixel": 16,' \
+                        '"pulseWidth": 31e-6,' \
+                        '"antennaHeight": 4.9,' \
+                        '"antennaWidth": 0.7,' \
+                        '"antennaApertureEfficiency": 0.5,' \
+                        '"operatingFrequency": 9.65e9,' \
+                        '"peakTransmitPower": 1e3,' \
+                        '"chirpBandwidth": 75e6,' \
+                        '"minimumPRF": 3000,' \
+                        '"maximumPRF": 8000,' \
+                        '"radarLoss": 3.5,' \
+                        '"sceneNoiseTemp": 290,' \
+                        '"systemNoiseFigure": 4.3' \
+                        '}'
 
-class TestSyntheticApertureRadarModel(unittest.TestCase):
+# SEASAT
+seasat_json_str =  '{"@type": "Synthetic Aperture Radar",' \
+                    '"orientation": {' \
+                    '    "convention": "SIDE_LOOK",' \
+                    '    "sideLookAngle": 20.5' \
+                    '},' \
+                    '"pulseWidth": 33.4e-6,' \
+                    '"antennaHeight": 10.7,' \
+                    '"antennaWidth": 2.16,' \
+                    '"antennaApertureEfficiency": 0.6,' \
+                    '"operatingFrequency": 1.2757e9,' \
+                    '"peakTransmitPower": 1000,' \
+                    '"chirpBandwidth": 19e6,' \
+                    '"minimumPRF": 1463,' \
+                    '"maximumPRF": 1640,' \
+                    '"radarLoss": 3.5,' \
+                    '"systemNoiseFigure": 5.11' \
+                    '}'
 
-    # SAR without specification of maneuverability, numStripsInScene, altitude fields
-    # H. Saito et al., “Compact x-band synthetic aperture radar for 100kg class satellite,” IEICE Transactions on
-    # Communications, vol. E100.B, no. 9, pp. 1653–1660, 2017
-    microxsar = SyntheticApertureRadarModel.from_json( '{"@type": "Synthetic Aperture Radar",'
-                                                  '"name": "MiroXSAR",'  
-                                                  '"mass": 130,' 
-                                                  '"volume": 0.343,' 
-                                                  '"power": 1100,' 
-                                                  '"orientation": {'
-                                                  '    "convention": "SIDE_LOOK",'
-                                                  '    "sideLookAngle": 30'
-                                                  '},'
-                                                  '"dataRate": 2000,'
-                                                  '"bitsPerPixel": 16,'
-                                                  '"pulseWidth": 31e-6,'
-                                                  '"antennaAlongTrackDim": 4.9,'
-                                                  '"antennaCrossTrackDim": 0.7,' 
-                                                  '"antennaApertureEfficiency": 0.5,' 
-                                                  '"operatingFrequency": 9.65e9,' 
-                                                  '"peakTransmitPower": 1e3,' 
-                                                  '"chirpBandwidth": 75e6,'      
-                                                  '"minimumPRF": 3000,' 
-                                                  '"maximumPRF": 8000,' 
-                                                  '"radarLosses": 3.5,' 
-                                                  '"sceneNoiseTemp": 290,' 
-                                                  '"systemNoiseFigure": 4.3,'
-                                                  '"NESZthreshold": -15}')
-
-    # SAR with maneuverability, numStripsInScene, altitude fields and without other optional fields
-    seasat = SyntheticApertureRadarModel.from_json(  '{"@type": "Synthetic Aperture Radar",'
-                                                '"orientation": {'
-                                                '    "convention": "SIDE_LOOK",'
-                                                '    "sideLookAngle": 20.5'
-                                                '},'
-                                                '"pulseWidth": 33.4e-6,'
-                                                '"antennaAlongTrackDim": 10.7,'
-                                                '"antennaCrossTrackDim": 2.16,' 
-                                                '"antennaApertureEfficiency": 0.6,' 
-                                                '"operatingFrequency": 1.2757e9,' 
-                                                '"peakTransmitPower": 1000,' 
-                                                '"chirpBandwidth": 19e6,'      
-                                                '"minimumPRF": 1463,' 
-                                                '"maximumPRF": 1640,' 
-                                                '"radarLosses": 3.5,' 
-                                                '"systemNoiseFigure": 5.11,'
-                                                '"maneuverability":{'
-                                                '    "@type": "YAW180ROLL",'
-                                                '    "rollMin": -10,'
-                                                '    "rollMax": 10'   
-                                                '},'
-                                                '"altitude": 800,'
-                                                '"numStripsInScene":14392'
-                                                '}')
-    _seasat = SyntheticApertureRadarModel.from_json(  '{"@type": "Synthetic Aperture Radar",'
-                                                '"orientation": {'
-                                                '    "convention": "SIDE_LOOK",'
-                                                '    "sideLookAngle": 20.5'
-                                                '},'
-                                                '"pulseWidth": 33.4e-6,'
-                                                '"antennaAlongTrackDim": 10.7,'
-                                                '"antennaCrossTrackDim": 2.16,' 
-                                                '"antennaApertureEfficiency": 0.6,' 
-                                                '"operatingFrequency": 1.2757e9,' 
-                                                '"peakTransmitPower": 1000,' 
-                                                '"chirpBandwidth": 19e6,'      
-                                                '"minimumPRF": 1000,' 
-                                                '"maximumPRF": 3000,' 
-                                                '"radarLosses": 3.5,' 
-                                                '"systemNoiseFigure": 5.11,'
-                                                '"maneuverability":{'
-                                                '    "@type": "YAW180ROLL",'
-                                                '    "rollMin": -10,'
-                                                '    "rollMax": 10'   
-                                                '},'
-                                                '"altitude": 800,'
-                                                '"numStripsInScene":14392'
-                                                '}')
-
-    # SAR with maneuverability field and without other optional fields
-    ers1 = SyntheticApertureRadarModel.from_json('{"@type": "Synthetic Aperture Radar",'
-                                            '   "orientation": {'
-                                            '      "convention": "SIDE_LOOK",'
-                                            '      "sideLookAngle": 20'
-                                            '  },'                                           
-                                            '  "pulseWidth": 37.1e-6,'
-                                            '  "antennaAlongTrackDim": 10,'
-                                            '  "antennaCrossTrackDim": 1,' 
-                                            '  "antennaApertureEfficiency": 0.26,' 
-                                            '  "operatingFrequency": 5.25e9,' 
-                                            '  "peakTransmitPower": 4800,' 
-                                            '  "chirpBandwidth": 15.5e6,'      
-                                            '  "minimumPRF": 1680,' 
-                                            '  "maximumPRF": 1700,' 
-                                            '  "radarLosses": 3.5,' 
-                                            '  "systemNoiseFigure": 3.4,'
-                                            '  "maneuverability":{'
-                                            '        "@type": "ROLLONLY",'
-                                            '        "rollMin": -15,'
-                                            '        "rollMax": 15'    
-                                            '       }' 
-                                            '}')
+# ERS1
+ers1_json_str = '{"@type": "Synthetic Aperture Radar",' \
+                '   "orientation": {' \
+                '      "convention": "SIDE_LOOK",' \
+                '      "sideLookAngle": 20' \
+                '  },' \
+                '  "pulseWidth": 37.1e-6,' \
+                '  "antennaHeight": 10,' \
+                '  "antennaWidth": 1,' \
+                '  "antennaApertureEfficiency": 0.26,' \
+                '  "operatingFrequency": 5.25e9,' \
+                '  "peakTransmitPower": 4800,' \
+                '  "chirpBandwidth": 15.5e6,' \
+                '  "minimumPRF": 1680,' \
+                '  "maximumPRF": 1700,' \
+                '  "radarLoss": 3.5,' \
+                '  "systemNoiseFigure": 3.4' \
+                '}'
+class TestSyntheticApertureRadarModel(unittest.TestCase):   
 
     def __init__(self, *args, **kwargs):
         # 
@@ -121,66 +84,69 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
 
     def test_from_json_basic_1(self):
         """ Test initialization of the synthetic aperture radar in the many different ways allowed. 
-        """    
+        """   
+        microxsar= SyntheticApertureRadarModel.from_json(microxsar_json_str) 
         # SAR without specification of maneuverability, numStripsInScene, altitude fields
-        self.assertEqual(self.microxsar._type, "Synthetic Aperture Radar")
-        self.assertEqual(self.microxsar.name, "MiroXSAR")
-        self.assertIsInstance(self.microxsar.name, str)
-        self.assertEqual(self.microxsar.acronym, "MiroXSAR")
-        self.assertIsInstance(self.microxsar.acronym, str)
-        self.assertEqual(self.microxsar.mass, 130)
-        self.assertIsInstance(self.microxsar.mass, float)
-        self.assertEqual(self.microxsar.volume, 0.343)
-        self.assertIsInstance(self.microxsar.volume, float)
-        self.assertEqual(self.microxsar.power, 1100)
-        self.assertIsInstance(self.microxsar.power, float)
-        self.assertEqual(self.microxsar.dataRate, 2000)
-        self.assertIsInstance(self.microxsar.dataRate, float)
-        self.assertEqual(self.microxsar.bitsPerPixel, 16)
-        self.assertIsInstance(self.microxsar.bitsPerPixel, int)
-        self.assertIsInstance(self.microxsar.orientation, Orientation)
-        self.assertEqual(self.microxsar.orientation.euler_seq1, 1)
-        self.assertEqual(self.microxsar.orientation.euler_seq2, 2)
-        self.assertEqual(self.microxsar.orientation.euler_seq3, 3)
-        self.assertEqual(self.microxsar.orientation.euler_angle1, 0)
-        self.assertEqual(self.microxsar.orientation.euler_angle2, 30)
-        self.assertEqual(self.microxsar.orientation.euler_angle3, 0)
-        self.assertEqual(self.microxsar.pulseWidth, 31e-6)
-        self.assertIsInstance(self.microxsar.pulseWidth, float)
-        self.assertEqual(self.microxsar.antennaAlongTrackDim, 4.9)
-        self.assertIsInstance(self.microxsar.antennaAlongTrackDim, float)
-        self.assertEqual(self.microxsar.antennaCrossTrackDim, 0.7)
-        self.assertIsInstance(self.microxsar.antennaCrossTrackDim, float)
-        self.assertEqual(self.microxsar.antennaApertureEfficiency, 0.5)
-        self.assertIsInstance(self.microxsar.antennaApertureEfficiency, float)
-        self.assertEqual(self.microxsar.operatingFrequency, 9.65e9)
-        self.assertIsInstance(self.microxsar.operatingFrequency, float)
-        self.assertEqual(self.microxsar.peakTransmitPower, 1e3)
-        self.assertIsInstance(self.microxsar.peakTransmitPower, float)
-        self.assertEqual(self.microxsar.chirpBandwidth, 75e6)
-        self.assertIsInstance(self.microxsar.chirpBandwidth, float)
-        self.assertEqual(self.microxsar.minimumPRF, 3000)
-        self.assertIsInstance(self.microxsar.minimumPRF, float)
-        self.assertEqual(self.microxsar.maximumPRF, 8000)
-        self.assertIsInstance(self.microxsar.maximumPRF, float)
-        self.assertEqual(self.microxsar.radarLosses, 3.5)
-        self.assertIsInstance(self.microxsar.radarLosses, float)
-        self.assertEqual(self.microxsar.sceneNoiseTemp, 290)
-        self.assertIsInstance(self.microxsar.sceneNoiseTemp, float)
-        self.assertEqual(self.microxsar.systemNoiseFigure, 4.3)
-        self.assertIsInstance(self.microxsar.systemNoiseFigure, float)
-        self.assertEqual(self.microxsar.NESZthreshold, -15)
-        self.assertIsInstance(self.microxsar.NESZthreshold, float)
-        # along-track fov and cross-track fov are calculated from antenna size and initialized in the object
-        self.assertAlmostEqual(self.microxsar.fieldOfView._AT_fov_deg, 0.3635, places = 2)
-        self.assertAlmostEqual(self.microxsar.fieldOfView._CT_fov_deg, 2.5446, places = 2)
-        # since no numStripsInScene, altitude was specified, sceneFOV = None
-        self.assertIsNone(self.microxsar.sceneFieldOfView)
-        # since no maneuverability and sceneFOV specified FOR = FOV
-        self.assertAlmostEqual(self.microxsar.fieldOfRegard.get_rectangular_fov_specs_from_custom_fov_specs()[0], 0.3635, places = 2)
-        self.assertAlmostEqual(self.microxsar.fieldOfRegard.get_rectangular_fov_specs_from_custom_fov_specs()[1], 2.5446, places = 2)
-        self.assertFalse(self.microxsar.fieldOfRegard._yaw180_flag)
-        
+        self.assertEqual(microxsar._type, "Synthetic Aperture Radar")
+        self.assertIsInstance(microxsar.name, str)
+        self.assertEqual(microxsar.name, "MiroXSAR")
+        self.assertIsInstance(microxsar.mass, float)
+        self.assertEqual(microxsar.mass, 130)
+        self.assertIsInstance(microxsar.volume, float)
+        self.assertEqual(microxsar.volume, 0.343)
+        self.assertIsInstance(microxsar.power, float)
+        self.assertEqual(microxsar.power, 1100)
+        self.assertEqual(microxsar.orientation, Orientation.from_json({"convention":"Euler", "eulerSeq1":1, "eulerSeq2":2, "eulerSeq3":3, "eulerAngle1":0, "eulerAngle2":30, "eulerAngle3":0}))
+        self.assertIsInstance(microxsar.orientation, Orientation)
+        self.assertIsInstance(microxsar.fieldOfView, ViewGeometry)         
+        self.assertAlmostEqual(microxsar.fieldOfView.sph_geom.get_fov_height_and_width()[0], 0.3635, places = 2)
+        self.assertAlmostEqual(microxsar.fieldOfView.sph_geom.get_fov_height_and_width()[1], 2.5446, places = 2)
+        self.assertEqual(microxsar.sceneFieldOfView, microxsar.fieldOfView)
+        self.assertIsNone(microxsar.maneuver)
+        self.assertIsNone(microxsar.fieldOfRegard)
+        self.assertIsNone(microxsar.pointingOption)
+        self.assertIsInstance(microxsar.dataRate, float)
+        self.assertEqual(microxsar.dataRate, 2000)
+        self.assertIsInstance(microxsar.bitsPerPixel, int)
+        self.assertEqual(microxsar.bitsPerPixel, 16)        
+        self.assertIsInstance(microxsar.pulseWidth, float)
+        self.assertEqual(microxsar.pulseWidth, 31e-6)
+        self.assertIsInstance(microxsar.antennaHeight, float)
+        self.assertEqual(microxsar.antennaHeight, 4.9)
+        self.assertIsInstance(microxsar.antennaWidth, float)
+        self.assertEqual(microxsar.antennaWidth, 0.7)
+        self.assertIsInstance(microxsar.antennaApertureEfficiency, float)
+        self.assertEqual(microxsar.antennaApertureEfficiency, 0.5)
+        self.assertIsInstance(microxsar.operatingFrequency, float)
+        self.assertEqual(microxsar.operatingFrequency, 9.65e9)
+        self.assertIsInstance(microxsar.peakTransmitPower, float)
+        self.assertEqual(microxsar.peakTransmitPower, 1e3)
+        self.assertIsInstance(microxsar.chirpBandwidth, float)
+        self.assertEqual(microxsar.chirpBandwidth, 75e6)
+        self.assertIsInstance(microxsar.minimumPRF, float)
+        self.assertEqual(microxsar.minimumPRF, 3000)
+        self.assertIsInstance(microxsar.maximumPRF, float)
+        self.assertEqual(microxsar.maximumPRF, 8000)
+        self.assertIsInstance(microxsar.sceneNoiseTemp, float)
+        self.assertEqual(microxsar.sceneNoiseTemp, 290)
+        self.assertIsInstance(microxsar.radarLoss, float)
+        self.assertEqual(microxsar.radarLoss, 3.5)
+        self.assertIsInstance(microxsar.atmosLoss, float)
+        self.assertEqual(microxsar.atmosLoss, 2) # default value        
+        self.assertIsInstance(microxsar.systemNoiseFigure, float)
+        self.assertEqual(microxsar.systemNoiseFigure, 4.3)
+        self.assertIsInstance(microxsar.polType, PolTypeSAR) 
+        self.assertEqual(microxsar.polType, PolTypeSAR.SINGLE)
+        self.assertIsNone(microxsar.dualPolPulseConfig)
+        self.assertIsNone(microxsar.dualPolPulseSep)        
+        self.assertIsInstance(microxsar.scanTechnique, ScanTechSAR) 
+        self.assertEqual(microxsar.scanTechnique, ScanTechSAR.STRIPMAP) 
+        self.assertIsInstance(microxsar.swathType, SwathTypeSAR) 
+        self.assertEqual(microxsar.swathType, SwathTypeSAR.FULL) # default value
+        self.assertIsNone(microxsar.fixedSwathSize) 
+        self.assertIsInstance(microxsar.numSubSwaths, int) 
+        self.assertEqual(microxsar.numSubSwaths, 1) # default value 
+
         # Test of an improper orientation specification. Although physically specifing XYZ as (0,10,0) degrees is the same as specifying 
         # the side-look angle as 10 deg, the behavior of the code is to throw an error.
         with self.assertRaises(Exception):
@@ -190,16 +156,16 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"volume": 0.343,' 
                                                   '"power": 1100,' 
                                                   '"orientation": {'
-                                                  '   "convention": "XYZ",'
-                                                  '   "xRotation": 0,'
-                                                  '   "yRotation": 10,'
-                                                  '   "zRotation": 0'
+                                                  '   "convention": "Euler",'
+                                                  '   "eulerAngle1": 0,'
+                                                  '   "eulerAngle2": 10,'
+                                                  '   "eulerAngle3": 0'
                                                   ' },'
                                                   '"dataRate": 2000,'
                                                   '"bitsPerPixel": 16,'
                                                   '"pulseWidth": 31e-6,'
-                                                  '"antennaAlongTrackDim": 4.9,'
-                                                  '"antennaCrossTrackDim": 0.7,' 
+                                                  '"antennaHeight": 4.9,'
+                                                  '"antennaWidth": 0.7,' 
                                                   '"antennaApertureEfficiency": 0.5,' 
                                                   '"operatingFrequency": 9.65e9,' 
                                                   '"peakTransmitPower": 1e3,' 
@@ -209,7 +175,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"radarLosses": 3.5,' 
                                                   '"sceneNoiseTemp": 290,' 
                                                   '"systemNoiseFigure": 4.3,'
-                                                  '"NESZthreshold": -15}')
+                                                  '}')
 
         # Check for invalid PRF min, max specification
         with self.assertRaises(Exception):
@@ -225,8 +191,8 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"dataRate": 2000,'
                                                   '"bitsPerPixel": 16,'
                                                   '"pulseWidth": 31e-6,'
-                                                  '"antennaAlongTrackDim": 4.9,'
-                                                  '"antennaCrossTrackDim": 0.7,' 
+                                                  '"antennaHeight": 4.9,'
+                                                  '"antennaWidth": 0.7,' 
                                                   '"antennaApertureEfficiency": 0.5,' 
                                                   '"operatingFrequency": 9.65e9,' 
                                                   '"peakTransmitPower": 1e3,' 
@@ -236,10 +202,10 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"radarLosses": 3.5,' 
                                                   '"sceneNoiseTemp": 290,' 
                                                   '"systemNoiseFigure": 4.3,'
-                                                  '"NESZthreshold": -15}')
+                                                  '}')
 
 
-        
+    '''   
     def test_from_json_basic_2(self):
         """ Test initialization of the synthetic aperture radar in the many different ways allowed.
         """
@@ -261,10 +227,10 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(self.seasat.orientation.euler_angle3, 0)
         self.assertEqual(self.seasat.pulseWidth, 33.4e-6)
         self.assertIsInstance(self.seasat.pulseWidth, float)
-        self.assertEqual(self.seasat.antennaAlongTrackDim, 10.7)
-        self.assertIsInstance(self.seasat.antennaAlongTrackDim, float)
-        self.assertEqual(self.seasat.antennaCrossTrackDim, 2.16)
-        self.assertIsInstance(self.seasat.antennaCrossTrackDim, float)
+        self.assertEqual(self.seasat.antennaHeight, 10.7)
+        self.assertIsInstance(self.seasat.antennaHeight, float)
+        self.assertEqual(self.seasat.antennaWidth, 2.16)
+        self.assertIsInstance(self.seasat.antennaWidth, float)
         self.assertEqual(self.seasat.antennaApertureEfficiency, 0.6)
         self.assertIsInstance(self.seasat.antennaApertureEfficiency, float)
         self.assertEqual(self.seasat.operatingFrequency, 1.2757e9)
@@ -316,10 +282,10 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(self.ers1.orientation.euler_angle3, 0)
         self.assertEqual(self.ers1.pulseWidth, 0.0000371)
         self.assertIsInstance(self.ers1.pulseWidth, float)
-        self.assertEqual(self.ers1.antennaAlongTrackDim, 10)
-        self.assertIsInstance(self.ers1.antennaAlongTrackDim, float)
-        self.assertEqual(self.ers1.antennaCrossTrackDim, 1)
-        self.assertIsInstance(self.ers1.antennaCrossTrackDim, float)
+        self.assertEqual(self.ers1.antennaHeight, 10)
+        self.assertIsInstance(self.ers1.antennaHeight, float)
+        self.assertEqual(self.ers1.antennaWidth, 1)
+        self.assertIsInstance(self.ers1.antennaWidth, float)
         self.assertEqual(self.ers1.antennaApertureEfficiency, 0.26)
         self.assertIsInstance(self.ers1.antennaApertureEfficiency, float)
         self.assertEqual(self.ers1.operatingFrequency, 5.25e9)
@@ -357,7 +323,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         v_sc = 7.613
         v_x = 7.0596
         alt_km = 500
-        instru_look_angle_rad = numpy.deg2rad(18.5) 
+        instru_look_angle_rad = np.deg2rad(18.5) 
         tau_p = 30e-6
         D_az = 6
         D_elv = 1.75
@@ -370,7 +336,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         v_sc = 7.613
         v_x = 7.0596
         alt_km = 500
-        instru_look_angle_rad = numpy.deg2rad(18.5) 
+        instru_look_angle_rad = np.deg2rad(18.5) 
         tau_p = 30e-6
         D_az = 6
         D_elv = 1.75
@@ -382,7 +348,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         v_sc = 7.613
         v_x = 7.0596
         alt_km = 500
-        instru_look_angle_rad = numpy.deg2rad(18.5)
+        instru_look_angle_rad = np.deg2rad(18.5)
         tau_p = 30e-6
         D_az = 6
         D_elv = 1.75 
@@ -394,7 +360,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         v_sc = 7.613
         v_x = 7.0596        
         alt_km = 500
-        instru_look_angle_rad = numpy.deg2rad(18.5)
+        instru_look_angle_rad = np.deg2rad(18.5)
         tau_p = 30e-6
         D_az = 6
         D_elv = 1.75 
@@ -406,7 +372,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         v_sc = 7.613
         v_x = 7.0596        
         alt_km = 500
-        instru_look_angle_rad = numpy.deg2rad(18.5)
+        instru_look_angle_rad = np.deg2rad(18.5)
         tau_p = 30e-6
         D_az = 6
         D_elv = 1.75 
@@ -431,7 +397,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
             metrics = _d["resultantMetrics"]
             if("incidenceAngle" in params):
                 h = params["altitude"]*1e3
-                orb_speed = numpy.sqrt(3.986004418e14/(Re + h)) # [m/s]
+                orb_speed = np.sqrt(3.986004418e14/(Re + h)) # [m/s]
                 inc_deg = params["incidenceAngle"]
                 obsv_metrics = test_sar.calc_typ_data_metrics(alt_km = h*1e-3, v_sc_kmps = orb_speed*1e-3, v_g_kmps = orb_speed*1e-3*(Re/(Re+h)), incidence_angle_deg = inc_deg, 
                                               instru_look_angle_from_GP_inc_angle = True)
@@ -466,14 +432,16 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], 28.9855, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["(Nominal) Swath-width [km]"], 37, delta = 1)
         self.assertFalse(obsv_metrics["Coverage [T/F]"])
-    """
+    
+    '''
+    '''
     def test_calc_typ_data_metrics_2(self):
-        ''' SeaSatA typical data-metrics. Truth values taken from the reference (below) are approximately equal to those computed by this
+        """ SeaSatA typical data-metrics. Truth values taken from the reference (below) are approximately equal to those computed by this
             test. There is ambiguity in the actual operating point used in computation of the truth value (eg: exact PRF within
             the given range, pulse widths.
            
             Ref: D. Bickel, B. Brock, and C. Allen, Spaceborne SAR study: LDRD 92 final report, Mar 1993.
-        '''
+        """
         # 
 
         epoch_JDUT1 = 2451623.999630
@@ -488,6 +456,26 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["Incidence angle [deg]"], 23, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["(Nominal) Swath-width [km]"], 37, delta = 1)
         self.assertFalse(obsv_metrics["Coverage [T/F]"])
-    """
+    '''
 
+    def test_get_id(self): #@TODO
+        pass
+
+    def test_get_field_of_view(self): #@TODO
+        pass
+
+    def test_get_scene_field_of_view(self): #@TODO
+        pass
+
+    def test_get_field_of_regard(self): #@TODO
+        pass
+
+    def test_get_orientation(self): #@TODO
+        pass
+
+    def test_get_pointing_option(self): #TODO
+        pass
+    
+    def test_to_dict(self): #@TODO
+        pass
 

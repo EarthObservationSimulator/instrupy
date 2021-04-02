@@ -1178,8 +1178,8 @@ class Maneuver(Entity):
         :paramtype fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
 
         :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the NADIR_POINTING frame, 
-                 and the coresponding spherical geometry specifications.
-        :rtype: list, ViewGeometry
+                 and the coresponding spherical geometry specifications. If invalid or no maneuver, then ``None`` is returned.
+        :rtype: list, ViewGeometry or None
 
         """
         field_of_regard = None 

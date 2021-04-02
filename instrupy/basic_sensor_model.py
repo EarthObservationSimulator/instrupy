@@ -207,15 +207,6 @@ class BasicSensorModel(Entity):
     def __repr__(self):
         return "BasicSensorModel.from_dict({})".format(self.to_dict())
 
-    def __eq__(self, other):
-        """ Simple equality check. Returns True if the class attributes are equal, else returns False. 
-            The derived attributes ``fieldOfView`` and ``fieldOfRegard`` are not checked.
-            Note that the ``_id`` data attribute could be different.
-        """
-        return (self.name == other.name and self.mass == other.mass and self.volume == other.volume and self.power==other.power and self.fieldOfViewGeometry == other.fieldOfViewGeometry and
-                self.orientation == other.orientation and self.maneuver == other.maneuver and self.dataRate == other.dataRate and self.bitsPerPixel ==other.bitsPerPixel and 
-                self.syntheticDataConfig == other.syntheticDataConfig and self.numberDetectorCols == other.numberDetectorCols and self.numberDetectorRows == other.numberDetectorRows)
-
     def calc_data_metrics(self, sc_orbit_state, target_coords):
         """ Calculate typical observation data metrics. This function is invoked by the function ``Instrument.calc_data_metrics(.)`` class in the ``base`` module.
             
@@ -406,33 +397,57 @@ class BasicSensorModel(Entity):
         )
     
     def get_id(self):
-        """ Get the object identifier.
+        """ Get the instrument identifier.
 
-        :returns: Object identifier.
+        :returns: instrument identifier.
         :rtype: str
 
         """
         return self._id
     
     def get_field_of_view(self):
+        """ Get the instrument field-of-view.
+
+        :returns: Instrument field-of-view. 
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
         return self.fieldOfView
 
     def get_scene_field_of_view(self):
+        """ Get the scene-field-of-view (sceneFOV).
+
+        :returns: Scene-field-of-view.
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
         return self.sceneFieldOfView
 
     def get_field_of_regard(self):
-        """ Get the instrument field of regard.
+        """ Get the instrument field of regard. 
 
-        :returns: Field of regard. 
+        :returns: Field of regard (list of ``ViewGeometry`` objects). 
         :rtype: list, :class:`instrupy.util.ViewGeometry`
 
         """
         return self.fieldOfRegard
 
     def get_orientation(self):
+        """ Get the instrument orientation.
+
+        :returns: Instrument orientation.
+        :rtype: :class:`instrupy.util.Orientation`
+
+        """
         return self.orientation
     
     def get_pointing_option(self):
+        """ Get the list of pointing options.
+
+        :returns: List of pointing options.
+        :rtype: list, :class:`instrupy.util.Orientation`
+
+        """
         return self.pointingOption
 
     def get_pixel_config(self):
