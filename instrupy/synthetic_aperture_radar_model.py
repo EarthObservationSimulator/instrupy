@@ -396,7 +396,7 @@ class SyntheticApertureRadarModel(Entity):
         else:
             raise RuntimeError("Unknown SAR scan technique specified.")
         
-        # parse list of pointing options
+        # parse the pointing options as a list of Orientation objects.
         pnt_opt_dict = d.get("pointingOption", None)
         _pointing_option = None
         if pnt_opt_dict:
@@ -551,7 +551,7 @@ class SyntheticApertureRadarModel(Entity):
         
         :paramtype sc_orbit_state: dict
         
-        :param target_coords: Location of the observation. Also sometimes called the Point-Of-Interest (POI).
+        :param target_coords: Location of the observation. Also sometimes the Point-Of-Interest (POI).
 
         Dictionary keys are: 
         
@@ -636,7 +636,6 @@ class SyntheticApertureRadarModel(Entity):
         :rtype: dict
 
         """
-
         inc_angle = np.deg2rad(inc_angle_deg)
         look_angle = np.arcsin(np.sin(inc_angle)*Constants.radiusOfEarthInKM/(Constants.radiusOfEarthInKM + alt_km)) 
         #print("inc_angle", inc_angle*180/np.pi)

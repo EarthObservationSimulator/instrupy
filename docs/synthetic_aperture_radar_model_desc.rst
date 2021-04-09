@@ -230,7 +230,7 @@ Output observation metrics calculation
     swath-width [m], float, meters, Swath-width of the strip of which the imaged pixel is part-off.                                                                                        
     NESZ [dB], float, decibels, The backscatter coefficient of a target for which the signal power level in final image is equal to the noise power level.**Numerically lesser is better.**       
     ground pixel along-track resolution [m], float, meters, Along-track resolution of an ground-pixel centered about observation point.                                                                                                                        
-    Ground Pixel Cross-Track Resolution [m], float, meters, Cross-track pixel resolution of an ground-pixel centered about observation point.     
+    ground Pixel cross-track resolution [m], float, meters, Cross-track pixel resolution of an ground-pixel centered about observation point.     
     PRF [Hz], float, Hertz, Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
 
 Viewing geometry

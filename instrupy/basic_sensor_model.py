@@ -49,9 +49,9 @@ class BasicSensorModel(Entity):
                              Note that this shall be a list in order to accommodate non-intersecting view-geometries.
         :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
-        :ivar pointing_option: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
+        :ivar pointingOption: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
                                The orientation must be specified in the NADIR_POINTING frame.
-        :vartype pointing_option: list, :class:`orbitpy.util.Orientation`
+        :vartype pointingOption: list, :class:`orbitpy.util.Orientation`
 
         :ivar dataRate: Rate of data recorded (Mega bits per sec) during nominal operations.
         :vartype dataRate: float  
@@ -62,10 +62,10 @@ class BasicSensorModel(Entity):
         :ivar bitsPerPixel: Number of bits encoded per pixel of image.
         :vartype bitsPerPixel: int        
 
-        :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame).
+        :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the along-track direction.
         :vartype numberDetectorRows: int
 
-        :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame).
+        :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the cross-track direction.
         :vartype numberDetectorCols: int
 
         :ivar _id: Unique instrument identifier.
@@ -145,6 +145,7 @@ class BasicSensorModel(Entity):
         scene_fov_geom = d.get("sceneFieldOfViewGeometry", instru_fov_geom)  # default sceneFOV geometry is the instrument FOV geometry
         default_orien = dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}) #  default orientation = referenced and aligned to the SC_BODY_FIXED frame.
         
+        # parse the pointing options as a list of Orientation objects.
         pnt_opt_dict = d.get("pointingOption", None)
         _pointing_option = None
         if pnt_opt_dict:
@@ -247,7 +248,7 @@ class BasicSensorModel(Entity):
         :paramtype sc_orbit_state: dict
 
         
-        :param target_coords: Location of the observation. Also sometimes called the Point-Of-Interest (POI).
+        :param target_coords: Location of the observation. Also sometimes the Point-Of-Interest (POI).
 
                             Dictionary keys are: 
                             

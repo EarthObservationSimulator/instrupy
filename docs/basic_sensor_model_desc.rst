@@ -22,8 +22,8 @@ Input JSON format specifications description
     syntheticDataConfig, :ref:`syntheticDataConfig_json_obj`, , Synthetic data configuration.
     dataRate, float, Mega-bits-per-s, Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
-    numberDetectorRows, integer, ,Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). 
-    numberDetectorCols, integer, ,Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). 
+    numberDetectorRows, integer, ,Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the along-track direction.
+    numberDetectorCols, integer, ,Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the cross-track direction.
     
 .. _basic_sensor_data_metrics_calc:
 

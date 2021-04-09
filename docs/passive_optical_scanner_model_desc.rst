@@ -17,17 +17,18 @@ Input JSON format specifications description
    @type, string, ,Must be *Passive Optical Scanner*
    @id, string, , Unique identifier for the instrument.
    name, string, ,Full name of the instrument 
-   acronym, string, ,Acronym or initialism or abbreviation.
    mass, float, kilograms,Total mass of this entity.
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
-   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument with respect to Nadir-frame.
-   fieldOfView, :ref:`fieldOfView_json_obj`, ,Field of view specification of instrument. Only field of view of :code:`"sensorGeometry": "RECTANGULAR"` is accepted.
-   numStripsInScene, int, , Number of consequetive scanned strips in a scene See :ref:`ifov_fov_scenefov_for_desc`.
+   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument.
+   fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
+   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument.
+   maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
+   pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
    dataRate, float, Mega-bits per s, Rate of data recorded during nominal operations.
-   scanTechnique, string, ,Accepted values are ":code:`PUSHBROOM`" or ":code:`WHISKBROOM`" or ":code:`MATRIX_IMAGER`".
-   numberDetectorRowsAT, integer, ,Number of detector rows in along-track direction.
-   numberDetectorColsCT, integer, ,Number of detector columns in cross-track direction.
+   scanTechnique, string, ,Scanning technique. Accepted values are ":code:`PUSHBROOM`" or ":code:`WHISKBROOM`" or ":code:`MATRIX_IMAGER`".
+   numberDetectorRows, integer, ,Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the along-track direction.
+   numberDetectorCols, integer, ,Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the cross-track direction.
    Fnum, float, ,F-number/ F# of lens.
    focalLength, float, meters, Focal length of lens.
    operatingWavelength, float, meters, Center operating wavelength.
@@ -39,15 +40,13 @@ Input JSON format specifications description
    detectorWidth, float, meters,Width of detector element.
    apertureDia, float, meters, Telescope aperture diameter.
    maxDetectorExposureTime, float, seconds, maximum exposure time on the detector elements (optional parameter).
-   snrThreshold, float,, Threshold value of SNR for observation to be classified as 'Valid'
-   considerAtmosLoss, bool,, True/False flag to specify if atmospheric losses should be taken into account using LOWTRAN 3rd party package. Default is `False`.
-   maneuverability, :ref:`maneuverability_json_object`, ,Payload maneuverability (see :ref:`manuv_desc`)
+   atmosLossModel, str,, Specify the atmospheric loss model. Accepted value is 'LOWTRAN7'.
 
 .. figure:: passive_scanner_aperture_figure.png
    :scale: 75 %
    :align: center
 
-   Diagram of rectangular aperture illustrating the input parameters :code:`numberDetectorRowsAT`, :code:`numberDetectorColsCT` and :code:`detectorWidth`.
+   Diagram of rectangular aperture illustrating the input parameters :code:`numberDetectorRows`, :code:`numberDetectorCols` and :code:`detectorWidth`.
 
 .. warning:: Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
              The present version of the instrupy package does **not** check for the consistency of the values.
@@ -87,12 +86,11 @@ Output observation metrics calculation
     :widths: 8,4,4,20
     :header: Metric/Aux data,Data Type,Units,Description 
                                                                                                                                                                                                   
-    Coverage [T/F], string,, Indicates if observation was  possible during the access event  (True/ False).                                                                        
-    Noise-Equivalent delta T [K], float, Kelvin  , Noise Equivalent delta temperature. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
-    DR, float,, Dynamic Range. Is the quotient of the signal and read-out noise electrons the sensor sees between dark and bright scenes.                            
-    SNR, float,, Signal-to-Noise ratio                                                                                                                                 
-    Ground Pixel Along-Track  Resolution [m], float, meters, Along-track pixel resolution                                                                                                                          
-    Ground Pixel Cross-Track Resolution [m] , float, meters, Cross-track pixel resolution 
+    noise-equivalent delta T [K], float, Kelvin  , Noise Equivalent delta temperature. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
+    dynamic range, float,, Dynamic Range. Is the quotient of the signal and read-out noise electrons the sensor sees between dark and bright scenes.                            
+    SNR, float,, Signal-to-Noise ratio.                                                                                                                                 
+    ground pixel along-track resolution [m], float, meters, Spatial resolution of a hypothetical ground-pixel centered about observation point along along-track direction in meters.                                                                                                                         
+    ground pixel cross-track resolution [m] , float, meters, Spatial resolution of a hypothetical ground-pixel centered about observation point along cross-track direction in meters. 
 
 Viewing geometry
 -----------------
@@ -118,8 +116,7 @@ Let :math:`t_{acc}` be the total access time of the instrument over a ground-poi
       
 :math:`t_{acc} = \theta_{AT} \hspace{2mm} h/ v_g`
 
-.. todo:: Update access time calculation for general target geometry. Above formulation is valid only for the Nadir case or for strictly 
-          sidelooking geometry.
+.. todo:: Update access time calculation for general target geometry. Above formulation is valid only for the Nadir case or for strictly sidelooking geometry.
 
 PUSHBROOM
 ^^^^^^^^^^^^^^^^^^
@@ -219,7 +216,7 @@ Calculation of signal-to-noise-ratio
 Calculation of dynamic range
 -----------------------------------
 
-:math:`DR = \dfrac{N_e}{N_r}`
+:math:`dynamic range = \dfrac{N_e}{N_r}`
 
 Calculation of Noise-Equivalent Delta T
 ----------------------------------------

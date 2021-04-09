@@ -1410,13 +1410,13 @@ class GeoUtilityFunctions:
              
         :param gcoord: geographic coordinates of point [latitude [deg] ,longitude [deg], altitude [km]]. Geographic coordinates assume the Earth is a perfect sphere, with radius 
                      equal to its equatorial radius.
-        :paramtype  gcoord: list, float
+        :paramtype  gcoord: list or tuple, (float, float, float)
 
         :param JDtime: Julian Day time.
         :paramtype JDtime: float
 
         :return: A 3-element array of ECI [X,Y,Z] coordinates in kilometers. The TOD epoch is the supplied JDtime.                           
-        :rtype: float
+        :rtype: list, (float, float, float)
 
         .. seealso:: 
             * :mod:`JD2GMST`
