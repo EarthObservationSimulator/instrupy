@@ -43,7 +43,7 @@ class AtmosphericLossModel(EnumEntity):
     :vartype LOWTRAN7: str
     
     """
-    LOWTRAN = "LOWTRAN7"
+    LOWTRAN7 = "LOWTRAN7"
 
 class PassiveOpticalScannerModel(Entity):
     """A passive optical scanner class. Supports following types of passive optical scanners: 
@@ -135,8 +135,11 @@ class PassiveOpticalScannerModel(Entity):
        :ivar maxDetectorExposureTime: Maximum exposure time of detector in seconds.
        :vartype maxDetectorExposureTime: float
        
-       :ivar atmosLossModel: Specify the atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
+       :ivar atmosLossModel: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
        :vartype atmosLossModel: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
+
+       :ivar _id: Unique instrument identifier.
+       :vartype _id: str or int
 
        .. todo:: Accommodate input of specific detectivity D* for infrared detectors
    
@@ -237,6 +240,7 @@ class PassiveOpticalScannerModel(Entity):
             orientation, Referenced and aligned to the SC_BODY_FIXED frame.
             sceneFieldOfViewGeometry, fieldOfViewGeometry
             atmosLossModel, None (i.e. do not consider atmospheric loss).
+            targetBlackBodyTemp, 290 Kelvin
             _id, random string
 
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
@@ -256,9 +260,9 @@ class PassiveOpticalScannerModel(Entity):
             else:
                 _pointing_option = [Orientation.from_dict(pnt_opt_dict)]
 
-        _scan = ScanTech.get(d.get("scan_tech", None))
+        _scan = ScanTech.get(d.get("scanTechnique", None))
         # Only whiskbroom, pushbroom and step-and-stare scan techniques supported.
-        if(_scan == "WHISKBROOM") or (_scan == "PUSHBROOM") or (_scan == "MATRIX_IMAGER"):
+        if(_scan == ScanTech.WHISKBROOM) or (_scan == ScanTech.PUSHBROOM) or (_scan == ScanTech.MATRIX_IMAGER):
 
             # Only rectangular FOV specs supported
             fov_dict = d.get("fieldOfViewGeometry", None)
@@ -282,7 +286,7 @@ class PassiveOpticalScannerModel(Entity):
                         mass = d.get("mass", None),
                         volume = d.get("volume", None),
                         power = d.get("power", None),
-                        orientation = Orientation.from_json(d.get("orientation", None)),
+                        orientation = Orientation.from_json(d.get("orientation", {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"})), # default orientation is referenced and aligned to to the SENSOR_BODY_FIXED frame.
                         fieldOfViewGeometry = fov,
                         sceneFieldOfViewGeometry = SphericalGeometry.from_json(scene_fov_geom), 
                         maneuver= Maneuver.from_json(d.get("maneuver", None)),
@@ -291,7 +295,7 @@ class PassiveOpticalScannerModel(Entity):
                         operatingWavelength = d.get("operatingWavelength", None),
                         bandwidth = d.get("bandwidth", None),
                         quantumEff = d.get("quantumEff", None),
-                        targetBlackBodyTemp = d.get("targetBlackBodyTemp", None),
+                        targetBlackBodyTemp = d.get("targetBlackBodyTemp", 290), # default is 290 K
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         scanTechnique = _scan,
                         opticsSysEff = d.get("opticsSysEff", None),
@@ -308,9 +312,9 @@ class PassiveOpticalScannerModel(Entity):
                         )
 
             else:
-                raise Exception("Error message: Only Rectangular FOV geometries supported for passive-optical scanner instrument type.")
+                raise Exception("Only Rectangular FOV geometries supported for passive-optical scanner instrument type.")
         else:
-            raise Exception("Error message: Please specify scanning technique as one of WHISKBROOM/ PUSHBROOM/ MATRIX_IMAGER.")
+            raise Exception("Please specify scanning technique as one of WHISKBROOM/ PUSHBROOM/ MATRIX_IMAGER.")
 
     def to_dict(self):
         """ Translate the PassiveOpticalScannerModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
@@ -425,7 +429,7 @@ class PassiveOpticalScannerModel(Entity):
         nadir_access_duration_s = np.deg2rad(self.fieldOfView.sph_geom.angle_height)*alt_km/ (GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos,sc_vel) *1e-3) # analytical calculation of the access duration
         
         # The analytically calculated access duration is given as input to the integration time calculations
-        Ti_s = PassiveOpticalScannerModel.calculate_integration_time(self.scanTechnique, self.numberDetectorRows, self.numberDetectorCols, nadir_access_duration_s, iFOV_deg, self.max_det_exp_time, self.fieldOfView.sph_geom.angle_width)
+        Ti_s = PassiveOpticalScannerModel.calculate_integration_time(self.scanTechnique, self.numberDetectorRows, self.numberDetectorCols, nadir_access_duration_s, iFOV_deg, self.maxDetectorExposureTime, self.fieldOfView.sph_geom.angle_width)
         
         Ne = PassiveOpticalScannerModel.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp, 
                                                                        self.apertureDia, self.opticsSysEff, self.quantumEff,  
@@ -438,16 +442,16 @@ class PassiveOpticalScannerModel(Entity):
         Nt = np.sqrt(Nn**2 + self.numOfReadOutE**2)
        
         # signal to noise ratio
-        try:
-            SNR = Ne/ Nt
-        except ZeroDivisionError:
+        if Nt==0:
             SNR = np.NaN
+        else:
+            SNR = Ne/ Nt
 
         # dynamic range of sensor
-        try:
-            DR = Ne/self.numOfReadOutE
-        except ZeroDivisionError:
+        if self.numOfReadOutE==0:
             DR = np.NaN
+        else:
+            DR = Ne/self.numOfReadOutE
 
         # find noise equivalent temperature difference
         Ne_new = PassiveOpticalScannerModel.calculate_number_of_signal_electrons(self.operatingWavelength, self.bandwidth, self.targetBlackBodyTemp + 1,
@@ -458,17 +462,17 @@ class PassiveOpticalScannerModel(Entity):
         deltaN = Ne_new - Ne
 
         # noise-equivalent delta temperature
-        try:
-            NEdeltaT = Nn/ deltaN 
-        except ZeroDivisionError:
-            NEdeltaT = np.NaN      
+        if deltaN==0:
+            NEdeltaT = np.inf
+        else:    
+            NEdeltaT = Nn/ deltaN     
     
         obsv_metrics = {}
-        obsv_metrics["ground pixel along-track resolution [m]"] = res_AT_m
-        obsv_metrics["ground pixel cross-track resolution [m]"] = res_CT_m
-        obsv_metrics["SNR"] = SNR
-        obsv_metrics["dynamic range"] = DR
-        obsv_metrics["noise-equivalent delta T [K]"] = NEdeltaT
+        obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2)
+        obsv_metrics["ground pixel cross-track resolution [m]"] = round(res_CT_m, 2)
+        obsv_metrics["SNR"] = round(SNR, 2)
+        obsv_metrics["dynamic range"] = round(DR, 2)
+        obsv_metrics["noise-equivalent delta T [K]"] = round(NEdeltaT, 5)
 
         return obsv_metrics
 
@@ -533,9 +537,9 @@ class PassiveOpticalScannerModel(Entity):
         return Ti_s
 
     @staticmethod
-    def calculate_number_of_signal_electrons(opWav_m, bw_m, bb_T_K, ap_dia_m, op_tx_fac, qe, tObs_JDUT1,
-                                            obs_pos_km, tar_pos_km, pixel_area_m2, Ti_s, considerAtmosLoss):
-        """Calculate the typical number of signal electrons at the detector due to incoming light energy from a hypothetical pixel centered at the target position.
+    def calculate_number_of_signal_electrons(op_wav_m, bw_m, bb_T_K, ap_dia_m, op_tx_fac, qe, tObs_JDUT1,
+                                            obs_pos_km, tar_pos_km, pixel_area_m2, Ti_s, atmos_loss_model):
+        """Calculate the number of signal electrons at the detector due to incoming light energy from a hypothetical pixel centered at the target position.
            The light energy from the observed pixel is due to the following two sources:
 
            1. Radiant energy from the target by considering the target as a black-body with the supplied black-body temperature. 
@@ -544,8 +548,8 @@ class PassiveOpticalScannerModel(Entity):
              
            See SMAD 3rd edition, Table 9-15 for the forumlation.
            
-           :param opWav_m: Operating wavelength in meters.
-           :paramtype opWav_m: float
+           :param op_wav_m: Operating wavelength in meters.
+           :paramtype op_wav_m: float
 
            :param bw_m: Bandwidth in meters.
            :paramtype bw_m: float
@@ -577,23 +581,24 @@ class PassiveOpticalScannerModel(Entity):
            :param Ti_s: Integration time in seconds.
            :paramtype Ti_s: float
 
-           :param atmosLossModel: Specify the atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
-           :paramtype atmosLossModel: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
+           :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
+           :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
 
-           :return: Number of electrons
+           :return: Number of signal electrons.
            :rtype: float
 
         """
         obs2tar_vec_km = np.array(tar_pos_km) - np.array(obs_pos_km)
         distance_km = np.linalg.norm(obs2tar_vec_km)
         alt_km = np.linalg.norm(obs_pos_km) - Constants.radiusOfEarthInKM
-        lookAngle_rad = np.arccos(np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km)))
-        obsIncAng_rad = np.arcsin(np.sin(lookAngle_rad)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
+        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km)))
+        obs_inc_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
  
         # estimate total radiance from the surface [photons/s/m2/sr] to the direction of the observer                     
-        Lint = PassiveOpticalScannerModel.radianceWithEarthAsBlackBodyRadiator(opWav_m, bw_m, bb_T_K, obsIncAng_rad, considerAtmosLoss) + PassiveOpticalScannerModel.radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, pixel_area_m2, considerAtmosLoss)
+        Lint = PassiveOpticalScannerModel.radiance_with_earth_as_bb_radiator(op_wav_m, bw_m, bb_T_K, obs_inc_angle, atmos_loss_model) + \
+               PassiveOpticalScannerModel.radiance_with_earth_as_reflector(op_wav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, pixel_area_m2, atmos_loss_model)
 
-        # total radiated, reflected photon rate
+        # total radiated and reflected photon rate
         L = Lint * pixel_area_m2
         
         # input photons rate at the sensor         
@@ -610,185 +615,187 @@ class PassiveOpticalScannerModel(Entity):
         return Ne
 
     @staticmethod
-    def radianceWithEarthAsBlackBodyRadiator(opWav_m, bw_m, bb_T_K, obsIncAng_rad, considerAtmosLoss):
+    def radiance_with_earth_as_bb_radiator(wav_m, bw_m, bb_T_K, obs_inc_angle, atmos_loss_model):
         """ Determine radiance from Earth as blackbody radiator in bandwidth of interest.
             Assumes the Earth as blackbody with user-input equivalent black-body temperature.
             Also assumes Earth as Lambertian surface obeying Lambert's coside law.
 
-            :param opWav_m: operating wavelength [m]
-            :paramtype opWav_m: float
+        :param wav_m: Wavelength of interest in meters.
+        :paramtype wav_m: float
 
-            :param bw_m: bandwidth [m]
-            :paramtype bw_m: float
+        :param bw_m: Bandwidth in meters.
+        :paramtype bw_m: float
 
-            :param bb_T_K: black-body temperature [K]
-            :paramtype bb_T_K: float
+        :param bb_T_K: Black-body temperature in Kelvin.
+        :paramtype bb_T_K: float
 
-            :param obsIncAng_rad: observation incidence angle in radians
-            :paramtype obsIncAng_rad: float
+        :param obs_inc_angle: Observation incidence angle in radians.
+        :paramtype obs_inc_angle: float
 
-            :param considerAtmosLoss: Flag to specify if atmospheric loss is to be considered. 
-            :paramtype considerAtmosLoss: bool
-    
-            :return: radiance from Earth [photons/s/m2/sr]
-            :rtype: float            
+        :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
+        :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
+
+        :return: radiance from Earth [photons/s/m2/sr]
+        :rtype: float            
           
         """
         # Ensure that observation incidence angle is input in an positive angular domain
-        while(obsIncAng_rad < 0):
-            obsIncAng_rad = obsIncAng_rad + (2 * np.pi )
-        obsIncAng_rad = obsIncAng_rad % (np.pi*2)
+        while(obs_inc_angle < 0):
+            obs_inc_angle = obs_inc_angle + (2 * np.pi )
+        obs_inc_angle = obs_inc_angle % (np.pi*2)
         
         # Observation incidence angle must be in range 270 deg to 90 deg deg, else line-of-sight doesn't exist.
-        if((obsIncAng_rad > np.pi/2) and (obsIncAng_rad < (3/2) * np.pi)):
+        if((obs_inc_angle > np.pi/2) and (obs_inc_angle < (3/2) * np.pi)):
             raise Exception("Observation incidence angle should be in range -90 deg to 90 deg.")
         
-        Lint_ER = PassiveOpticalScannerModel.planck_photon_integral_with_wavlen_dependent_atmos_loss_1((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), bb_T_K, obsIncAng_rad, considerAtmosLoss)
+        Lint_ER = PassiveOpticalScannerModel.planck_photon_integral_with_wavelen_dependent_atmos_loss_1((wav_m - bw_m*0.5), (wav_m + bw_m*0.5), bb_T_K, obs_inc_angle, atmos_loss_model)
         
         # Assume Lambertian surface obeying Lambert's cosine law.
-        Lint_ER = Lint_ER * np.cos(obsIncAng_rad)  
+        Lint_ER = Lint_ER * np.cos(obs_inc_angle)  
 
         return Lint_ER 
 
     @staticmethod
-    def radianceWithEarthAsReflector(opWav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, considerAtmosLoss):
-        """ Determine radiance due to reflection of solar radiation off the Earths surface. Reflectance from the Earth surface is taken as **1**.        
+    def radiance_with_earth_as_reflector(wav_m, bw_m, tObs_JDUT1, obs_pos_km, tar_pos_km, obs_area_m2, atmos_loss_model):
+        """ Determine radiance due to reflection of solar radiation off the Earths surface. Reflectance from the Earth surface is taken to be unity.        
 
-            :param opWav_m: operating wavelength [m]
-            :paramtype opWav_m: float
+        :param wav_m: Wavelength of interest in meters.
+        :paramtype wav_m: float
 
-            :param bw_m: bandwidth [m]
-            :paramtype bw_m: float
+        :param bw_m: Bandwidth in meters.
+        :paramtype bw_m: float
 
-            :param tObs_JDUT1: observation time [Julian Day UT1]
-            :paramtype tObs_JDUT1: float
+        :param tObs_JDUT1: observation time [Julian Day UT1]
+        :paramtype tObs_JDUT1: float
 
-            :param obs_pos_km: observer (satellite) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
-            :paramtype obs_pos_km: list, float
+        :param obs_pos_km: observer (satellite) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
+        :paramtype obs_pos_km: list, float
 
-            :param tar_pos_km: target (observed ground pixel) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
-            :paramtype tar_pos_km: list, float
+        :param tar_pos_km: target (observed ground pixel) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
+        :paramtype tar_pos_km: list, float
 
-            :param obs_area_m2: area of observed target (m2)
-            :paramtype obs_area_m2: float
-            
-            :param considerAtmosLoss: Flag to specify that atmos loss is to be considered. 
-            :paramtype considerAtmosLoss: bool
-
-            .. todo:: account for wavelength dependent, surface dependent reflectance of Earth
+        :param obs_area_m2: area of observed target (m2)
+        :paramtype obs_area_m2: float
+        
+        :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
+        :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
         
         """
         obs2tar_vec_km = np.array(tar_pos_km) - np.array(obs_pos_km)
         alt_km = np.linalg.norm(obs_pos_km) - Constants.radiusOfEarthInKM
-        lookAngle_rad = np.arccos(np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km)))
-        obsIncAng_rad = np.arcsin(np.sin(lookAngle_rad)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
+        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km)))
+        obs_inc_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
 
         # calculate solar incidence angle
         [solar_inc_angle_rad, solar_distance] = GeoUtilityFunctions.compute_sun_zenith(tObs_JDUT1, tar_pos_km)
         if(solar_inc_angle_rad is None) or (solar_inc_angle_rad >= np.pi/2): # check if Sun is below horizon
             return 1e-19 # return small number
-        ''' 
+        """
         Calculate radiance from Sun [photons/s/m2/sr]. Note that here the two-way atmospheric losses (Sun to Ground to Observer) is taken into account, not just one way (Sun to Ground).
         Strictly speaking just the Sun to Ground atmospheric loss should be taken into account at this stage and a later stage the Ground to Sun atmos
         loss should be taken into account. Mathematically the below implementation is correct, and is favored since it is easier to code. 
-        '''
-        Lint = PassiveOpticalScannerModel.planck_photon_integral_with_wavlen_dependent_atmos_loss_2((opWav_m - bw_m*0.5), (opWav_m + bw_m*0.5), Constants.SunBlackBodyTemperature, solar_inc_angle_rad, obsIncAng_rad, considerAtmosLoss)
+        """
+        Lint = PassiveOpticalScannerModel.planck_photon_integral_with_wavelen_dependent_atmos_loss_2((wav_m - bw_m*0.5), (wav_m + bw_m*0.5), Constants.SunBlackBodyTemperature, solar_inc_angle_rad, obs_inc_angle, atmos_loss_model)
 
         # Calculate downwelling radiance assuming Lambertian surface obeying Lambert's cosine law.
-        Lint_dwnwell = Lint * np.cos(solar_inc_angle_rad)  
+        Lint_downwell = Lint * np.cos(solar_inc_angle_rad)  
 
         # calculate downwelling photon rate 
-        Pin_dwnwell = Lint_dwnwell * obs_area_m2 * (np.pi*(Constants.SolarRadius /(solar_distance*1e3))**2) # [photons/s]      
+        Pin_downwell = Lint_downwell * obs_area_m2 * (np.pi*(Constants.SolarRadius /(solar_distance*1e3))**2) # [photons/s]      
    
         # upwelling photon rate (surface reflectivity = 1) 
-        Pin_upwell = Pin_dwnwell
+        Pin_upwell = Pin_downwell
 
         # calculate the reflected upwelling radiance assuming Lambertian surface with unit reflectivity
-        Lint_upWell = Pin_upwell * np.cos(obsIncAng_rad)  * 1/ (4*np.pi * obs_area_m2) 
+        Lint_upWell = Pin_upwell * np.cos(obs_inc_angle)  * 1/ (4*np.pi * obs_area_m2) 
 
         return Lint_upWell # [photons/s/m2/sr]
 
     @staticmethod
-    def planck_photon_integral_with_wavlen_dependent_atmos_loss_1(wav_low_m, wav_high_m, bb_T_K, obs_zen_rad, considerAtmosLoss):
+    def planck_photon_integral_with_wavelen_dependent_atmos_loss_1(wav_low_m, wav_high_m, bb_T_K, obs_zen_rad, atmos_loss_model):
         """ Blackbody integral of spectral photon radiance in given bandwidth of interest, taking into account
             atmospheric losses. 
+        
+        :param wav_low_m: lower wavelength in bandwidth of interest [m]
+        :paramtype wav_low_m: float
 
-            :param wav_low_m: lower wavelength in bandwidth of interest [m]
-            :paramtype wav_low_m: float
+        :param wav_high_m: higher wavelength in bandwidth of interest  [m]
+        :paramtype wav_high_m: float
 
-            :param wav_high_m: higher wavelength in bandwidth of interest  [m]
-            :paramtype wav_high_m: float
+        :param bb_T_K: black-body temperature [K]
+        :paramtype bb_T_K: float
 
-            :param bb_T_K: black-body temperature [K]
-            :paramtype bb_T_K: float
+        :param obs_zen_rad: zenith angle of observer
+        :paramtype obs_zen_rad: float
 
-            :param obs_zen_rad: zenith angle of observer
-            :paramtype obs_zen_rad: float
+        :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
+        :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
 
-            :param considerAtmosLoss: Flag to specify that atmos loss is to be consdered. 
-            :paramtype considerAtmosLoss: bool
-
-            :return: radiance [photons/s/m2/sr] after consideration of atmospheric losses
-            :rtype: float
+        :return: Radiance [photons/s/m2/sr] after consideration of atmospheric losses.
+        :rtype: float
         
         """    
         Lint = 0 # integrated radiance
-        if(considerAtmosLoss is True):
+        if(atmos_loss_model == AtmosphericLossModel.LOWTRAN7):
             TR = GeoUtilityFunctions.get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zen_rad)
-            trEff = TR['transmission'][0].values[:,0]
+            tr_eff = TR['transmission'][0].values[:,0]
             wav_m = TR['wavelength_nm'].values * 1e-9
+            #print(wav_m)
+            #print(tr_eff)
+            # The array of wavelengths are not necessarily bound within [wav_low_m, wav_high_m]. This could lead to errors. Hence make new modified array of wavelengths. 
+            wav_m[0] = wav_high_m
+            wav_m[-1] = wav_low_m
             for indx in range(0,len(wav_m)-1):
-                Lint = Lint + 0.5*(trEff[indx]+trEff[indx+1])*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bb_T_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx+1], bb_T_K))
+                Lint = Lint + 0.5*(tr_eff[indx]+tr_eff[indx+1])*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bb_T_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx+1], bb_T_K))
         else:
             Lint = (PassiveOpticalScannerModel.planck_photon_integral(wav_high_m, bb_T_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_low_m, bb_T_K))
+
         return Lint
 
     @staticmethod
-    def planck_photon_integral_with_wavlen_dependent_atmos_loss_2(wav_low_m, wav_high_m, bb_T_K, sun_zen_rad, obs_zen_rad, considerAtmosLoss):
+    def planck_photon_integral_with_wavelen_dependent_atmos_loss_2(wav_low_m, wav_high_m, bb_T_K, sun_zen_rad, obs_zen_rad, atmos_loss_model):
         """ Blackbody integral of reflected spectral photon radiance in given bandwidth of interest, taking into account
-            atmospheric losses.  The two-way atmospheric losses (Sun to Ground to Observer) is taken into account, not just one way 
+            atmospheric losses.  The two-way atmospheric losses (Sun to Ground, Ground to Observer) is taken into account, not just one way 
             (Sun to Ground).  Strictly speaking just the Sun to Ground atmospheric loss should be taken into account at this stage
-            and a later stage the Ground to Sun atmos loss should be taken into account. 
-            Mathmatically the below implementation is correct, and is favored since it is easier to code. 
+            and at later stage the Ground to Sun atmos loss should be taken into account. 
+            Mathematically the below implementation is correct, and is favored since it is easier to code. 
 
-            :param wav_low_m: lower wavelength in bandwidth of interest [m]
-            :paramtype wav_low_m: float
+        :param wav_low_m: lower wavelength in bandwidth of interest in meters.
+        :paramtype wav_low_m: float
 
-            :param wav_high_m: higher wavelength in bandwidth of interest  [m]
-            :paramtype wav_high_m: float
+        :param wav_high_m: higher wavelength in bandwidth of interest in meters.
+        :paramtype wav_high_m: float
 
-            :param bb_T_K: black-body temperature [K]
-            :paramtype bb_T_K: float
+        :param bb_T_K: Black-body temperature in degrees.
+        :paramtype bb_T_K: float
 
-            :param sun_zen_rad: zenith angle of Sun
-            :paramtype sun_zen_rad: float
+        :param sun_zen_rad: Zenith angle of Sun.
+        :paramtype sun_zen_rad: float
 
-            :param obs_zen_rad: zenith angle of observer
-            :paramtype obs_zen_rad: float
+        :param obs_zen_rad: Zenith angle of observer.
+        :paramtype obs_zen_rad: float
 
-            :param considerAtmosLoss: Flag to specify that atmos loss is to be considered. 
-            :paramtype considerAtmosLoss: bool
+        :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
+        :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
 
-            :return: radiance [photons/s/m2/sr] after consideration of atmospheric losses
-            :rtype: float
+        :return: Radiance [photons/s/m2/sr] after consideration of atmospheric losses.
+        :rtype: float
         
         """          
         Lint = 0 # integrated radiance
-        if(considerAtmosLoss is True):
+        if(atmos_loss_model == AtmosphericLossModel.LOWTRAN7):
             TR_SunPath = GeoUtilityFunctions.get_transmission_Obs2Space(wav_low_m, wav_high_m, sun_zen_rad)
             TR_ObsPath = GeoUtilityFunctions.get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zen_rad)
             
-            trEff_SunPath = TR_SunPath['transmission'][0].values[:,0]
-            trEff_ObsPath = TR_ObsPath['transmission'][0].values[:,0]
+            tr_eff_sun_path = TR_SunPath['transmission'][0].values[:,0]
+            tr_eff_obs_path = TR_ObsPath['transmission'][0].values[:,0]
             wav_m = TR_SunPath['wavelength_nm'].values * 1e-9
             for indx in range(0,len(wav_m)-1):
-                Lint = Lint + (0.5*(trEff_SunPath[indx]+trEff_SunPath[indx+1]))*(0.5*(trEff_ObsPath[indx]+trEff_ObsPath[indx+1]))*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bb_T_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx+1], bb_T_K))
+                Lint = Lint + (0.5*(tr_eff_sun_path[indx]+tr_eff_sun_path[indx+1]))*(0.5*(tr_eff_obs_path[indx]+tr_eff_obs_path[indx+1]))*(PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx], bb_T_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_m[indx+1], bb_T_K))
         else:
             Lint = (PassiveOpticalScannerModel.planck_photon_integral(wav_high_m, bb_T_K) - PassiveOpticalScannerModel.planck_photon_integral(wav_low_m, bb_T_K))
 
         return Lint
-
-
     
     @staticmethod
     def planck_photon_integral(lambda_m, T_K):
@@ -796,16 +803,16 @@ class PassiveOpticalScannerModel(Entity):
             Algorithm from `Spectral Calc <http://www.spectralcalc.com/blackbody/CalculatingBlackbodyRadianceV2.pdf>`_
             Follows Widger and Woodall, Bulletin of the American Meteorological Society, Vol. 57, No. 10, pp. 1217
 
-            :param lambda_m: wavelength (m)
-            :paramtype lambda_m: float
+        :param lambda_m: wavelength (m)
+        :paramtype lambda_m: float
 
-            :param T_K: Equivalent blackbody absolute temperature of body (Kelvin).
+        :param T_K: Equivalent blackbody absolute temperature of body (Kelvin).
 
-            :returns: integrated radiance from supplied wavelength to zero-wavelegnth (photons/s/m2/sr)
-                      
-                      .. warning:: note that it is **not** from supplied wavelength to infinity wavelength.
+        :returns: integrated radiance from supplied wavelength to zero-wavelegnth (photons/s/m2/sr)
+                    
+                    .. warning:: note that it is **not** from supplied wavelength to infinity wavelength.
 
-            :rtype: float
+        :rtype: float
         
         """
         try:

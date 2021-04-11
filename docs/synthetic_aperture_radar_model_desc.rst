@@ -448,7 +448,7 @@ Glossary
 .. note:: The same variable names as in the references are followed as much as possible. However it becomes difficult when merging the formulation in
           case of multiple references. 
 
-* :math:`\mathbf{R_S}`: Distance to the satellite from origin in an Earth centered frame. 
+* :math:`R_S`: Distance to the satellite from origin in an Earth centered frame. 
 * :math:`\theta_i`: Incidence angle at the target ground pixel.
 * :math:`R_E`: Nominal equatorial radius of Earth.
 * :math:`c`: Speed of light.

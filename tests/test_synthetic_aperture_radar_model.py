@@ -72,7 +72,6 @@ import json
 import numpy as np
 import sys, os
 
-
 from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel, ScanTechSAR, PolTypeSAR, DualPolPulseConfig, SwathTypeSAR
 from instrupy.util import Orientation, SphericalGeometry, ViewGeometry, FileUtilityFunctions, Maneuver
 

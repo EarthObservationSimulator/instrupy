@@ -213,7 +213,7 @@ class SyntheticApertureRadarModel(Entity):
         :vartype numSubSwaths: int or None
 
         :ivar _id: Unique instrument identifier.
-        :vartype _id: str
+        :vartype _id: str or int
 
         .. note:: The actual pulse-repetition frequency during the calculation of the observation metrics is taken as the highest PRF within allowed range of PRFs. 
                   The highest PRF is chosen since it maximizes NESZ.

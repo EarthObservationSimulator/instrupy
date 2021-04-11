@@ -69,7 +69,7 @@ class BasicSensorModel(Entity):
         :vartype numberDetectorCols: int
 
         :ivar _id: Unique instrument identifier.
-        :vartype _id: str
+        :vartype _id: str or int
 
         .. figure:: detector_config.png
             :scale: 75 %

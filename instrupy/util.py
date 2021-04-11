@@ -26,7 +26,7 @@ import metpy.interpolate
 from collections import namedtuple
 
 from math import radians, cos, sin, asin, sqrt
-#import lowtran #TEMPORARY: PLEASE REMOVE if commented
+import lowtran #TEMPORARY: PLEASE REMOVE if commented
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.
@@ -1685,17 +1685,16 @@ class GeoUtilityFunctions:
         return {"derived_obsTime_JDUT1": derived_obsTime_JDUT1, "derived_obs_pos_km": derived_obs_pos_km.tolist(), "derived_range_vec_km": derived_range_vec_km.tolist(), "derived_alt_km": derived_alt_km, "derived_incidence_angle_rad": derived_incidence_angle_rad}
       
     @staticmethod
-    def get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zenith_angle_rad):
+    def get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zenith_angle_rad, wav_step_percm=5):
         ''' Observer to space transmission loss
 
-            :returns: transmissitivity in steps of 20cm-1
+            :returns: transmissitivity in steps of 5cm-1
             :rtype: array, float
         '''        
         obs_alt_km = 0
         wav_low_nm = wav_low_m*1e9
         wav_high_nm = wav_high_m*1e9
         obs_zenith_angle_deg = np.rad2deg(obs_zenith_angle_rad)
-        wav_step_percm = 40
         
         c1 = {'model': 6, # US standard
             'h1': obs_alt_km,
