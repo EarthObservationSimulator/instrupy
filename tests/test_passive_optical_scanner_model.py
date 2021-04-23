@@ -72,7 +72,6 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
             else:
                 self.fail(msg)
 
-    '''
     def test_from_json_basic(self):        
         # Test: Typical case      
         firesat = PassiveOpticalScannerModel.from_json(firesat_json)
@@ -416,9 +415,8 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
         # A (positive) deviation is expected since SMAD does not consider the energy from Sun reflected off Sun
         self.assertGreater(obsv_metrics["SNR"], 88)
         self.assertGreater(obsv_metrics["dynamic range"], 332.9)
-        self.assertAlmostEqual(obsv_metrics["noise-equivalent delta T [K]"], 0.3 , places=2)
-
-        self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 31.34, 'ground pixel cross-track resolution [m]': 32.91, 'SNR': 148.06, 'dynamic range': 901.16, 'noise-equivalent delta T [K]': 0.30254})
+        self.assertAlmostEqual(obsv_metrics["noise-equivalent delta T [K]"], 0.3 , delta=0.01)
+        self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 31.34, 'ground pixel cross-track resolution [m]': 32.91, 'SNR': 148.15, 'dynamic range': 902.27, 'noise-equivalent delta T [K]': 0.30609})
 
 
         # @TODO, make test with satellite in night region, thus no reflected energy of Sun. Result should match SMAD.
@@ -480,7 +478,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
         landsat_tirs_band1 = PassiveOpticalScannerModel.from_dict(landsat_tirs_band1_dict)
         obsv_metrics = landsat_tirs_band1.calc_data_metrics(sc_orbit_state, target_coords)
         self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 98.78, 'ground pixel cross-track resolution [m]': 98.92, 'SNR': 1610.69, 'dynamic range': 129736.13, 'noise-equivalent delta T [K]': 0.03895})
-    ''' 
+ 
     def test_calc_data_metrics_OLIBlueBand_precomputed(self):
         """  Model instrument with OLI Blue band specs (Optical, pushbroom) and test with the results as computed on 4 April 2021.
 

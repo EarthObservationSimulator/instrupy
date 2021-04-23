@@ -12,7 +12,7 @@ from collections import namedtuple
 import copy
 
 from .basic_sensor_model import BasicSensorModel
-#from .passive_optical_scanner_model import PassiveOpticalScannerModel
+from .passive_optical_scanner_model import PassiveOpticalScannerModel
 from .synthetic_aperture_radar_model import SyntheticApertureRadarModel
 
 class InstrumentModelFactory:
@@ -38,7 +38,7 @@ class InstrumentModelFactory:
     def __init__(self):
         self._creators = {}
         self.register_instrument_model('Basic Sensor', BasicSensorModel)
-        #self.register_instrument_model('Passive Optical Scanner', PassiveOpticalScannerModel)
+        self.register_instrument_model('Passive Optical Scanner', PassiveOpticalScannerModel)
         self.register_instrument_model('Synthetic Aperture Radar', SyntheticApertureRadarModel)
 
     def register_instrument_model(self, _type, creator):

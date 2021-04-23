@@ -6,6 +6,8 @@ import random
 
 from instrupy import InstrumentModelFactory, Instrument
 from instrupy.basic_sensor_model import BasicSensorModel
+from instrupy.passive_optical_scanner_model import PassiveOpticalScannerModel
+from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel
 from instrupy.util import SphericalGeometry, Orientation, ViewGeometry, Maneuver 
 
 class TestInstrumentModelFactory(unittest.TestCase):
@@ -23,7 +25,10 @@ class TestInstrumentModelFactory(unittest.TestCase):
         # test the built-in instrumnet models are registered
         self.assertIn('Basic Sensor', factory._creators)
         self.assertEqual(factory._creators['Basic Sensor'], BasicSensorModel)
-        # @TODO: Add checks of PassiveOpticalScannerModel, SyntheticApertureRadarModel
+        self.assertIn('Passive Optical Scanner', factory._creators)
+        self.assertEqual(factory._creators['Passive Optical Scanner'], PassiveOpticalScannerModel)
+        self.assertIn('Synthetic Aperture Radar', factory._creators)
+        self.assertEqual(factory._creators['Synthetic Aperture Radar'], SyntheticApertureRadarModel)
     
     def test_register_instrument_model(self):
         factory = InstrumentModelFactory()
@@ -33,7 +38,10 @@ class TestInstrumentModelFactory(unittest.TestCase):
         # test the built-in instrumnet models remain registered
         self.assertIn('Basic Sensor', factory._creators)
         self.assertEqual(factory._creators['Basic Sensor'], BasicSensorModel)
-        # @TODO: Add checks of PassiveOpticalScannerModel, SyntheticApertureRadarModel
+        self.assertIn('Passive Optical Scanner', factory._creators)
+        self.assertEqual(factory._creators['Passive Optical Scanner'], PassiveOpticalScannerModel)
+        self.assertIn('Synthetic Aperture Radar', factory._creators)
+        self.assertEqual(factory._creators['Synthetic Aperture Radar'], SyntheticApertureRadarModel)
 
     def test_get_instrument_model(self):
         factory = InstrumentModelFactory()
@@ -45,7 +53,15 @@ class TestInstrumentModelFactory(unittest.TestCase):
         bs_model = factory.get_instrument_model(specs)
         self.assertIsInstance(bs_model, BasicSensorModel)
         
-        # @TODO: Add checks of PassiveOpticalScannerModel, SyntheticApertureRadarModel
+        # PassiveOpticalScannerModel, 
+        specs = {"@type": 'Passive Optical Scanner', 'scanTechnique': 'PUSHBROOM', "numberDetectorRows":1, "numberDetectorCols":500,  "fieldOfViewGeometry":{"shape":"rectangular", "angleWidth": 5, "angleHeight": 5}} # in practice additional instrument specs shall be present in the dictionary
+        ps_model = factory.get_instrument_model(specs)
+        self.assertIsInstance(ps_model, PassiveOpticalScannerModel)
+
+        # SyntheticApertureRadarModel
+        specs = {"@type": 'Synthetic Aperture Radar', "minimumPRF": 2000, "maximumPRF": 8000, "operatingFrequency": 9.6e9, "antennaHeight":5, "antennaWidth":0.5} # in practice additional instrument specs shall be present in the dictionary
+        sar_model = factory.get_instrument_model(specs)
+        self.assertIsInstance(sar_model, SyntheticApertureRadarModel)
 
         # DummyNewInstrument
         specs = {"@type": 'New Instrument 2021'} # in practice additional instrument specs shall be present in the dictionary
@@ -369,7 +385,6 @@ class TestInstrument(unittest.TestCase):
         
         # no input mode-id
         obsv_metrics = TestInstrument.bs1.calc_data_metrics(None, SpacecraftOrbitState, TargetCoords)
-        self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], 500, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 0, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], 0, delta = 0.1)
@@ -377,7 +392,6 @@ class TestInstrument(unittest.TestCase):
 
         # correct mode-id
         obsv_metrics = TestInstrument.bs1.calc_data_metrics("0", SpacecraftOrbitState, TargetCoords)
-        self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], 500, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 0, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], 0, delta = 0.1)
@@ -385,7 +399,6 @@ class TestInstrument(unittest.TestCase):
 
          # in-correct mode-id
         obsv_metrics = TestInstrument.bs1.calc_data_metrics("abc", SpacecraftOrbitState, TargetCoords)
-        self.assertTrue(obsv_metrics["coverage [T/F]"])
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], 500, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 0, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], 0, delta = 0.1)

@@ -906,7 +906,7 @@ class SyntheticApertureRadarModel(Entity):
         
         #print("PRFmax: ", PRFmax)
         #print("PRFmin: ", PRFmin)
-        
+
         f_P = None   # Note that this is the Master PRF
         # Find the highest possible prf within the input prf range which allows for unambiguous echo detection. 
         for _f_P in range(int(f_P_max), int(f_P_min), -1): # step down in steps of 1 Hz
