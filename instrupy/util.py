@@ -20,6 +20,10 @@ import shapely
 import cartopy.geodesic
 import math
 import json
+import copy
+import scipy.interpolate
+import metpy.interpolate
+from collections import namedtuple
 
 from math import radians, cos, sin, asin, sqrt
 import lowtran #TEMPORARY: PLEASE REMOVE if commented
@@ -152,91 +156,283 @@ class EnumEntity(str, Enum):
             except: return None
 
 class Constants(object):
-    """ Enumeration of various constants. Unless indicated otherwise, the constants 
+    """ Collection of various frequently utilized constants. Unless indicated otherwise, the constants 
         are in S.I. units. 
     """
-    radiusOfEarthInKM = 6378.137 # Nominal equatorial radius of Earth
-    speedOfLight = scipy.constants.speed_of_light
-    GMe = 3.986004418e14*1e-9 # product of Gravitaional constant and Mass of Earth [km^3 s^-2]
+    radiusOfEarthInKM = 6378.137 # [km] Nominal equatorial radius of Earth
+    speedOfLight = scipy.constants.speed_of_light# [meters per second]
+    GMe = 3.986004418e14*1e-9 # [km^3 s^-2] product of Gravitational constant and Mass of Earth 
     Boltzmann = scipy.constants.physical_constants['Boltzmann constant'][0]
-    angularSpeedofEarthInRADpS = 7292115e-11 # WGS-84 nominal mean angular velocity of Earth
+    angularSpeedOfEarthInRadPerSec = 7292115e-11 # [rad per sec] WGS-84 nominal mean angular velocity of Earth
     Planck = scipy.constants.physical_constants['Planck constant'][0]
-    SunBlackBodyTemperature = 6000.0 # Sun black body temperature in Kelvin
-    SolarRadius = 6.95700e8 # Solar radius
+    SunBlackBodyTemperature = 6000.0 # [Kelvin] Sun black body temperature
+    SolarRadius = 6.95700e8 # [meters] Solar radius
 
 class SyntheticDataConfiguration(Entity):
-    def __init__(self, sourceFilePaths=None, environVar=None, interplMethod=None):
-        self.sourceFilePaths = sourceFilePaths if sourceFilePaths is not None else list()
-        self.environVar = environVar if environVar is not None else None 
-        self.interplMethod = interplMethod if interplMethod is not None else None
+    """ Class to handle configuration of synthetic data.
+
+    :ivar sourceFilePaths: List of filepaths of the science-data files in NetCDF format. Each file corresponds to a specific (forecast/analysis) time.
+    :vartype sourceFilePaths: list, str
+
+    :ivar geophysicalVar: Geophysical variable (name as present in the source NetCDF file) to be used for the synthetic data.
+    :vartype geophysicalVar: str
+
+    :ivar interpolMethod: Interpolation method to be employed while spatially interpolating the source data onto the pixel-positions.
+    :vartype interpolMethod: :class:`instrupy.util.SyntheticDataConfiguration.InterpolationMethod`
+
+    :ivar _id: Unique identifier.
+    :vartype _id: str
+    """
+
+    class InterpolationMethod(EnumEntity):
+        """ Enumeration of recognized interpolation methods which can be used for synthetic data production.
+        """
+        SCIPY_LINEAR = "SCIPY_LINEAR"
+        METPY_LINEAR = "METPY_LINEAR"
+
+    def __init__(self, sourceFilePaths=None, geophysicalVar=None, interpolMethod=None, _id=None):
+        
+        self.sourceFilePaths = sourceFilePaths if sourceFilePaths is not None else None
+        if(not isinstance(self.sourceFilePaths, list)):
+            self.sourceFilePaths = [self.sourceFilePaths]
+        self.geophysicalVar = str(geophysicalVar) if geophysicalVar is not None else None 
+        self.interpolMethod = SyntheticDataConfiguration.InterpolationMethod.get(interpolMethod) if interpolMethod is not None else None
+
+        self.interpolators = {"SCIPY_LINEAR": SyntheticDataInterpolator.scipy_linear, "METPY_LINEAR": SyntheticDataInterpolator.metpy_linear} # list of available interpolators
+
+        super(SyntheticDataConfiguration, self).__init__(_id, "SyntheticDataConfiguration")
     
     @staticmethod
     def from_dict(d):
-        return SyntheticDataConfiguration(sourceFilePaths = d.get("sourceFilePaths", None), 
-                                          environVar      = d.get("environVar", None),
-                                          interplMethod    = d.get("interplMethod", None))
+        """ Construct an SyntheticDataConfiguration object from a dictionary.
+
+        :param d: Dictionary containing the synthetic data config specifications.
+        :paramtype d: dict
+    
+        :return: Parsed python object. 
+        :rtype: :class:`instrupy.util.SyntheticDataConfiguration`
+        """
+        return SyntheticDataConfiguration(sourceFilePaths   = d.get("sourceFilePaths", None), 
+                                           geophysicalVar   = d.get("geophysicalVar", None),
+                                           interpolMethod   = d.get("interpolMethod", None),
+                                                      _id   = d.get("@id", None))
 
     def to_dict(self):
-        """ Return data members of the object as python dictionary. 
+        """ Translate the SyntheticDataConfiguration object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-            :return: SyntheticDataConfiguration object as python dictionary
-            :rtype: dict
+        :return: SyntheticDataConfiguration object as python dictionary
+        :rtype: dict
         """
-        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, "environVar": self.environVar, "interplMethod": self.interplMethod}
+        syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, 
+                            "geophysicalVar": self.geophysicalVar, 
+                            "interpolMethod": self.interpolMethod,
+                            "@id": self._id
+                           }
         return syndataconf_dict
+    
+    def get_interpolator(self):
+        """ Get the interpolator associated with the configured interpolation method.
 
-class ManueverType(EnumEntity):
-    """Enumeration of recognized manuvever types"""
-    FIXED = "FIXED"
-    CONE = "CONE",
-    ROLLONLY = "ROLLONLY",
-    YAW180 = "YAW180",
-    YAW180ROLL = "YAW180ROLL"
+        :return: Interpolation function.
+        :rtype: function
 
-class OrientationConvention(EnumEntity):
-    """Enumeration of recognized instrument orientation conventions."""
-    XYZ = "XYZ"
-    NADIR = "NADIR"
-    SIDE_LOOK = "SIDE_LOOK"
+        """
+        interp = self.interpolators.get(self.interpolMethod.value)
+        if not interp:
+            print('{} interpolation method was not recognized.'.format(self.interpolMethod.value))
+            raise ValueError(self.interpolMethod.value)
+        return interp
+    
+    def __repr__(self):
+        return "SyntheticDataConfiguration.from_dict({})".format(self.to_dict())
+    
+    def __eq__(self, other):
+        # Equality test is simple one which compares the data attributes.
+        # note that _id data attribute may be different
+        # @TODO: Make the list of strings comparison (sourceFilePaths variable) insensitive to order of the elements in the list and the case (upper/ lower cases).
+        if(isinstance(self, other.__class__)):
+            return (self.sourceFilePaths==other.sourceFilePaths) and (self.geophysicalVar==other.geophysicalVar) and (self.interpolMethod==other.interpolMethod)         
+        else:
+            return NotImplemented
+
+class SyntheticDataInterpolator:
+    """ Class containting functional implementations of interpolators which shall be used to 
+        interpolate geophysical variable data onto pixel (center) positions to produce synthetic observations.
+
+    """
+    @staticmethod
+    def scipy_linear(lons, lats, var_data, pixel_center_pos):
+        """ Execute SciPy linear interpolation on the input data.
+
+        :param lons: (degrees) List of longitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param lats: (degrees) List of latitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param var_data: Geophysical variable data on the base grid.
+        :paramtype var_data: list, float
+
+        :param pixel_center_pos: Pixel center positions (locations to which the interpolation should take place).
+                                 List of dictionaries with the dictionary keys as:
+
+                                 1. lon[deg]: Longitude
+                                 2. lat[deg]: Latitude
+
+        :paramtype pixel_center_pos: list, dict
+
+        :returns: Interpolated values at the pixel center positions.
+        :rtype: list, float
+
+        """
+        f = scipy.interpolate.interp2d(lons, lats, var_data, kind='linear')
+        interpl_data = []
+        for _pix_p in pixel_center_pos:
+            lon = _pix_p['lon[deg]']
+            lat = _pix_p['lat[deg]']
+            interpl_data.append(f(lon, lat)[0]) # [0] is needed to convert from the single element np.array to float
+        print("Inaccuracy around longitude=0 deg")
+
+        return interpl_data
+    
+    @staticmethod
+    def metpy_linear(lons, lats, var_data, pixel_center_pos):
+        """ Execute MetPy linear interpolation on the input data.
+
+        :param lons: (degrees) List of longitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param lats: (degrees) List of latitudes making the base grid. 
+        :paramtype lons: list, float
+
+        :param var_data: Geophysical variable data on the base grid.
+        :paramtype var_data: list, float
+
+        :param pixel_center_pos: Pixel center positions (locations to which the interpolation should take place).
+                                 List of dictionaries with the dictionary keys as:
+
+                                 1. lon[deg]: Longitude
+                                 2. lat[deg]: Latitude
+
+        :paramtype pixel_center_pos: list, dict
+
+        :returns: Interpolated values at the pixel center positions.
+        :rtype: list, float
+
+        """
+        # transform input data into format required by the MetPy API
+        X = np.array(lons)
+        Y = np.array(lats)
+        X = X.reshape((np.prod(X.shape),))
+        Y = Y.reshape((np.prod(Y.shape),))
+        coords = np.dstack((X,Y))[0]
+        var_data = np.array(var_data).flatten()
+
+        pix_cen_pos = [] 
+        for x in pixel_center_pos:
+            pix_cen_pos.append([x["lon[deg]"],x["lat[deg]"]])
+               
+        interpl_data = metpy.interpolate.interpolate_to_points(coords, var_data, pix_cen_pos, interp_type='linear')
+                      # metpy.interpolate.interpolate_to_points(coords, var_data, pixel_center_pos, interp_type='linear', 
+                      #                                          minimum_neighbors=3, gamma=0.25, kappa_star=5.052, 
+                      #                                          search_radius=None, rbf_func='linear', rbf_smooth=0)
+        return interpl_data
+
+
+
+class ReferenceFrame(EnumEntity):
+    """ Enumeration of recognized reference frames.
+    
+        :cvar EARTH_CENTERED_INERTIAL: Earth Centered Inertial reference frame.
+        
+                                        This is an Earth equator inertial reference frame identical to EarthMJ2000Eq coordinate system used in GMAT.
+                                        The nominal x-axis points along the line formed by the intersection of the Earth’s 
+                                        mean equatorial plane and the mean ecliptic plane (at the J2000 epoch), in the direction
+                                        of Aries. The z-axis is normal to the Earth’s mean equator at the J2000 epoch and the 
+                                        y-axis completes the right-handed system. The mean planes of the ecliptic and equator, 
+                                        at the J2000 epoch, are computed using IAU-1976/FK5 theory with 1980 update for nutation.
+
+        :vartype EARTH_CENTERED_INERTIAL: str
+
+        :cvar EARTH_FIXED: Earth Fixed reference frame.
+
+                            The Earth Fixed reference frame is referenced to the Earth's equator and the prime meridian 
+                            and is computed using IAU-1976/FK5 theory. This system is identical to the EarthFixed coordinate
+                            system used in GMAT.
+
+        :vartype EARTH_FIXED: str
+
+        :cvar NADIR_POINTING: Nadir-pointing reference frame.
+
+                            The axis of the Nadir-pointing reference frame are defined as follows:
+
+                            * :math:`\\bf X_{np}` axis: :math:`-({\\bf Z_{np}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in EARTH_FIXED frame)
+                                    
+                            * :math:`\\bf Y_{np}` axis: :math:`({\\bf Z_{np}} \\times {\\bf X_{np}})`
+                                    
+                            * :math:`\\bf Z_{np}` axis: Aligned to Nadir vector (i.e. the negative of the position vector of satellite in EARTH_FIXED frame)
+
+                            .. figure:: nadirframe.png
+                                :scale: 100 %
+                                :align: center
+
+                            .. todo:: Verify the claim about position vector and velocity vector in EARTH_FIXED frame.
+
+        :vartype NADIR_POINTING: str
+
+        :cvar SC_BODY_FIXED: Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus. 
+        :vartype SC_BODY_FIXED: str
+
+        :cvar SENSOR_BODY_FIXED: Sensor Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Sensor. 
+        :vartype SENSOR_BODY_FIXED: str
+
+    """
+    EARTH_CENTERED_INERTIAL = "EARTH_CENTERED_INERTIAL"
+    EARTH_FIXED = "EARTH_FIXED"
+    NADIR_POINTING = "NADIR_POINTING"
+    SC_BODY_FIXED = "SC_BODY_FIXED"
+    SENSOR_BODY_FIXED = "SENSOR_BODY_FIXED"
 
 class Orientation(Entity):
-    """ Class to handle instrument orientation.
-        Orientation is maintained internally via three rotation angles in the following order, xRotation -> yRotation -> zRotation, (intrinsic) with respect to "**Nadir-frame**" (A GMAT defined term). 
+    """ Class to store and handle orientation. Orientation is parameterized as intrinsic rotations specified by Euler angles and sequence 
+        with respect to the user-specified reference frame. The definition of the Euler angle rotation is identical to the 
+        one used in the orbitpy->propcov->extern->gmatutil->util->AttitudeUtil, AttitudeConversionUtility C++ classes.
 
-        At zero rotation, the instrument is aligned to the satellite body-frame which in turn is aligned to the Nadir-frame nominally. 
-        Thus the instrument orientation with respect to the satellite body-frame is the same as it’s orientation with respect to the 
-        Nadir-frame in the scenario that the satellite body-frame is aligned to the Nadir-frame. It is also assumed that the instrument
-        imaging axis is along the instrument z-axis.
-
-        **Nadir-frame:**
-        * :math:`\\bf X_{nadir}` axis: :math:`-({\\bf Z_{nadir}} \\times {\\bf V})`, where :math:`\\bf V` is the Velocity vector of satellite in EarthFixed frame)
-        * :math:`\\bf Y_{nadir}` axis: :math:`({\\bf Z_{nadir}} \\times {\\bf X_{nadir}})`
-        * :math:`\\bf Z_{nadir}` axis: Aligned to Nadir vector (position vector of satellite in EarthFixed frame)
-
-        It is also assumed that the instrument imaging axis is along the instrument z-axis.
+        A Euler sequence = 123 implies the following rotation: R = R3.R2.R1, where Ri is the rotation matrix about the ith axis. 
+        A positive angle corresponds to an anti-clockwise rotation about the respective axis.
+        Each rotation matrix rotates the coordinate system (not the vector). 
+        See:
+ 
+         * https://mathworld.wolfram.com/RotationMatrix.html
      
-        :ivar euler_angle1: (deg) Rotation about X-axis
+        :ivar ref_frame: Reference frame. Default in "NADIR_POINTING".
+        :vartype ref_frame: str
+
+        :ivar euler_angle1: (deg) Rotation angle corresponding to the first rotation. Default is 0.
         :vartype euler_angle1: float
 
-        :ivar euler_angle2: (deg) Rotation about Y-axis
+        :ivar euler_angle2: (deg) Rotation angle corresponding to the second rotation. Default is 0.
         :vartype euler_angle2: float
 
-        :ivar euler_angle3: (deg) Rotation about Z-axis
+        :ivar euler_angle3: (deg) Rotation angle corresponding to the third rotation. Default is 0.
         :vartype euler_angle3: float
 
-        :ivar euler_seq1: Axis number to be rotated the first time.
+        :ivar euler_seq1: Axis-number corresponding to the first rotation. Default is 1.
         :vartype euler_angle1: int
 
-        :ivar euler_seq2: Axis number to be rotated the second time.
+        :ivar euler_seq2: Axis-number corresponding to the second rotation. Default is 2.
         :vartype euler_angle2: int
 
-        :ivar euler_seq3: Axis number to be rotated the third time.
+        :ivar euler_seq3: Axis-number corresponding to the third rotation. Default is 3.
         :vartype euler_angle3: int
 
-        .. todo:: Add support to rotations specified by other Euler sequences (currently only 1,2,3 is supported.).
+        :ivar _id: Unique identifier.
+        :vartype _id: str
     
-    """
-    def __init__(self, euler_angle1, euler_angle2, euler_angle3, euler_seq1 = int(1), euler_seq2 = int(2), euler_seq3 = int(3), _id = None):
+    """    
+    def __init__(self, ref_frame="NADIR_POINTING", euler_angle1=0, euler_angle2=0, euler_angle3=0, euler_seq1=int(1), euler_seq2=int(2), euler_seq3=int(3), _id=None):
+        
+        self.ref_frame = ReferenceFrame.get(ref_frame)
         self.euler_angle1 = float(euler_angle1)%360 
         self.euler_angle2 = float(euler_angle2)%360 
         self.euler_angle3 = float(euler_angle3)%360
@@ -245,447 +441,871 @@ class Orientation(Entity):
         self.euler_seq3 = euler_seq3
         super(Orientation, self).__init__(_id, "Orientation")
     
-    @classmethod
-    def from_sideLookAngle(cls, side_look_angle_deg, _id = None):
-        ''' Translate side-look-angle user input parameter to internal instrument orientation specs.
-        
-        :param side_look_angle_deg: Side look angle, also commonly called as nadir/ off-nadir angle in degrees. A positive angle corresponds to anti-clockwise rotation applied around the instrument y-axis.
-        :paramtype side_look_angle_deg: float
+    class Convention(EnumEntity):
+        """ Enumeration of recognized orientation conventions with which an object can be initialized. The rotations below can be specified with respect to 
+            any of the reference frames given in :class:`instrupy.util.ReferenceFrame`.
 
-        :param _id: Unique identifier
+        :cvar XYZ: Rotations about the X, Y and Z axis in the order 123.
+        :vartype XYZ: str
+
+        :cvar REF_FRAME_ALIGNED: Aligned with respective to the underlying reference frame. Identity rotation matrix. 
+        :vartype REF_FRAME_ALIGNED: str
+
+        :cvar SIDE_LOOK: Rotation about the Y axis only. 
+        :vartype SIDE_LOOK: str
+
+        :cvar EULER: Rotation according to the specified Euler angles and sequence.
+        :vartype EULER: str
+
+        """
+        XYZ = "XYZ"
+        REF_FRAME_ALIGNED = "REF_FRAME_ALIGNED"
+        SIDE_LOOK = "SIDE_LOOK"
+        EULER = "EULER"
+
+    @classmethod
+    def from_sideLookAngle(cls, ref_frame="NADIR_POINTING", side_look_angle=0, _id=None):
+        """ Return :class:`Orientation` object constructed from the side-look angle. 
+        
+        :param ref_frame: Reference frame. Default in "NADIR_POINTING".
+        :paramtype ref_frame: str
+
+        :param side_look_angle: (deg) Side look angle. A positive angle corresponds to anti-clockwise rotation applied around the y-axis. Default is 0.
+        :paramtype side_look_angle: float
+
+        :param _id: Unique identifier.
         :paramtype _id: str
 
-        :return: Corresponding `Orientation` object
+        :return: Corresponding `Orientation` object.
         :rtype: :class:`instrupy.util.Orientation`
 
-        '''
-        return Orientation(0.0, side_look_angle_deg, 0.0, 1,2,3,_id)
+        """
+        return Orientation(ref_frame, 0.0, side_look_angle, 0.0, 1,2,3,_id)
     
     @classmethod
-    def from_XYZ_rotations(cls,  xRotation, yRotation, zRotation, _id = None):
-        ''' Translate XYZ user input parameter to internal instrument orientation specs. 
-            Orientation is specified via three rotation angles, xRotation -> yRotation -> zRotation..
+    def from_XYZ_rotations(cls, ref_frame="NADIR_POINTING", x_rot=0, y_rot=0, z_rot=0, _id = None):
+        """ Return :class:`Orientation` object by the user-specified XYZ rotation angles with  
+            the sequence=123.
 
-        .. note:: This orientation specification convention input to this function is same as the GMAT-OC orientation convention specification.   
-        
-        :ivar x_rot_deg: (deg) Rotation about X-axis
-        :vartype x_rot_deg: float
+        :param ref_frame: Reference frame. Default in "NADIR_POINTING".
+        :paramtype ref_frame: str
 
-        :ivar y_rot_deg: (deg) Rotation about Y-axis
-        :vartype y_rot_deg: float
+        :ivar x_rot: (deg) Rotation about X-axis. Default is 0.
+        :vartype x_rot: float
 
-        :ivar z_rot_deg: (deg) Rotation about Z-axis
-        :vartype z_rot_deg: float`
+        :ivar y_rot: (deg) Rotation about Y-axis. Default is 0.
+        :vartype y_rot: float
 
-        '''
-        return Orientation(xRotation, yRotation, zRotation, 1,2,3,_id)       
+        :ivar z_rot: (deg) Rotation about Z-axis. Default is 0.
+        :vartype z_rot: float`
+
+        :param _id: Unique identifier.
+        :paramtype _id: str
+
+        """
+        return Orientation(ref_frame, x_rot, y_rot, z_rot, 1,2,3,_id)       
         
     @staticmethod
     def from_dict(d):
-        """Parses orientation specifications from a normalized JSON dictionary.
+        """Parses orientation specifications from a dictionary.
         
-            :return: Parsed python object 
+            :param d: Dictionary containing the orientation specifications.
+            :paramtype d: dict
+
+            :return: Parsed python object. 
             :rtype: :class:`instrupy.util.Orientation`
         """
-        _orien = OrientationConvention.get(d.get("convention", None))
-        if(_orien == "XYZ"):
-            return Orientation.from_XYZ_rotations(xRotation = d.get("xRotation", None), yRotation = d.get("yRotation", None), zRotation = d.get("zRotation", None), _id = d.get("@id", None))
-        elif(_orien == "SIDE_LOOK"):
-            return Orientation.from_sideLookAngle(d.get("sideLookAngle", None), d.get("@id", None))
-        elif(_orien == "NADIR"):
-            return Orientation.from_sideLookAngle(0, d.get("@id", None))
+        orien_conv = Orientation.Convention.get(d.get("convention", None))
+        ref_frame = ReferenceFrame.get(d.get("referenceFrame", "NADIR_POINTING")).value # default reference frame is NADIR_POINTING
+        if(orien_conv == "XYZ"):
+            return Orientation.from_XYZ_rotations(ref_frame=ref_frame, x_rot=d.get("xRotation", 0), y_rot=d.get("yRotation", 0), z_rot=d.get("zRotation", 0), _id = d.get("@id", None))
+        elif(orien_conv == "SIDE_LOOK"):
+            return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=d.get("sideLookAngle", 0), _id=d.get("@id", None))
+        elif(orien_conv == "REF_FRAME_ALIGNED"):
+            return Orientation.from_sideLookAngle(ref_frame=ref_frame, side_look_angle=0, _id=d.get("@id", None))
+        elif(orien_conv == "EULER"):
+            return Orientation(ref_frame=ref_frame, euler_angle1=d.get("eulerAngle1", 0), euler_angle2=d.get("eulerAngle2", 0), 
+                               euler_angle3=d.get("eulerAngle3", 0), euler_seq1=d.get("eulerSeq1", 1), euler_seq2=d.get("eulerSeq2", 2),
+                               euler_seq3=d.get("eulerSeq3", 3), _id=d.get("@id", None))
         else:
             raise Exception("Invalid or no Orientation convention specification")
     
-    def get_orien_as_list(self):
-        return [self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3]
+    def to_tuple(self): # TODO: remove this function
+        """ Return data members of the instance as a tuple.
+        
+            :return: Orientation object data attributes as namedtuple.
+            :rtype: namedtuple, (str, int, int, int, float, float, float)
+
+        """
+        orientation = namedtuple("orientation", ["ref_frame", "euler_seq1", "euler_seq2", "euler_seq3", "euler_angle1", "euler_angle2", "euler_angle3"])
+        return orientation(self.ref_frame, self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3)
 
     def to_dict(self):
-        """ Return data members of the object as python dictionary. 
+        """ Return data members of the instance as python dictionary. 
         
-            :return: Orientation object as python dictionary
+            :return: Orientation object data attributes as python dictionary.
             :rtype: dict
         """
-        orien_dict = {"convention": "XYZ", "xRotation": self.euler_angle1,  "yRotation": self.euler_angle2, "zRotation": self.euler_angle3}
+        orien_dict = {
+                      "referenceFrame": self.ref_frame.value, 
+                      "convention": "EULER", 
+                      "eulerAngle1": self.euler_angle1,  
+                      "eulerAngle2": self.euler_angle2, 
+                      "eulerAngle3": self.euler_angle3,
+                      "eulerSeq1": self.euler_seq1, 
+                      "eulerSeq2": self.euler_seq2, 
+                      "eulerSeq3": self.euler_seq3,
+                      "@id": self._id
+                     }
         return orien_dict
-            
-class SensorGeometry(EnumEntity):
-    """Enumeration of recognized instrument sensor geometries."""
-    CONICAL = "CONICAL",
-    RECTANGULAR = "RECTANGULAR",
-    CUSTOM = "CUSTOM"
+    
+    def __repr__(self):
+        if isinstance(self._id, str):
+            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id='{}')".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
+                                                                                            self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
+        else:
+            return "Orientation(ref_frame='{}',euler_angle1={},euler_angle2={},euler_angle3={},euler_seq1={},euler_seq2={},euler_seq3={},_id={})".format(self.ref_frame, self.euler_angle1, self.euler_angle2, self.euler_angle3,
+                                                                                          self.euler_seq1, self.euler_seq2, self.euler_seq3, self._id)
 
-class FieldOfView(Entity):
-        """ Class to handle instrument field-of-view, field-of-regard specifications.
-        The Sensor FOV is maintained internally via vector of cone and clock angles. This is the same definition as that of :class:`CustomSensor` class definition in the GMAT-OC code.
+    def __eq__(self, other):
+            # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+            # the Orientation is physically the same.
+            # note that _id data attribute may be different
+            if(isinstance(self, other.__class__)):
+                return (self.ref_frame==other.ref_frame) and (self.euler_angle1==other.euler_angle1) and (self.euler_angle2==other.euler_angle2) and (self.euler_angle3==other.euler_angle3) \
+                       and (self.euler_seq1==other.euler_seq1) and (self.euler_seq2==other.euler_seq2) and (self.euler_seq3==other.euler_seq3)                    
+            else:
+                return NotImplemented
+
+class SphericalGeometry(Entity):
+        """ Class to handle spherical geometries (spherical polygons and circles) which are used to characterize the sensor 
+            field-of-view (FOV) / scene FOV/ field-of-regard (FOR).
+
+            The spherical geometry is maintained internally via vector of cone and clock angles defined in the SENSOR_BODY_FIXED frame with 
+            the Z-axis as the pointing axis. This can be paired with an Orientation object (which describes the orientation of the sensor (hence the SENSOR_BODY_FIXED frame)
+            with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
+
+            .. figure:: cone_clock_angle.png
+                :scale: 100 %
+                :align: center
        
-        :ivar _geometry: Geometry of the sensor field-of-view. Accepted values are "CONICAL", "RECTANGULAR" or "CUSTOM".
-        :vartype _geometry: str
+        :ivar shape: Shape of the spherical geometry. Accepted values are "CIRCULAR", "RECTANGULAR" or "CUSTOM".
+        :vartype shape: str
 
-        :ivar _coneAngleVec_deg: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
+        :ivar cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis (pointing axis). If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on unit sphere, then the 
                                  cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
-        :vartype _coneAngleVec_deg: list, float
+        :vartype cone_angle_vec: list, float
 
-        :ivar _clockAngleVec_deg: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis.  if (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
-                                  describing a FOV point, then the clock angle for the point is :math:`atan2(yP,xP)`.
-        :vartype _clockAngleVec_deg: list, float
+        :ivar clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the +X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+                                  describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
+        :vartype clock_angle_vec: list, float
 
-        :ivar _AT_fov_deg: Along track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
-        :vartype _AT_fov_deg: float
+        :ivar diameter: (deg) Spherical circular diameter (around the sensor Z axis) (only for CIRCULAR shape).
+        :vartype diameter: float
 
-        :ivar _CT_fov_deg: Cross track FOV in degrees (only if CONICAL or RECTANGULAR geometry)
-        :vartype _CT_fov_deg: float
+        :ivar angle_height: (deg) Spherical rectangular geometry angular width (about sensor X axis) (only for RECTANGULAR shape). Corresponds to along-track angular width if sensor frame is aligned to NADIR_POINTING frame.
+        :vartype angle_height: float
 
-        :ivar yaw180_flag: Flag applies in case of field-of-regard. If true, it signifies that the field-of-regard includes the field-of-view of payload rotated about the yaw axis by 180 deg. 
-        :vartype yaw180_flag: bool
+        :ivar angle_width: (deg) Spherical rectangular geometry angular height (about sensor Y axis)  (only for RECTANGULAR shape). Corresponds to cross-track angular width if sensor frame is aligned to NADIR_POINTING frame.
+        :vartype angle_width: float
 
-        .. note:: :code:`coneAnglesVec_deg[0]` ties to :code:`clockAnglesVec_deg[0]`, and so on. Except for the case of *CONICAL* FOV, in which we 
-                  have just one :code:`clockAnglesVec_deg[0] = 1/2 full_cone_angle_deg` and no corresponding clock angle. 
+        :param _id: Unique identifier.
+        :paramtype _id: str
+
+        .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shape, in which we 
+                  have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
+
         """
-        def __init__(self, geometry = None, coneAnglesVec_deg = None, clockAnglesVec_deg = None, 
-                     AT_fov_deg = None, CT_fov_deg = None, yaw180_flag = None, _id = None):                       
-
-            if(coneAnglesVec_deg is not None):
-                if(isinstance(coneAnglesVec_deg, list)):
-                    self._coneAngleVec_deg = list(map(float, coneAnglesVec_deg))
-                    self._coneAngleVec_deg = [x%360 for x in self._coneAngleVec_deg]
-                else:
-                    self._coneAngleVec_deg = [float(coneAnglesVec_deg)%360]
-            else:
-                self._coneAngleVec_deg = None
+        class Shape(EnumEntity):
+            """Enumeration of recognized SphericalGeometry shapes.
             
-            if(clockAnglesVec_deg is not None):
-                if(isinstance(clockAnglesVec_deg, list)):
-                    self._clockAngleVec_deg = list(map(float, clockAnglesVec_deg))
-                    self._clockAngleVec_deg = [x%360 for x in self._clockAngleVec_deg]
+            :cvar CIRCULAR: Circular shape definition, characterized by the radius of the circle around the Z-axis.
+            :vartype CIRCULAR: str
+
+            :cvar RECTANGULAR: Rectangular polygon definition, characterized by angular width (about Y-axis) and angular height (about X-axis). 
+            :vartype RECTANGULAR: str
+
+            :cvar CUSTOM: Custom polygon definition, where an arbitrary number of cone, clock angles
+                          denoting the vertices of the polygon can be specified. 
+            :vartype CUSTOM: str
+            
+            """
+            CIRCULAR = "CIRCULAR"
+            RECTANGULAR = "RECTANGULAR"
+            CUSTOM = "CUSTOM"
+            
+        def __init__(self, shape=None, cone_angle_vec=None, clock_angle_vec=None, _id=None):   
+            if(cone_angle_vec is not None):
+                if(isinstance(cone_angle_vec, list)):
+                    self.cone_angle_vec = list(map(float, cone_angle_vec))
+                    self.cone_angle_vec = [x%360 for x in self.cone_angle_vec]
                 else:
-                    self._clockAngleVec_deg = [float(clockAnglesVec_deg)%360]
+                    self.cone_angle_vec = [float(cone_angle_vec)%360]
             else:
-                self._clockAngleVec_deg = None
+                self.cone_angle_vec = None
+            
+            if(clock_angle_vec is not None):
+                if(isinstance(clock_angle_vec, list)):
+                    self.clock_angle_vec = list(map(float, clock_angle_vec))
+                    self.clock_angle_vec = [x%360 for x in self.clock_angle_vec]
+                else:
+                    self.clock_angle_vec = [float(clock_angle_vec)%360]
+            else:
+                self.clock_angle_vec = None
 
-            self._geometry = geometry if geometry is not None else None
-            self._AT_fov_deg = AT_fov_deg if AT_fov_deg is not None else None
-            self._CT_fov_deg = CT_fov_deg if CT_fov_deg is not None else None
-            self._yaw180_flag = bool(yaw180_flag) if yaw180_flag is not None else None
+            self.shape = SphericalGeometry.Shape.get(shape) if shape is not None else None
 
-            super(FieldOfView, self).__init__(_id, "FieldOfView")
+            self.diameter = None
+            self.angle_height = None
+            self.angle_width = None
+            if(self.shape==SphericalGeometry.Shape.CIRCULAR):
+                self.diameter = 2 * self.cone_angle_vec[0]
+                self.angle_height = self.diameter
+                self.angle_width = self.diameter
+
+            elif(self.shape==SphericalGeometry.Shape.RECTANGULAR):
+                [self.angle_height, self.angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(self.cone_angle_vec, self.clock_angle_vec)
+                
+
+            super(SphericalGeometry, self).__init__(_id, "SphericalGeometry")
 
         def to_dict(self):
             """ Return data members of the object as python dictionary. 
 
-                :return: FieldOfView object as python dictionary
+                :return: SphericalGeometry object as python dictionary
                 :rtype: dict 
             """
-            if self._geometry==SensorGeometry.CONICAL:
-                fov_dict = {"sensorGeometry": "Conical", "fullConeAngle": self._AT_fov_deg}
-            elif self._geometry==SensorGeometry.RECTANGULAR:
-                fov_dict = {"sensorGeometry": "Rectangular", "alongTrackFieldOfView": self._AT_fov_deg, "crossTrackFieldOfView": self._CT_fov_deg}
-            elif self._geometry==SensorGeometry.CONICAL:
-                fov_dict = {"sensorGeometry": "Custom", 
-                            "customConeAnglesVector": "[" + [str(x) for x in self._coneAngleVec_deg] + "]", 
-                            "customClockAnglesVector": "[" + [str(x) for x in self._clockAngleVec_deg] + "]"
+            if self.shape==SphericalGeometry.Shape.CIRCULAR:
+                sph_geom_dict = {"shape": "CIRCULAR", "diameter": self.diameter, "@id": self._id}
+            elif self.shape==SphericalGeometry.Shape.RECTANGULAR:
+                sph_geom_dict = {"shape": "RECTANGULAR", "angleHeight": self.angle_height, "angleWidth": self.angle_width, "@id": self._id}
+            elif self.shape==SphericalGeometry.Shape.CUSTOM:
+                sph_geom_dict = {"shape": "CUSTOM", 
+                            "customConeAnglesVector": "[" + ','.join(map(str, self.cone_angle_vec))  + "]", 
+                            "customClockAnglesVector": "[" + ','.join(map(str, self.clock_angle_vec))  + "]",
+                            "@id": self._id
                            }
-            return fov_dict
+            else:
+                sph_geom_dict = None
+            return sph_geom_dict
+
+        def __eq__(self, other):
+            # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+            # the spherical shape is physically the same.
+            # note that _id data attribute may be different
+            if(isinstance(self, other.__class__)):
+                return (self.shape==other.shape) and (self.diameter==other.diameter) == (self.angle_width==other.angle_width) and (self.angle_height==other.angle_height) and \
+                       (self.cone_angle_vec==other.cone_angle_vec) and (self.clock_angle_vec==other.clock_angle_vec)
+                    
+            else:
+                return NotImplemented
+                    
 
         @classmethod
-        def from_customFOV(cls, coneAnglesVec_deg = None, clockAnglesVec_deg = None, yaw180_flag = False, _id = None):
-            """  Return corresponding :class:`instrupy.util.FieldOfView` object.
+        def from_custom_specs(cls, cone_angle_vec=None, clock_angle_vec=None, _id=None):
+            """  Return corresponding :class:`instrupy.util.SphericalGeometry` object from input cone and clock angles.
 
-                .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
-                          values in :code:`customConeAnglesVector` should be just one (corresponding to CONICAL Sensor) and no values in 
-                          :code:`customClockAnglesVector`.
+                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on unit sphere, then the 
+                                 cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`.
+                :paramtype cone_angle_vec: list, float
+
+                :param clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+                                        describing a point on the unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                :paramtype clock_angle_vec: list, float
+
+                :param _id: Unique identifier.
+                :paramtype _id: str
+
+                .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shaped FOV, in which we 
+                    have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
             
             """
-            if(coneAnglesVec_deg):
-                if(not isinstance(coneAnglesVec_deg, list)):
-                    coneAnglesVec_deg = [coneAnglesVec_deg]
+            if(cone_angle_vec):
+                if(not isinstance(cone_angle_vec, list)):
+                    cone_angle_vec = [cone_angle_vec]
             else:
                 raise Exception("No cone angle vector specified!")
             
-            if(clockAnglesVec_deg):
-                if(not isinstance(clockAnglesVec_deg, list)):
-                    clockAnglesVec_deg = [clockAnglesVec_deg]
+            if(clock_angle_vec):
+                if(not isinstance(clock_angle_vec, list)):
+                    clock_angle_vec = [clock_angle_vec]
 
-            if(any(coneAnglesVec_deg) < 0 or any(coneAnglesVec_deg) > 90):
+            if(any(cone_angle_vec) < 0 or any(cone_angle_vec) > 90):
                 raise Exception("CUSTOM cone angles specification must be in the range 0 deg to 90 deg.")
 
-            if(len(coneAnglesVec_deg) == 1 and (clockAnglesVec_deg is not None)):
+            if(len(cone_angle_vec) == 1 and (clock_angle_vec is not None)):
                 raise Exception("With only one cone angle specified, there should be no clock angles specified.")
                 
-            if(not(len(coneAnglesVec_deg) == 1 and (clockAnglesVec_deg is None))):
-                if(len(coneAnglesVec_deg) != len(clockAnglesVec_deg)):
+            if(not(len(cone_angle_vec) == 1 and (clock_angle_vec is None))):
+                if(len(cone_angle_vec) != len(clock_angle_vec)):
                     raise Exception("With more than one cone angle specified, the length of cone angle vector should be the same as length of the clock angle vector.")
                 
-            return FieldOfView("CUSTOM", coneAnglesVec_deg, clockAnglesVec_deg, None, _id)
+            return SphericalGeometry("CUSTOM", cone_angle_vec, clock_angle_vec, _id)
 
         @classmethod
-        def from_conicalFOV(cls, full_cone_angle_deg = None, yaw180_flag = False, _id = None):
-            ''' Convert user-given conical sensor specifications to cone, clock angles and return corresponding :class:`instrupy.util.FieldOfView` object.
+        def from_circular_specs(cls, diameter=None, _id=None):
+            """ Convert input circular specs to cone, clock angles and return corresponding :class:`instrupy.util.SphericalGeometry` object.
             
-            :param full_cone_angle_deg: Full conical angle of the Cone Sensor in degrees.
-            :paramtype full_cone_angle_deg: float
+            :param diameter: (deg) Diameter of the circle.
+            :paramtype diameter: float
 
             :param _id: Unique identifier
             :paramtype _id: str
 
-            :return: Corresponding `FieldOfView` object
-            :rtype: :class:`instrupy.util.FieldOfView`
+            :return: Corresponding `SphericalGeometry` object
+            :rtype: :class:`instrupy.util.SphericalGeometry`
 
-            '''
-            if full_cone_angle_deg is None:
-                raise Exception("Please specify full-cone-angle of the CONICAL fov instrument.")
+            """
+            if diameter is None:
+                raise Exception("Please specify diameter of the CIRCULAR fov.")
 
-            if(full_cone_angle_deg < 0 or full_cone_angle_deg > 180):
-                raise Exception("Specified full-cone angle of CONICAL sensor must be within the range 0 deg to 180 deg")
+            if(diameter < 0 or diameter > 180):
+                raise Exception("Specified diameter of CIRCULAR fov must be within the range 0 deg to 180 deg")
 
-            return FieldOfView("CONICAL", 0.5*full_cone_angle_deg, None, full_cone_angle_deg, full_cone_angle_deg, yaw180_flag, _id)
+            return SphericalGeometry("CIRCULAR", 0.5*diameter, None, _id)
 
         @classmethod
-        def from_rectangularFOV(cls, along_track_fov_deg = None, cross_track_fov_deg = None, yaw180_flag = False, _id = None):
-            ''' Convert the along-track (full) fov and cross-track (full) fov specs to clock, cone angles and return corresponding :class:`instrupy.util.FieldOfView` object.
-                Along-track fov **must** be less than cross-track fov.
+        def from_rectangular_specs(cls, angle_height=None, angle_width=None, _id=None):
+            """ Convert the angle_height and angle_width rectangular specs to clock, cone angles and return corresponding :class:`instrupy.util.SphericalGeometry` object.
 
-            :param along_track_fov_deg: Along track field-of-view (full) in degrees
-            :paramtype along_track_fov_deg: float
+            :param angle_height: (deg) Angular height (about sensor X axis). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :paramtype angle_height: float
 
-            :param cross_track_fov_deg: Cross track field-of-view (full) in degrees
-            :paramtype cross_track_fov_deg: float
+            :param angle_width: (deg) Angular width (about sensor Y axis). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :paramtype angle_width: float
             
             :param _id: Unique identifier
             :paramtype _id: str
 
-            :return: Corresponding `FieldOfView` object
-            :rtype: :class:`instrupy.util.FieldOfView`
+            :return: Corresponding `SphericalGeometry` object
+            :rtype: :class:`instrupy.util.SphericalGeometry`                      
 
-            .. seealso:: The :class:`CustomSensor` class definition in GMAT-OC code. 
-
-            .. warning:: The along-track FOV and cross-track FOV specs are assigned assuming the instrument is in nominal orientation, i.e. the instrument is
-                         aligned to the satellite body frame, and further the satellite is aligned to nadir-frame.
-                         If the instrument is rotated about the satellite body frame (by specifying the non-zero orientation angles in the instrument json specs file), the actual along-track
-                         and cross-track fovs maybe different.                         
-
-            '''
-            if(along_track_fov_deg is None or cross_track_fov_deg is None):
-                raise Exception("Please specify the along-track and cross-track fovs for the rectangular fov instrument.")
+            """
+            if(angle_height is None or angle_width is None):
+                raise Exception("Please specify the angle_height and angle_width for the RECTANGULAR fov.")
             
-            if(along_track_fov_deg < 0 or along_track_fov_deg > 180 or cross_track_fov_deg < 0 or cross_track_fov_deg > 180):
-                raise Exception("Specified along-track and cross-track fovs of RECTANGULAR sensor must be within the range 0 deg to 180 deg")       
+            if(angle_height < 0 or angle_height > 180 or angle_width < 0 or angle_width > 180):
+                raise Exception("Specified angle_height and angle_width of the RECTANGULAR fov must be within the range 0 deg to 180 deg")       
             
-            alongTrackFieldOfView = np.deg2rad(along_track_fov_deg)
-            crossTrackFieldOfView = np.deg2rad(cross_track_fov_deg)
+            angle_height = np.deg2rad(angle_height)
+            angle_width = np.deg2rad(angle_width)
 
-            cosCone = np.cos(alongTrackFieldOfView/2.0)*np.cos(crossTrackFieldOfView/2.0)
+            cosCone = np.cos(angle_height/2.0)*np.cos(angle_width/2.0)
             cone = np.arccos(cosCone)
 
-            sinClock =  np.sin(alongTrackFieldOfView/2.0) / np.sin(cone)
+            sinClock =  np.sin(angle_height/2.0) / np.sin(cone)
 
             clock = np.arcsin(sinClock)
 
-            cone_deg = np.rad2deg(cone)
-            clock_deg = np.rad2deg(clock)
+            cone = np.rad2deg(cone)
+            clock = np.rad2deg(clock)
 
-            coneAngles_deg = [cone_deg, cone_deg, cone_deg, cone_deg]
+            cone_angle_vec = [cone, cone, cone, cone]
 
-            clockAngles_deg = [clock_deg, 180.0 - clock_deg, 180.0 + clock_deg, -clock_deg]
+            clock_angle_vec = [clock, 180.0-clock, 180.0+clock, -clock]
 
-            return FieldOfView("RECTANGULAR", coneAngles_deg, clockAngles_deg,along_track_fov_deg, cross_track_fov_deg, yaw180_flag, _id)
+            return SphericalGeometry("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)
 
         @staticmethod
         def from_dict(d):
-            """Parses field-of-view specifications from a normalized JSON dictionary.
+            """Parses spherical geometry specifications from a normalized JSON dictionary.
     
-               :param d: Dictionary with the instrument field-of-view specifications.
+               :param d: Dictionary with the spherical geometry specifications.
                :paramtype d: dict
 
-               :return: Field-of-view
-               :rtype: :class:`instrupy.util.FieldOfView`
+               :return: Spherical geometry object
+               :rtype: :class:`instrupy.util.SphericalGeometry`
 
             """          
-            # calulate the field-of-view
-            _geo = SensorGeometry.get(d.get("sensorGeometry", None))
-            if(_geo == "CONICAL"):
-                fldofview = FieldOfView.from_conicalFOV(d.get("fullConeAngle", None), False, d.get("_id", None))
-            elif(_geo == "RECTANGULAR"):
-                fldofview = FieldOfView.from_rectangularFOV(d.get("alongTrackFieldOfView", None), d.get("crossTrackFieldOfView", None), False, d.get("_id", None))
-            elif(_geo == "CUSTOM"):
-                fldofview = FieldOfView.from_customFOV(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None), False, d.get("_id", None))  
-            else:
-                raise Exception("Invalid Sensor FOV specified")
+            shape = SphericalGeometry.Shape.get(d.get("shape", None))
 
-            return fldofview
+            if(shape == "CIRCULAR"):
+                sph_geom_dict = SphericalGeometry.from_circular_specs(d.get("diameter", None), d.get("@id", None))
+            elif(shape == "RECTANGULAR"):
+                sph_geom_dict = SphericalGeometry.from_rectangular_specs(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("@id", None))
+            elif(shape == "CUSTOM"):
+                sph_geom_dict = SphericalGeometry.from_custom_specs(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("@id", None))  
+            else:
+                raise Exception("Invalid spherical geometry shape specified.")
+
+            return sph_geom_dict
         
         def get_cone_clock_fov_specs(self):
-            """ Function to the get the cone and clock angle vectors from the resepective FieldOfView object.
+            """ Function to the get the cone and clock angle vectors from the respective SphericalGeometry object.
 
                 :return: Cone, Clock angles in degrees
                 :rtype: list, float
 
             """
-            return [self._coneAngleVec_deg, self._clockAngleVec_deg]
+            return [self.cone_angle_vec, self.clock_angle_vec]
 
-        def get_rectangular_fov_specs_from_custom_fov_specs(self):
-            """ Function to get the rectangular fov specifications (along-track, cross-track fovs in degrees), from the sensor initialized
-                clock, cone angles.           
+        @staticmethod
+        def get_rect_poly_specs_from_cone_clock_angles(cone_angle_vec, clock_angle_vec):
+            """ Function to get the rectangular specifications (angle_height and angle_width), from input clock, cone angle vectors.           
 
-                :return: Along-track and cross-track fovs in degrees
-                :rtype: :class:`numpy.array`, float
+                :param cone_angle_vec: (deg) Array of cone angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a point on unit sphere, then the 
+                                 cone angle for the point is :math:`\\pi/2 - \\sin^{-1}zP`. 
+                :paramtype cone_angle_vec: list, float
+
+                :param clock_angle_vec: (deg) Array of clock angles (right ascensions) measured anti-clockwise from the + X-axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector
+                                        describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
+                :paramtype clock_angle_vec: list, float
+
+                :return: angle_height and angle_width in degrees
+                :rtype: list, float
       
                 .. todo:: Make sure selected clock angle is from first quadrant. 
             """
-            # Check if the instance does correspond to an rectangular fov.
+            # Check if the instance does correspond to an rectangular shape.
+
             # Length of cone angle vector and clock angle vector must be 4.
-            if(len(self._coneAngleVec_deg) != 4):
-                raise Exception("This FieldOfView instance does not correspond to a rectangular fov.")
-
+            if(len(cone_angle_vec) != 4) or (len(clock_angle_vec) != 4):
+                raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.")
             # Check that all elements in the cone angle vector are the same value.
-            if(len(set(self._coneAngleVec_deg))!= 1):
-                raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
-
-            # The elements of the clock angle vector fold the following relationship: [theta, 180-theta, 180+theta, 360-theta]
-            # Check for this relationship
-            if(self._clockAngleVec_deg is not None):
-                if(not math.isclose(self._clockAngleVec_deg[3],(360-self._clockAngleVec_deg[0])) or not math.isclose(self._clockAngleVec_deg[1], (180 - self._clockAngleVec_deg[0])) or not math.isclose(self._clockAngleVec_deg[2], (180 + self._clockAngleVec_deg[0]))):
-                    raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
-            else:
-                raise Exception("This FieldOfView instance does not correspond to a rectangular fov.") 
+            if(len(set(cone_angle_vec))!= 1):
+                raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.")
+            # The elements of the clock angle vector satisfy the following relationship: [theta, 180-theta, 180+theta, 360-theta]
+            # in case of rectangular shape. Check for this relationship.
+            if(not math.isclose(clock_angle_vec[3],(360-clock_angle_vec[0])) or not math.isclose(clock_angle_vec[1], (180 - clock_angle_vec[0])) or not math.isclose(clock_angle_vec[2], (180 + clock_angle_vec[0]))):
+                raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.") 
             
-            theta = np.deg2rad(self._coneAngleVec_deg[0])
-            omega = np.deg2rad(self._clockAngleVec_deg[0])
+            theta = np.deg2rad(cone_angle_vec[0])
+            omega = np.deg2rad(clock_angle_vec[0])
 
             alpha = np.arcsin(np.sin(theta)*np.sin(omega))
             beta = np.arccos(np.cos(theta)/np.cos(alpha))
 
-            alTrFov_deg = 2*np.rad2deg(alpha)
-            crTrFov_deg = 2*np.rad2deg(beta)
+            angle_height = 2*np.rad2deg(alpha)
+            angle_width = 2*np.rad2deg(beta)
 
-            return np.array([alTrFov_deg, crTrFov_deg]) 
+            return [angle_height, angle_width]
 
-        def get_ATCT_fov(self):
-            """ Get the along-track and cross-track FOVs. Valid only for CONICAL and 
-                RECTANGULAR FOV geometry.
+        def get_fov_height_and_width(self):
+            """ Get the angle_height and angle_width. Valid only for CIRCULAR and 
+                RECTANGULAR shapes.
 
-                :return: Along-track and cross-track fovs in degrees
+                :return: angle_height and angle_width in degrees
                 :rtype: list, float
             """
-            return [self._AT_fov_deg, self._CT_fov_deg]
+            return [self.angle_height, self.angle_width]
 
-class Maneuverability(Entity):
-    """ Class holding the manuverability specifications of the instrument. """
-    def __init__(self, manuver_type=None, roll_min=None , roll_max=None, yaw180=None, full_cone_angle=None, _id=None):
+        def __repr__(self):
+            return "SphericalGeometry.from_dict({})".format(self.to_dict())
 
-        self.manuver_type = ManueverType.get(manuver_type) if manuver_type is not None else None
-        self.roll_min =  float(roll_min) if roll_min is not None else None
-        self.roll_max = float(roll_max) if roll_min is not None else None
-        self.full_cone_angle = float(full_cone_angle) if full_cone_angle is not None else None
+class ViewGeometry(Entity):
+    """ Container class which congregates the :class:`SphericalGeometry` and :class:`Orientation` objects and can be used to model
+        the Field of View (FOV) or Scene FOV or Field of Regard (FOR) of a sensor. 
 
-        self.yaw180 = (self.manuver_type == ManueverType.YAW180 or self.manuver_type == ManueverType.YAW180ROLL)
+        The :code:`SphericalGeometry` member of the container describes the spherical geometry (polygon/ circle) in the SENSOR_BODY_FIXED frame
+        with the Z-axis as the pointing axis. This can be paired with an Orientation object (which describes the orientation of the sensor (hence the SENSOR_BODY_FIXED frame)
+        with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
+        
+        In the current :class:`instrupy` implementation when used to model the FOR, the Orientation is always defined with respect to the 
+        NADIR_POINTING reference frame. 
 
-        super(Maneuverability, self).__init__(_id, "Maneuverability")
+    :ivar orien: Orientation of the sensor (and hence the spherical geometry which is described in the SENSOR_BODY_FIXED frame).
+    :vartype orien: :class:`instrupy.util.Orientation
+    
+    :ivar sph_geom: Spherical geometry object associated with the FOV/ Scene FOV/ FOR.
+    :vartype sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+    """
+
+    def __init__(self, orien=None, sph_geom=None, _id=None):
+
+        self.orien = copy.deepcopy(orien) if orien is not None and isinstance(orien, Orientation) else None
+        self.sph_geom = copy.deepcopy(sph_geom) if sph_geom is not None and isinstance(sph_geom, SphericalGeometry) else None
+        super(ViewGeometry, self).__init__(_id, "ViewGeometry")
+    
+    @staticmethod
+    def from_dict(d):
+        """ Parses an ViewGeometry object from a normalized JSON dictionary.
+        
+        :param d: Dictionary with the GridCoverage specifications.
+
+                Following keys are to be specified.
+                
+                * "orientation":            (dict) Refer to :class:`instrupy.util.Orientation.from_dict`
+                * "sphericalGeometry":      (dict) Refer to :class:`instrupy.util.SphericalGeometry.from_dict`
+                * "@id":                    (str or int) Unique identifier of the ``ViewGeometry`` object.
+
+        :paramtype d: dict
+
+        :return: ViewGeometry object.
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
+        orien_dict = d.get('orientation', None)
+        sph_geom_dict = d.get('sphericalGeometry', None)
+        return ViewGeometry(orien = Orientation.from_dict(orien_dict) if orien_dict else None, 
+                            sph_geom = SphericalGeometry.from_dict(sph_geom_dict) if sph_geom_dict else None, 
+                            _id  = d.get('@id', None))
+
+    def __eq__(self, other):
+        # Equality test is simple one which compares the data attributes.
+        if(isinstance(self, other.__class__)):
+            return (self.orien==other.orien) and (self.sph_geom==other.sph_geom)
+        else:
+            return NotImplemented
+    
+    def to_dict(self):
+        """ Translate the ViewGeometry object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+
+        :return: ViewGeometry object as python dictionary
+        :rtype: dict
+
+        """
+        return {"orientation": self.orien.to_dict(), "sphericalGeometry": self.sph_geom.to_dict(), "@id": self._id}
+
+    def __repr__(self):
+        #orien_dict = self.orien.to_dict() if self.orien is not None and isinstance(self.orien, Orientation) else None
+        #sph_geom_dict = self.sph_geom.to_dict() if self.sph_geom is not None and isinstance(self.sph_geom, SphericalGeometry) else None
+        #return "ViewGeometry(orien=Orientation.from_dict({}), sph_geom=SphericalGeometry.from_dict({}))".format(orien_dict, sph_geom_dict)
+        return "ViewGeometry.from_dict({})".format(self.to_dict())
+
+class Maneuver(Entity):
+    """ Class handling the maneuverability of the satellite and/or sensor. 
+        
+    The maneuverability is specified with reference to the NADIR_POINTING frame. The maneuver specifications 
+    describe the angular-space where the pointing axis of the sensor can be positioned. 
+    
+    This class includes a function which can be used to obtain the Field-Of-Regard in terms of a *proxy-FOV setup*. 
+    The proxy-sensor setup is characterized by orientation (wrt the NADIR_POINTING frame) of the proxy-sensor (hence the proxy-sensor SENSOR_BODY_FIXED frame)
+    and a spherical geometry (polygon/circle) specification of the proxy-sensor's field-of-view. This allows to calculate all coverage opportunities
+    by the satellite-sensor pair, taking into account the satellite and/or sensor maneuverability.    
+
+    :ivar maneuver_type: Type of manuevers. Accepted values are "CIRCULAR", "SINGLE_ROLL_ONLY", "DOUBLE_ROLL_ONLY".
+    :vartype maneuver_type: str
+
+    :ivar A_roll_min: (deg) Minimum roll angle of the 1st ROLL_ONLY region. 
+    :vartype A_roll_min: float
+
+    :ivar A_roll_max: (deg) Maximum roll angle of the 1st ROLL_ONLY region. 
+    :vartype A_roll_max: float
+
+    :ivar B_roll_min: (deg) Minimum roll angle of the 2nd ROLL_ONLY region. 
+    :vartype B_roll_min: float
+
+    :ivar B_roll_max: (deg) Maximum roll angle of the 2nd ROLL_ONLY region. 
+    :vartype B_roll_max: float
+
+    :ivar diameter: (deg) Diameter of the circular maneuver region.
+    :vartype diameter: float
+
+    :param _id: Unique identifier.
+    :paramtype _id: str
+    
+    """
+    class Type(EnumEntity):
+        """ Enumeration of recognized maneuver types. All maneuvers are with respect to the NADIR_POINTING frame.
+
+        :cvar CIRCULAR: This maneuver option indicates that the pointing axis can be maneuvered within a circular region (corresponding to a
+                        specified angular diameter) *around* the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
+                        The resulting FOR is characterized by a proxy-sensor as follows:
+
+                        * The proxy-sensor orientation is aligned to the NADIR_POINTING frame.
+
+                        * If input sensor FOV is CIRCULAR: 
+                        
+                            proxy-sensor FOV is CIRCULAR with diameter = maneuver diameter + input FOV diameter
+
+                        * If input sensor FOV is RECTANGULAR: 
+                        
+                            proxy-sensor FOV is CIRCULAR with diameter = maneuver diameter + diagonal angle of the input rectangular FOV
+
+                            where diagonal angle of the RECTANGULAR FOV = 2 acos( cos(angle_width/2) * cos(angle_height/2) )
+
+                        .. figure:: circular_maneuver.png
+                            :scale: 75 %
+                            :align: center
+
+        :vartype CIRCULAR: str
+
+        :cvar SINGLE_ROLL_ONLY: This maneuver option indicates that the pointing axis can be maneuvered about the roll axis (= y-axis of the NADIR_POINTING frame) 
+                                over a (single) range indicated by minimum and maximum roll angles. The resulting FOR characterized by a proxy-sensor is as follows:
+                                
+                                * The proxy-sensor orientation is at a roll-position (wrt to the NADIR_POINTING frame) as follows:
+                                    
+                                    roll position = rollMin + 0.5 * (rollMax - rollMin)
+
+                                * If input sensor FOV is CIRCULAR: 
+                                
+                                    proxy-sensor FOV is rectangular with:
+                                    
+                                    angle width = (rollMax - rollMin) + input FOV diameter
+
+                                    angle height = input sensor diameter
+
+                                * If input sensor FOV is RECTANGULAR: 
+                                
+                                    proxy-sensor FOV is rectangular with:
+                                    
+                                    angle width  = (rollMax - rollMin) + input FOV angle width
+
+                                    angle height = input FOV angle height
+
+                                .. figure:: single_rollonly_maneuver.png
+                                    :scale: 75 %
+                                    :align: center
+
+        :vartype SINGLE_ROLL_ONLY: str
+
+        :cvar DOUBLE_ROLL_ONLY: This maneuver option is similar to the SINGLE_ROLL_ONLY case, except that there are **two** 
+                                (potentially non-overlapping) ranges of roll-angles (minimum and maximum angles). Correspondingly 
+                                there are two proxy-sensor setups (orientation and FOV) associated with the FOR.
+
+                                .. figure:: double_rollonly_maneuver.png
+                                    :scale: 75 %
+                                    :align: center
+
+        :vartype DOUBLE_ROLL_ONLY: str
+
+        :cvar POINTING_OPTION: In this maneuver option a list of orientations of the instrument pointing-axis (to which it can be manuevered) is specified. 
+                                The pointing options must be specified in NADIR_POINTING reference frame. 
+        :vartype POINTING_OPTION: str
+
+
+        """
+        CIRCULAR = "CIRCULAR"
+        SINGLE_ROLL_ONLY = "SINGLE_ROLL_ONLY"
+        DOUBLE_ROLL_ONLY = "DOUBLE_ROLL_ONLY"
+
+    def __init__(self, maneuver_type=None, A_roll_min=None, A_roll_max=None, B_roll_min=None, B_roll_max=None, diameter=None, _id=None):
+
+        self.maneuver_type = Maneuver.Type.get(maneuver_type) if maneuver_type is not None else None
+        self.A_roll_min =  float(A_roll_min) if A_roll_min is not None else None
+        self.A_roll_max = float(A_roll_max) if A_roll_max is not None else None
+        self.B_roll_min =  float(B_roll_min) if B_roll_min is not None else None
+        self.B_roll_max = float(B_roll_max) if B_roll_max is not None else None
+        self.diameter = float(diameter) if diameter is not None else None
+        # basic checks for inputs
+        if(self.maneuver_type is None):
+            raise Exception("Please input valid maneuver type.")
+
+        if(self.maneuver_type == Maneuver.Type.CIRCULAR):
+            if(self.diameter is None or self.diameter <=0 or self.diameter > 180):
+                raise Exception("Please input valid maneuver CIRCULAR diameter.")
+        
+        if(self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY or self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY ):
+            if(self.A_roll_min is None or abs(self.A_roll_min) > 180 ):
+                raise Exception("Please input valid roll range for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
+            if(self.A_roll_max is None or abs(self.A_roll_max) > 180 ):
+                raise Exception("Please input valid roll range for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
+            if(self.A_roll_max <= self.A_roll_min):
+                raise Exception("Specified Max roll angle must be numerically greater than Min roll angle for SINGLE_ROLL_ONLY/ DOUBLE_ROLL_ONLY maneuver.")
+        
+        if(self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY):
+            if(self.B_roll_min is None or abs(self.B_roll_min) > 180 ):
+                raise Exception("Please input valid roll range for DOUBLE_ROLL_ONLY maneuver.")
+            if(self.B_roll_max is None or abs(self.B_roll_max) > 180 ):
+                raise Exception("Please input valid roll range for DOUBLE_ROLL_ONLY maneuver.")
+            if(self.B_roll_max <= self.B_roll_min):
+                raise Exception("Specified Max roll angle must be numerically greater than Min roll angle for DOUBLE_ROLL_ONLY maneuver.")
+
+        super(Maneuver, self).__init__(_id, "Maneuver")
 
     @staticmethod
     def from_dict(d):
-        """Parses an maneuvarability object from a normalized JSON dictionary."""
-        return Maneuverability(
-                manuver_type = d.get("@type", None),
-                roll_min = d.get("rollMin", None),
-                roll_max = d.get("rollMax", None),
-                full_cone_angle = d.get("fullConeAngle", None),
+        """Parses an manuever object from a normalized JSON dictionary.
+        
+        :param d: Dictionary with the manuever specifications.
+        :paramtype d: dict
+
+        :return: Maneuver object.
+        :rtype: :class:`instrupy.util.Maneuver`
+
+        """                
+        return Maneuver(
+                maneuver_type = d.get("maneuverType", None),
+                A_roll_min = d.get("A_rollMin", None),
+                A_roll_max = d.get("A_rollMax", None),
+                B_roll_min = d.get("B_rollMin", None),
+                B_roll_max = d.get("B_rollMax", None),
+                diameter = d.get("diameter", None),
+                _id = d.get("@id", None)
                 )
 
     def to_dict(self):
-        if self.manuver_type == ManueverType.FIXED:
-            manuv_dict= dict({ "@type": "FIXED"})
-        elif self.manuver_type == ManueverType.CONE:
-            manuv_dict= dict({"@type": "CONE", "fullConeAngle": self.full_cone_angle})
-        elif self.manuver_type == ManueverType.ROLLONLY:
-            manuv_dict= dict({"@type": "ROLLONLY", "rollMin": self.roll_min, "rollMax": self.roll_max})
-        elif self.manuver_type == ManueverType.YAW180:
-            manuv_dict= dict({"@type": "YAW180"})
-        elif self.manuver_type == ManueverType.YAW180ROLL:
-            manuv_dict= dict({"@type": "YAW180ROLL", "rollMin": self.roll_min, "rollMax": self.roll_max})
+        """ Translate the Maneuver object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        return manuv_dict
-    
-    def calc_field_of_regard(self, fldofview):
-        """ Calculate the field-of-regard.
+        :return: Maneuver object as python dictionary
+        :rtype: dict
 
-        :param fldofview:  Field-of-view of the instrument
-        :paramtype fldofview: :class:`instrupy.util.FieldOfView`
-
-        :return: Field-of-Regard
-        :rtype: :class:`instrupy.util.FieldOfView`
         """
-
-        # Calculate the field-of-regard
-        mv_type = self.manuver_type
-
-        if(mv_type == 'FIXED' or mv_type == 'YAW180'):
-            pass
-        elif(mv_type == 'CONE'):
-            mv_cone = 0.5 * float(self.full_cone_angle)
-        elif(mv_type == 'ROLLONLY' or mv_type=='YAW180ROLL'):
-            mv_ct_range = float(self.roll_max) - float(self.roll_min)
+        if self.maneuver_type == Maneuver.Type.CIRCULAR:
+            specs_dict= dict({"maneuverType": "CIRCULAR", "diameter": self.diameter, "@id": self._id})
+        elif self.maneuver_type == Maneuver.Type.SINGLE_ROLL_ONLY:
+            specs_dict= dict({"maneuverType": "SINGLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "@id": self._id})
+        elif self.maneuver_type == Maneuver.Type.DOUBLE_ROLL_ONLY:
+            specs_dict= dict({"maneuverType": "DOUBLE_ROLL_ONLY", "A_rollMin": self.A_roll_min, "A_rollMax": self.A_roll_max, "B_rollMin": self.B_roll_min, "B_rollMax": self.B_roll_max, "@id": self._id})
         else:
-            raise Exception('Invalid manuver type.')                                 
-
-        if(mv_type == 'FIXED'):
-            fr_geom = fldofview._geometry
-            fr_at = fldofview._AT_fov_deg
-            fr_ct = fldofview._CT_fov_deg
+            raise Exception("Invalid or no Manuever type specification.")
         
-        elif(mv_type == 'YAW180'):
-            fr_geom = fldofview._geometry
-            fr_at = fldofview._AT_fov_deg
-            fr_ct = fldofview._CT_fov_deg
+        return specs_dict
+    
+    def __repr__(self):
+        return "Maneuver.from_dict({})".format(self.to_dict())
 
-        elif(mv_type == 'CONE'):
-            if(fldofview._geometry == 'CONICAL'):
-                fr_geom = 'CONICAL'
-                fr_at =2*(mv_cone + fldofview._coneAngleVec_deg[0])
-                fr_ct = fr_at
+    def __eq__(self, other):
+        # Equality test is simple one which compares the data attributes. It does not cover complex cases where the data members may be unequal, but 
+        # the Maneuver is physically the same.
+        # note that _id data attribute may be different
+        if(isinstance(self, other.__class__)):
+            return (self.maneuver_type==other.maneuver_type) and (self.diameter==other.diameter) and (self.A_roll_min==other.A_roll_min) and \
+                    (self.A_roll_max==other.A_roll_max) and (self.B_roll_min==other.B_roll_min) and (self.B_roll_max==other.B_roll_max)
+                
+        else:
+            return NotImplemented
 
-            elif(fldofview._geometry == 'RECTANGULAR'):
-                fr_geom = 'CONICAL'
-                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fldofview._AT_fov_deg))*np.cos(np.deg2rad(0.5*fldofview._CT_fov_deg))))
-                fr_at = 2*(mv_cone +  diag_half_angle)
-                fr_ct = fr_at
+    def calc_field_of_regard(self, fov_sph_geom):
+        """ Calculate the field-of-regard (FOR) in terms of a *proxy sensor setup* for an input sensor FOV/ scene-FOV. 
+            
+        The FOR is characterized by (list of) :class:`ViewGeometry` container(s) (pairs :code:`Orientation` and :code:`SphericalGeometry` objects). 
+        This forms a *proxy-sensor setup*, which can be utilized to run coverage calculations and calculate all possible access 
+        opportunites by the sensor taking into account the (satellite + sensor) maneuverability.
+        Note that only CIRCULAR or RECTANGULAR shaped sensor FOV are permitted as inputs.
+
+        In some scenarios where the FOR can have non-overlapping angular spaces (e.g. sidelooking
+        SARs which can point on either "side", but cannot point at the nadir), we shall have as return a list of 
+        :code:`ViewGeometry` objects, where each element of the list corresponds to a separate proxy sensor setup.
+        All the proxy-sensor setups in the list together form the FOR.
+
+        Note that always, the proxy-sensor FOV >= input sensor FOV. 
+
+        .. seealso:: :class:`instrupy.util.Maneuver.Type` for calculation of the FOR for the different maneuver types.
+
+        :param fov_sph_geom:  Sensor FOV spherical geometry. Must be either CIRCULAR or RECTANGULAR shape.
+        :paramtype fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+        :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the NADIR_POINTING frame, 
+                 and the coresponding spherical geometry specifications. If invalid or no maneuver, then ``None`` is returned.
+        :rtype: list, ViewGeometry or None
+
+        """
+        field_of_regard = None 
+        mv_type = self.maneuver_type
+        # Evaluate FOR for CIRCULAR maneuver. proxy-sensor FOV shall be CIRCULAR shape.
+        if(mv_type == 'CIRCULAR'):
+
+            if(fov_sph_geom.shape == 'CIRCULAR'):
+                proxy_fov_diameter = self.diameter + fov_sph_geom.diameter # field-of-regard diameter
+
+            elif(fov_sph_geom.shape == 'RECTANGULAR'):
+                diag_half_angle = np.rad2deg(np.arccos(np.cos(np.deg2rad(0.5*fov_sph_geom.angle_height))*np.cos(np.deg2rad(0.5*fov_sph_geom.angle_width))))
+                proxy_fov_diameter = self.diameter +  2*diag_half_angle
 
             else:
-                raise Exception('Invalid FOV geometry')    
+                raise Exception('Invalid input FOV geometry')    
 
-        elif(mv_type == 'ROLLONLY'  or mv_type=='YAW180ROLL'):
-            if(fldofview._geometry == 'CONICAL'):
+            field_of_regard = [ViewGeometry(    Orientation(ref_frame="NADIR_POINTING"), 
+                                                SphericalGeometry.from_dict({"shape": 'CIRCULAR', "diameter": proxy_fov_diameter})
+                                )]                              
+
+        def get_roll_only_mv_proxy_sen_specs(roll_min, roll_max):
+            mv_angle_width_range = roll_max - roll_min # angular maneuver range
+            proxy_sen_roll_angle = roll_min + 0.5*mv_angle_width_range # reference orientation
+
+            if(fov_sph_geom.shape == 'CIRCULAR'):
                 print("Approximating FOR as rectangular shape")
-                fr_geom = 'RECTANGULAR'
-                fr_at = 2*(fldofview._coneAngleVec_deg[0])
-                fr_ct = 2*(0.5*mv_ct_range + fldofview._coneAngleVec_deg[0])
+                proxy_fov_angle_height = fov_sph_geom.diameter
+                proxy_fov_angle_width =  mv_angle_width_range + fov_sph_geom.diameter
 
-            elif(fldofview._geometry == 'RECTANGULAR'):
-                fr_geom = 'RECTANGULAR'
-                fr_at = fldofview._AT_fov_deg
-                fr_ct = mv_ct_range + fldofview._CT_fov_deg
+            elif(fov_sph_geom.shape == 'RECTANGULAR'):
+                proxy_fov_angle_height = fov_sph_geom.angle_height
+                proxy_fov_angle_width = mv_angle_width_range + fov_sph_geom.angle_width
+
             else:
-                raise Exception('Invalid FOV geometry')
+                raise Exception('Invalid input FOV geometry') 
 
-        if(mv_type=='YAW180ROLL' or mv_type=='YAW180'):
-            fr_yaw180_flag = True
-        else:
-            fr_yaw180_flag = False
+            return [proxy_sen_roll_angle, proxy_fov_angle_height, proxy_fov_angle_width]
 
-        if(fr_geom == 'CONICAL'):
-            fldofreg = FieldOfView.from_conicalFOV(full_cone_angle_deg = fr_at, yaw180_flag = fr_yaw180_flag, _id = None)
-        elif(fr_geom == 'RECTANGULAR'):
-            # Get the cone and clock angles from the rectangular FOV specifications.
-            fldofreg = FieldOfView.from_rectangularFOV(along_track_fov_deg = fr_at, cross_track_fov_deg = fr_ct, yaw180_flag = fr_yaw180_flag, _id = None)
+        # Evaluate FOR for SINGLE_ROLL_ONLY maneuver. proxy-sensor FOV shall be RECTANGULAR shape.
+        if(mv_type == 'SINGLE_ROLL_ONLY'):
+
+            [w, x, y] = get_roll_only_mv_proxy_sen_specs(self.A_roll_min, self.A_roll_max)
+
+            field_of_regard = [ViewGeometry(  Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w), 
+                                              SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x, "angleWidth":y})
+                               )]
+
+        # Evaluate FOR for DOUBLE_ROLL_ONLY maneuver. proxy-sensor FOV shall be RECTANGULAR shape. There are two proxy-sensors (orientation, FOV).
+        if(mv_type == 'DOUBLE_ROLL_ONLY'):
+
+            [w1, x1, y1] = get_roll_only_mv_proxy_sen_specs(self.A_roll_min, self.A_roll_max)
+            [w2, x2, y2] = get_roll_only_mv_proxy_sen_specs(self.B_roll_min, self.B_roll_max)
+
+            field_of_regard = [ViewGeometry(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w1), 
+                                                SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x1, "angleWidth":y1})
+                               ),
+                               ViewGeometry(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w2), 
+                                                SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x2, "angleWidth":y2})
+                               )]
+
         
-        return fldofreg
+        return field_of_regard
                 
 class MathUtilityFunctions:
-    """ Class aggregating various mathematical computation functions used in the InstruPy package. """
+    """ Class aggregating various mathematical computation functions. """
+
+    @staticmethod
+    def normalize(v):
+        """ Normalize a input vector.
+
+            :param v: Input vector
+            :paramtype v: list, float
+
+            :return: Normalized vector
+            :rtype: :obj:`np.array`, float
+        
+        """
+        v = np.array(v)
+        norm = np.linalg.norm(v)
+        if(norm == 0):
+            raise Exception("Encountered division by zero in vector normalization function.")
+        return v / norm
+
+    @staticmethod
+    def angle_between_vectors(vector1, vector2):
+        """ Find angle between two input vectors in radians. Use the dot-product relationship to obtain the angle.
+        
+            :param vector1: Input vector 1
+            :paramtype vector1: list, float
+
+            :param vector2: Input vector 2
+            :paramtype vector2: list, float
+
+            :return: [rad] Angle between the vectors, calculated using dot-product relationship.
+            :rtype: float
+
+        """
+        unit_vec1 = MathUtilityFunctions.normalize(vector1)
+        unit_vec2 = MathUtilityFunctions.normalize(vector2)
+        return np.arccos(np.dot(unit_vec1, unit_vec2))
+
+    @staticmethod
+    def find_closest_value_in_array(array, value):
+        """ Find the value in an array closest to the supplied scalar value.
+
+            :param array: Array under consideration
+            :paramtype array: list, float
+
+            :param value: Value under consideration
+            :paramtype value: float
+
+            :return: Value in array corresponding to one which is closest to supplied value, Index of the value in array
+            :rtype: list, float
+
+        """
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return [array[idx], idx]
+
+class GeoUtilityFunctions:
+    """ Class aggregating various geography related functions. """
 
     @staticmethod
     def compute_satellite_footprint_speed(r,v):
-        """ *Compute satellite footprint (**at Nadir** on ground-plane) linear speed*
+        """ Compute satellite footprint (**at nadir** on ground-plane) linear speed in [m/s].
 
             :param r: [distance] postion vector of satellite in ECI equatorial frame
             :paramtype r: list, float
@@ -704,7 +1324,7 @@ class MathUtilityFunctions:
         omega = np.cross(r,v)/ (np.linalg.norm(r)**2) # angular velocity vector in radians per second
         
         # compensate for Earths rotation
-        omega = omega - np.array([0,0,Constants.angularSpeedofEarthInRADpS])
+        omega = omega - np.array([0,0,Constants.angularSpeedOfEarthInRadPerSec])
 
         # Find linear speed of satellite footprint on ground [m/s].   
         return np.linalg.norm(omega)*Constants.radiusOfEarthInKM*1e3
@@ -790,13 +1410,13 @@ class MathUtilityFunctions:
              
         :param gcoord: geographic coordinates of point [latitude [deg] ,longitude [deg], altitude [km]]. Geographic coordinates assume the Earth is a perfect sphere, with radius 
                      equal to its equatorial radius.
-        :paramtype  gcoord: list, float
+        :paramtype  gcoord: list or tuple, (float, float, float)
 
         :param JDtime: Julian Day time.
         :paramtype JDtime: float
 
         :return: A 3-element array of ECI [X,Y,Z] coordinates in kilometers. The TOD epoch is the supplied JDtime.                           
-        :rtype: float
+        :rtype: list, (float, float, float)
 
         .. seealso:: 
             * :mod:`JD2GMST`
@@ -818,7 +1438,7 @@ class MathUtilityFunctions:
         lon = np.deg2rad(gcoord[1])
         alt = gcoord[2]
                
-        gst = MathUtilityFunctions.JD2GMST(JDtime)
+        gst = GeoUtilityFunctions.JD2GMST(JDtime)
         
         angle_sid=gst*2.0*np.pi/24.0 # sidereal angle
 
@@ -840,7 +1460,7 @@ class MathUtilityFunctions:
         [X,Y,Z] = ecicoord
         theta = np.arctan2(Y,X)
         
-        gst = MathUtilityFunctions.JD2GMST(JDtime)        
+        gst = GeoUtilityFunctions.JD2GMST(JDtime)        
         angle_sid=gst*2.0*np.pi/24.0 # sidereal angle
         lon = np.mod((theta - angle_sid),2*np.pi) 
 
@@ -853,42 +1473,6 @@ class MathUtilityFunctions:
         lon = np.rad2deg(lon)
                 
         return [lat,lon,alt]
-
-    @staticmethod
-    def normalize(v):
-        """ Normalize a input vector.
-
-            :param v: Input vector
-            :paramtype v: list, float
-
-            :return: Normalized vector
-            :rtype: :obj:`np.array`, float
-        
-        """
-        v = np.array(v)
-        norm = np.linalg.norm(v)
-        if(norm == 0):
-            raise Exception("Encountered division by zero in vector normalization function.")
-        return v / norm
-
-    @staticmethod
-    def angle_between_vectors(vector1, vector2):
-        """ Find angle between two input vectors in radians. Use the dot-product relationship to obtain the angle.
-        
-            :param vector1: Input vector 1
-            :paramtype vector1: list, float
-
-            :param vector2: Input vector 2
-            :paramtype vector2: list, float
-
-            :return: [rad] Angle between the vectors, calculated using dot-product relationship.
-            :rtype: float
-
-        """
-        unit_vec1 = MathUtilityFunctions.normalize(vector1)
-        unit_vec2 = MathUtilityFunctions.normalize(vector2)
-        return np.arccos(np.dot(unit_vec1, unit_vec2))
-
 
     @staticmethod
     def JD2GMST(JD):
@@ -920,25 +1504,6 @@ class MathUtilityFunctions:
 
         return GMST
 
-
-    @staticmethod
-    def find_closest_value_in_array(array, value):
-        """ Find the value in an array closest to the supplied scalar value.
-
-            :param array: Array under consideration
-            :paramtype array: list, float
-
-            :param value: Value under consideration
-            :paramtype value: float
-
-            :return: Value in array corresponding to one which is closest to supplied value, Index of the value in array
-            :rtype: list, float
-
-        """
-        array = np.asarray(array)
-        idx = (np.abs(array - value)).argmin()
-        return [array[idx], idx]
-    
     @staticmethod
     def SunVector_ECIeq(Time_JDUT1):
         """Find Sun Vector in Earth Centered Inertial (ECI) equatorial frame.
@@ -1054,9 +1619,9 @@ class MathUtilityFunctions:
             
         """
         # calculate Sun-vector in ECI frame
-        sunVector_km = MathUtilityFunctions.SunVector_ECIeq(time_JDUT1)
+        sunVector_km = GeoUtilityFunctions.SunVector_ECIeq(time_JDUT1)
         # verify point-of-interest is below in night region
-        if(MathUtilityFunctions.checkLOSavailability(pos_km, sunVector_km, Constants.radiusOfEarthInKM) is False):
+        if(GeoUtilityFunctions.checkLOSavailability(pos_km, sunVector_km, Constants.radiusOfEarthInKM) is False):
             return [None, None]
 
         # calculate sun to target vector
@@ -1120,17 +1685,16 @@ class MathUtilityFunctions:
         return {"derived_obsTime_JDUT1": derived_obsTime_JDUT1, "derived_obs_pos_km": derived_obs_pos_km.tolist(), "derived_range_vec_km": derived_range_vec_km.tolist(), "derived_alt_km": derived_alt_km, "derived_incidence_angle_rad": derived_incidence_angle_rad}
       
     @staticmethod
-    def get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zenith_angle_rad):
+    def get_transmission_Obs2Space(wav_low_m, wav_high_m, obs_zenith_angle_rad, wav_step_percm=5):
         ''' Observer to space transmission loss
 
-            :returns: transmissitivity in steps of 20cm-1
+            :returns: transmissitivity in steps of 5cm-1
             :rtype: array, float
         '''        
         obs_alt_km = 0
         wav_low_nm = wav_low_m*1e9
         wav_high_nm = wav_high_m*1e9
         obs_zenith_angle_deg = np.rad2deg(obs_zenith_angle_rad)
-        wav_step_percm = 40
         
         c1 = {'model': 6, # US standard
             'h1': obs_alt_km,
@@ -1155,6 +1719,7 @@ class MathUtilityFunctions:
         eca_deg = lambda_deg*2 # total earth centric angle
 
         return eca_deg
+
 
 class FileUtilityFunctions:
 

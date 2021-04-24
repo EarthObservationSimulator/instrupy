@@ -10,11 +10,11 @@ import numpy
 import copy
 import pandas, csv
 import random
-from instrupy.util import Entity, Orientation, FieldOfView, MathUtilityFunctions, Constants, FileUtilityFunctions, EnumEntity
-from instrupy.basic_sensor.basic_sensor_model import BasicSensorModel
+from instrupy.util import Entity
+from .basic_sensor_model import BasicSensorModel
 
 class BasicSensor(Entity):
-    """A synthetic aperture radar class. Instrument may support multiple operating modes and operating points which are 
+    """A basic sensor class. Instrument may support multiple operating modes and operating points which are 
        stored in a variable length list.
 
        :ivar instru_id: Instrument identifier
@@ -96,7 +96,7 @@ class BasicSensor(Entity):
         return obsv_metrics
     
     def to_dict(self):
-        """ Format the MissionConfig object into a dictionary. A list of dictionaries with each dict element correspondng 
+        """ Format the MissionConfig object into a dictionary. A list of dictionaries with each dict element corresponding 
             to a subsensor is returned. """
         sensor_dict = []
         for _ssen in self.subsensor:

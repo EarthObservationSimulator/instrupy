@@ -7,10 +7,10 @@ It should be helpful if you plan to extend InstruPy with custom components.
    :maxdepth: 1
    
    instrupy
-   instrupy.public_library
-   instrupy.basic_sensor
-   instrupy.passive_optical_scanner
-   instrupy.synthetic_aperture_radar
+   instrupy.base
+   instrupy.basic_sensor.basic_sensor_model
+   instrupy.passive_optical_scanner_model
+   instrupy.synthetic_aperture_radar_model
    instrupy.util
    tests
 

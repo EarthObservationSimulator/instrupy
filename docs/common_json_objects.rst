@@ -9,118 +9,119 @@ This page contains description of the user-configurable JSON objects shared by t
 ================================
 Several modes (in a list) maybe specified within a single instrument. Each mode corresponds to a specific operating point. For example, 
 consider a *Synthetic Aperture Radar* type instrument which operates in both L-band and C-band. Such an instrument is considered
-to be made up of two *sub-sensors* with each sub-sensor of instrument type *Synthetic Aperture Radar* and operating at L-band
-and C-band. A mode-identifier is to be specified by the user with which the subsensor can be referenced.
+to be made up of two modes with one mode operating at L-band and the other mode at C-band. 
+A mode-identifier can be specified by the user with which the corresponding mode can be referenced.
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   @id, string,, Unique identifier
-   @type, string,, For SAR specify Stripmap or ScanSar. For others leave empty.
+   @id, string,, Unique identifier of mode.
 
-The parameters outside the mode block are used as the common parameters for all the sub-sensors, while the parameters specified
-within a mode list entry are specific to the particular sub-sensor.
+The parameters outside the mode block are used as the common parameters for all the modes, while the parameters specified
+within a mode list entry are specific to the particular mode.
 
 Example: The example below is that of a *Basic Sensor* type instrument with two modes. The common parameters for both the modes
-are outside the :code:`mode` block. The `NadirObservationMode` has a nadir viewing geometry with a 35 deg Conical FOV. The `SideObservationMode`
-has a side looking geometry (both the side) at 25 deg conical FOV.
+are outside the :code:`mode` block. The `NadirObservationMode` has a nadir orientation while the `SideObservationMode`
+has an off-nadir orientation.
  
 .. code-block:: python
 
-               {        
-                  "@type": "Basic Sensor",
-                  "name": "Atom",
-                  "@id": "senX",  
-                  "mass": 28, 
-                  "volume": 0.12, 
-                  "power": 32, 
-                  "bitsPerPixel": 8, 
-                  "mode":[{
-                        "@id": "NadirObservationMode"
-                        "fieldOfView": {
-                              "sensorGeometry": "CONICAL",
-                              "fullConeAngle": 35
-                        },
-                        "orientation": {
-                              "convention": "NADIR"
-                        }      
-                  },
-                  {
-                        "@id": "SideObservationMode"
-                        "fieldOfView": {
-                           "sensorGeometry": "CONICAL",
-                           "fullConeAngle": 25
-                        },
-                        "orientation": {
-                           "convention": "SIDE_LOOK",
-                           "sideLookAngle": 30
-                        },
-                        "maneuverability":{
-                           "@type": "YAW180"
-                        }        
-                        }
-                  ]
-               }
+               specs = '{        
+                           "@type": "Basic Sensor",
+                           "name": "Atom",
+                           "@id": "senX",  
+                           "mass": 28, 
+                           "volume": 0.12, 
+                           "power": 32, 
+                           "bitsPerPixel": 8, 
+                           "fieldOfViewGeometry": {
+                                       "sensorGeometry": "CIRCULAR",
+                                       "diameter": 35
+                                 },
+                           "mode":[{
+                                    "@id": "NadirObservationMode",                            
+                                    "orientation": {
+                                          "referenceFrame": "SC_BODY_FIXED",
+                                          "convention": "REF_FRAME_ALIGNED"
+                                    }      
+                                 },
+                                 {
+                                    "@id": "SideObservationMode",
+                                    "orientation": {
+                                       "referenceFrame": "SC_BODY_FIXED",
+                                       "convention": "SIDE_LOOK",
+                                       "sideLookAngle": 30
+                                 }       
+                                 }
+                           ]
+                        }'
 
+               x = Instrument.from_json(specs) 
 
 .. _orientation_json_obj:
 
 :code:`orientation` JSON object format
 ========================================
-At zero rotation, the instrument is aligned to the satellite body-frame which in turn is aligned to the Nadir-frame nominally. 
-Thus the instrument orientation with respect to the satellite body-frame is the same as it's orientation with respect to the Nadir-frame 
-in the scenario that the satellite body-frame is aligned to the Nadir-frame. It is also assumed that the instrument imaging axis is
-along the instrument z-axis.
+Orientation is parameterized as intrinsic rotations specified by Euler angles and sequence with respect to 
+an user-specified reference frame. The definition of the Euler angle rotation is identical to the 
+one used in the orbitpy->propcov->extern->gmatutil->util->AttitudeUtil, AttitudeConversionUtility C++ classes. 
 
+A Euler sequence = 123 implies the following rotation: R = R3.R2.R1, where Ri is the rotation matrix about the ith axis.
+A positive angle corresponds to an anti-clockwise rotation about the respective axis. Each rotation matrix rotates the 
+coordinate system (not the vector).
+See:
 
-The definition of Nadir-frame is as follows:
+* https://mathworld.wolfram.com/RotationMatrix.html
 
-*Nadir-frame*
-
-* :math:`\bf X_{nadir}` axis: :math:`-({\bf Z_{nadir}} \times {\bf V})`, where :math:`\bf V` is the Velocity vector of satellite in EarthFixed frame)
-* :math:`\bf Y_{nadir}` axis: :math:`({\bf Z_{nadir}} \times {\bf X_{nadir}})`
-* :math:`\bf Z_{nadir}` axis: Aligned to Nadir vector (vector from Satellite to center of Earth in EarthFixed frame)
-
-The first subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
+The first subfield of the :code:`orientation` JSON object is the :code:`referenceFrame` subfield. 
+See :ref:`reference_frames_desc` for description about the reference frames.
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   convention, string,, "Accepted values are *NADIR*, *SIDE_LOOK* or *XYZ*."
+   referenceFrame, string,, "Accepted values are *EARTH_CENTERED_INERTIAL*, *EARTH_FIXED*, *NADIR_POINTING* or *SC_BODY_FIXED*."
+
+The second subfield of the :code:`orientation` JSON object is the :code:`convention` subfield.
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
+
+   convention, string,, "Accepted values are *REF_FRAME_ALIGNED*, *SIDE_LOOK*, *XYZ* or *EULER*."
 
 According to the specified :code:`convention`, other subfields materialize as follows:
 
-1. :code:`"convention": "NADIR"`
+1. :code:`"convention": "REF_FRAME_ALIGNED"`
 
-If the orientation is aligned to the Nadir-frame:
+Aligned with respective to the underlying reference frame.
 
 Example:
 
 .. code-block:: python
 
                "orientation": {
-                                "convention": "NADIR"
+                                "referenceFrame": "NADIR_POINTING",
+                                "convention": "REF_FRAME_ALIGNED"
                               }
 
 2. :code:`"convention": "SIDE_LOOK"`
 
-If the orientation is to be specified via a side-look-angle, the following subfields apply:
+If the orientation is to be specified via a side-look-angle (which corresponds to rotation about the y-axis only), the following subfields apply:
 
 .. csv-table:: Input parameter description 
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   sideLookAngle, number, degrees, Commonly called as nadir/ off-nadir angle. 
-
-.. note:: A positive SIDE_LOOK corresponds to anti-clockwise rotation applied around the Nadir frame y-axis.
+   sideLookAngle, float, degrees, Side-look angle
 
 Example:
 
 .. code-block:: python
 
                "orientation": {
+                                "referenceFrame": "NADIR_POINTING",
                                 "convention": "SIDE_LOOK",
                                 "sideLookAngle":10
                               }
@@ -128,8 +129,7 @@ Example:
  
 3. :code:`"convention": "XYZ"`
 
-Here the orientation is to be specified via set of three rotation angles about the instrument primary axis (which is first aligned to the
-Nadir-frame in nominal case). 
+Here the orientation is to be specified via set of three rotation angles about the X, Y and Z axis.
 The order of (intrinsic) rotations is: (1) rotation about instrument X-axis, (2) rotation about instrument Y-axis and last 
 (3) rotation about instrument Z-axis.
 
@@ -137,70 +137,101 @@ The order of (intrinsic) rotations is: (1) rotation about instrument X-axis, (2)
    :header: Parameter, Type, Units, Description
    :widths: 10,10,10,40
 
-   xRotation, number, degrees, rotation about instrument X-axis
-   yRotation, number, degrees, rotation about instrument Y-axis
-   zRotation, number, degrees, rotation about instrument Z-axis
+   xRotation, float, degrees, rotation about instrument X-axis
+   yRotation, float, degrees, rotation about instrument Y-axis
+   zRotation, float, degrees, rotation about instrument Z-axis
 
 Example:
 
 .. code-block:: python
 
                "orientation": {
+                                "referenceFrame": "NADIR_POINTING",
                                 "convention": "XYZ",
                                 "xRotation":10,
                                 "yRotation":20,
                                 "zRotation":0
                               }
 
-.. _fieldOfView_json_obj:
+4. :code:`"convention": "EULER"`
 
-:code:`fieldOfView` JSON object format
+Here the orientation is to be specified via set of Euler angles and sequence.
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
+
+   eulerAngle1, float, degrees, Rotation angle corresponding to the first rotation.
+   eulerAngle2, float, degrees, Rotation angle corresponding to the second rotation.
+   eulerAngle3, float, degrees, Rotation angle corresponding to the third rotation.
+   eulerSeq1, int, Axis-number corresponding to the first rotation.
+   eulerSeq2, int, Axis-number corresponding to the second rotation.
+   eulerSeq3, int, Axis-number corresponding to the third rotation.
+
+Example:
+
+.. code-block:: python
+
+               "orientation": {
+                                "referenceFrame": "NADIR_POINTING",
+                                "convention": "EULER",
+                                "eulerAngle1":10,
+                                "eulerAngle2":20,
+                                "eulerAngle3":0,
+                                "eulerSeq1": 3,
+                                "eulerSeq2": 1,
+                                "eulerSeq3": 3
+                              }
+
+.. _fieldOfViewGeometry_json_obj:
+
+:code:`fieldOfViewGeometry` JSON object format
 ========================================
-The :code:`fieldOfView` can be specified in three ways, according to the parameter :code:`sensorGeometry` definition.
+The :code:`fieldOfViewGeometry` is characterized by the key :code:`shape` definition. Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR`
+and :code:`CUSTOM`.
 
-1. :code:`"sensorGeometry": "CONICAL"`
+1. :code:`"shape": "CIRCULAR"`
 
     .. csv-table:: Input parameter description 
         :header: Parameter, Type,Description
         :widths: 10,10,10,40
 
-        fullConeAngle, number, degrees, Full cone angle of the instrument FOV. 
+        diameter, number, degrees, Diameter (2 times the cone angle)
 
     Example:
 
     .. code-block:: python
 
-                "fieldOfView": {
-                                    "sensorGeometry": "CONICAL",
-                                    "fullConeAngle":10
-                                }
+                "fieldOfViewGeometry": {
+                                          "shape": "CIRCULAR",
+                                          "diameter":10
+                                       }
 
-2. :code:`"sensorGeometry": "RECTANGULAR"`
+2. :code:`"shape": "RECTANGULAR"`
 
     .. csv-table:: Input parameter description 
         :header: Parameter, Type, Units, Description
         :widths: 10,10,10,40
 
-        alongTrackFieldOfView, number, degrees, (full) along-track fov. 
-        crossTrackFieldOfView, number, degrees, (full) cross-track fov.
+        angleHeight, number, degrees, Angular height (about sensor X-axis)
+        angleWidth, number, degrees, Angular width (about sensor Y-axis)
+    
+    angleHeight and angleWith correspond to the along-track and cross-track FOVs respectively in case the sensor-frame is
+    aligned to the NADIR_POINTING frame.
 
     Example:
 
     .. code-block:: python
 
-                "fieldOfView": {
-                                    "sensorGeometry": "RECTANGULAR",
-                                    "alongTrackFieldOfView":10,
-                                    "crossTrackFieldOfView":30
-                                }
+                "fieldOfViewGeometry": {
+                                          "shape": "RECTANGULAR",
+                                          "angleHeight":10,
+                                          "angleWidth":30
+                                       }
 
-    .. warning:: The along-track FOV and cross-track FOV specs are assigned assuming the instrument is in nominal orientation, i.e. the instrument is aligned to nadir-frame.
-                 If the instrument is rotated about the satellite body frame (by specifying non-zero orientation angles in the instrument json specs file), the actual along-track
-                 and cross-track fovs simulated maybe different.
+3. :code:`"shape": "CUSTOM"`
 
-3. :code:`"sensorGeometry": "CUSTOM"`
-
-    In this case the field-of-view is specified in terms of clock ,cone angles. The definition of the clock, cone angles is the 
+    In this case the field-of-view is specified in terms of clock, cone angles. The definition of the clock, cone angles is the 
     same as used in Orbit and Coverage module, i.e.
 
     Cone angles are angles measured from +Z sensor axis. If (:math:`xP`, :math:`yP`, :math:`zP`) is a unit vector describing a FOV point, then the 
@@ -213,7 +244,7 @@ The :code:`fieldOfView` can be specified in three ways, according to the paramet
         :header: Parameter, Type, Units, Description
         :widths: 10,10,10,40
 
-        customConeAnglesVector, string, degrees, array of cone angle (angle from Nadir vector) values separated by commas
+        customConeAnglesVector, string, degrees, array of cone angle values separated by commas
         customClockAnglesVector, string, degrees, array of clock values separated by commas
 
     .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
@@ -224,133 +255,153 @@ Example:
 
 .. code-block:: python
 
-               "fieldOfView": {
-                                "sensorGeometry": "CUSTOM",
-                                "customConeAnglesVector": [10,10,10,10],
-                                "customClockAnglesVector": [30, 120, 180, 280]
-                              }
+               "fieldOfViewGeometry": {
+                                          "shape": "CUSTOM",
+                                          "customConeAnglesVector": [10,10,10,10],
+                                          "customClockAnglesVector": [30,120,180,280]
+                                       }
 
-.. _maneuverability_json_object:
+.. _sceneFieldOfViewGeometry_json_obj:
 
-:code:`maneuverability` JSON object
+:code:`sceneFieldOfViewGeometry`
+===================================
+The scene field-of-view (sceneFOV) spherical geometry specification. The sceneFOV characterizes a (approximate) FOV representation of an image 'scene'. 
+For example, in the case of stripmap SARs, or pushbroom optical scanners, a scene consists of multiple concatenated narrow (in the along-track direction) strips. An 
+approximate FOV representation is built to represent the observation. The sceneFOV is considered for coverage calculations. If the sceneFOV geometry is not defined, 
+the sceneFOV geometry is assigned to be equal to the instrument FOV geometry. In case of Matrix imagers this bodes well. 
+
+The json structure is identical to the :code:`fieldOfViewGeometry` JSON (see :ref:`fieldOfViewGeometry_json_obj`).
+
+.. _maneuver_json_object:
+
+:code:`maneuver` JSON object
 ========================================
-Total maneuverability of payload pointing (combining satellite and payload maneuverability). Four types of 
-maneuverability are accepted: `Fixed`, `Cone`, `RollOnly`, `Yaw180`, `Yaw180Roll` and should be indicated in the 
-:code:`@type` name, value pair. Please refer to :ref:`manuv_desc` for a complete description of the options.
+Total maneuverability of sensor pointing (combining satellite and sensor maneuverability). Three types of 
+maneuvers are accepted: `Circular`, `Single_Roll_Only` and `Double_Roll_Only`. This should be indicated in the 
+:code:`maneuverType` name, value pair. Please refer to :ref:`maneuv_desc` for a complete description of the options.
 
-1. :code:`"@type":"Fixed"`
+1. :code:`"maneuverType":"Circular"`
 
-This option indicates that the payload shall be fixed at it's nominal orientation (specified inside the :code:`instrument`
-JSON object). There is no maneuverability.
-
-Example:
-
-.. code-block:: javascript
-   
-   "maneuverability":{
-        "@type":"Fixed"
-   }
-
-2. :code:`"@type":"Cone"`
-
-This option indicates that the payload pointing axis can be manuvered inside a conical region of full-cone angle as indicated
-by the :code:`fullConeAngle` name, value pair. The axis of the cone is aligned to the nominal orientation of the instrument specified
-in the :code:`instrument` JSON object.
+This option indicates that the instrument pointing axis can be maneuvered about the nadir vector inside a circular region of diameter as indicated
+by the :code:`diameter` name, value pair.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   fullConeAngle, float, degrees, Full cone angle of the maneuverability conical region
+   diameter, float, degrees, Diameter
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
-   "maneuverability":{
-        "@type":"Cone",
-        "fullConeAngle": 25
+   "maneuver":{
+        "maneuverType":"Circular",
+        "diameter": 25
    }
 
-3. :code:`"@type":"RollOnly"`
+2. :code:`"maneuverType":"Single_Roll_Only"`
 
-This option indicates that the payload can be manuevered only about the satellite-roll axis (about the satellite velocity vector in Inertial frame).
+This option indicates that the instrument can be maneuvered only about the roll axis (of the nadir-pointing frame).
 Such an option is expected for instruments which require a pure-side-looking target geometry.
-At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
-The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.
+The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs. Note that these angles are
+defined with respect to the NADIR_POINTING frame.
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   rollMin, float, degrees, minimum roll angle
-   rollMax, float, degrees, maximum roll angle
+   A_rollMin, float, degrees, minimum roll angle
+   A_rollMax, float, degrees, maximum roll angle
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
-   "maneuverability":{
-        "@type":"RollOnly",
-        "rollMin": -5,
-        "rollMax": 5
+   "maneuver":{
+        "maneuverType":"Single_Roll_Only",
+        "A_rollMin": 5,
+        "A_rollMax": 15
    }
 
-4. :code:`"@type":"Yaw180"`
+3. :code:`"maneuverType":"Double_Roll_Only"`
 
-This option allows for a 180 deg manuver option about the satellite-yaw axis. 
-
-Example:
-
-.. code-block:: javascript
-   
-   "maneuverability":{
-        "@type":"Yaw180"
-   }
-
-5. :code:`"@type":"Yaw180Roll"`
-
-This option is similar to the :code:`RollOnly` option, but also includes 180 deg manuver option about the yaw axis. 
-Such an option is expected for instruments which require a pure-side-looking target geometry.
-At a :math:`roll = 0` deg, the payload shall point at the nominal orientation specified in the :code:`instrument` JSON object. 
-The range of possible roll is indicated by the :code:`rollMin` and :code:`rollMax` name, value pairs.
+This option is similar to the :code:`Single_Roll_Only` option, except that it allows for definition of two set of roll-ranges (labelled as A and B).
+This option is useful to model manuever by purely side-looking (look at the nadir is prohibited) instruments which may be pointed on either 'side' (i.e. positive roll region
+and the negative roll region) of the nadir-pointing frame. 
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   rollMin, float, degrees, minimum roll angle
-   rollMax, float, degrees, maximum roll angle
+   A_rollMin, float, degrees, minimum roll angle of roll region A
+   A_rollMax, float, degrees, maximum roll angle of roll region A
+   B_rollMin, float, degrees, minimum roll angle of roll region B
+   B_rollMax, float, degrees, maximum roll angle of roll region B
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
-   "maneuverability":{
-        "@type":"Yaw180Roll",
-        "rollMin": -5,
-        "rollMax": 5
+   "maneuver":{
+        "maneuverType":"Double_Roll_Only",
+        "A_rollMin": 5,
+        "A_rollMax": 15,
+        "B_rollMin": -15,
+        "B_rollMax": -5
    }
 
-5. :code:`"@type":"FieldOfRegard"`
+.. _pointing_opt_json_obj:
 
-In this option the field of regard (angular region over which the sensor FOV can span) is specified. A :code:`fieldOfRegard` JSON object parameter
-is to be specified for which the format is the same as that the :code:`fieldOfView` JSON object.
+:code:`pointingOption` JSON object
+========================================
+List of orientations to which the instrument axis can be manuevered. Only the NADIR_POINTING reference frame is supported.
+This input specification is required to perform coverage calculations involving pointing-options.
+
+Example:
+
+.. code-block:: python
+   
+   "pointingOption":[{
+      "referenceFrame": "NADIR_POINTING",
+      "convention": "XYZ",
+      "xRotation":0,
+      "yRotation":20,
+      "zRotation":0
+   },
+   {
+      "referenceFrame": "NADIR_POINTING",
+      "convention": "XYZ",
+      "xRotation":0,
+      "yRotation":40,
+      "zRotation":0
+   }]
+
+.. _syntheticDataConfig_json_obj:
+
+:code:`syntheticDataConfig` JSON object
+================================================
+
+This JSON object is used to describe the configuration of the synthetic data to be produced by the instrument models. 
 
 .. csv-table:: Expected parameters
    :header: Parameter, Data type, Units, Description
    :widths: 10,10,5,40
 
-   fieldOfRegard, float, , Field-of-regard
+   sourceFilePaths, list str,, List of absolute filepaths of the science-data files in NetCDF format. Each file corresponds to a specific (forecast/analysis) time.
+   geophysicalVar, str,, Geophysical variable (name as present in the source NetCDF file) to be used for the synthetic data.
+   interpolMethod, str,, Interpolation method to be employed while interpolating the source data onto the pixel-positions.
 
 Example:
 
-.. code-block:: javascript
+.. code-block:: python
    
-   "maneuverability":{
-        "@type":"FieldOfRegard",
-        "fieldOfRegard":{
-            "convention": "conical",
-            "fullConeAngle": 60
-        }
+   "syntheticDataConfig":{
+        "sourceFilePaths": ["C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f000.nc", 
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f001.nc",
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f002.nc",
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f003.nc,
+                            "C:/workspace/gfs_forecast_data/gfs.t12z.pgrb2.0p25.f004.nc"],
+        "geophysicalVar": "TMP_P0_L1_GLL0",
+        "interpolMethod": "SCIPY_LINEAR"
    }

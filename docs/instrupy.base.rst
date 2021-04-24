@@ -1,7 +1,7 @@
-``instrupy.synthetic_aperture_radar`` --- Synthetic Aperture Radar
+``instrupy.base`` --- Base
 ====================================================================
 
-.. automodule:: instrupy.synthetic_aperture_radar
+.. automodule:: instrupy.base
    :members:
    :undoc-members:
    :show-inheritance:

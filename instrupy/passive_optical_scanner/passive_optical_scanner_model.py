@@ -13,7 +13,7 @@ import numpy
 import copy
 import pandas, csv
 import sys
-from instrupy.util import Entity, EnumEntity, OrientationConvention, Orientation, SensorGeometry, FieldOfView, Maneuverability, MathUtilityFunctions, Constants, FileUtilityFunctions
+from instrupy.util import Entity, EnumEntity, Orientation, SensorGeometry, FieldOfView, Maneuverability, MathUtilityFunctions, Constants, FileUtilityFunctions
 
 class ScanTech(EnumEntity):
     """Enumeration of recognized passive optical scanner scanning techniques."""
