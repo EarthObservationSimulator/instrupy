@@ -14,11 +14,11 @@ For the below tests refer to the following article more context:
 V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 
             2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020.
 
-* test_calc_data_metrics_TIRSBand1_precomputed: Model instrument with TIRS Band 1 specs (IR, pushbroom) and test with the results as computed on 4 April 2021.
-* test_calc_data_metrics_OLIBlueBand_precomputed: Model instrument with OLI Blue band specs (Optical, pushbroom) and test with the results as computed on 4 April 2021.
-* test_calc_data_metrics_MODISBand10_precomputed: Model instrument with MODIS Band 10 specs (Optical, whiskbroom) and test with the results as computed on 4 April 2021.
-* test_calc_data_metrics_MODISBand1_precomputed: Model instrument with MODIS Band 1 specs (Optical, whiskbroom) and test with the results as computed on 4 April 2021.
-* test_calc_data_metrics_CCAMBlueBand_precomputed: Model instrument with CCAM Blue Band specs (Matrix, optical) and test with the results as computed on 4 April 2021.
+* test_calc_data_metrics_TIRSBand1_precomputed: Model instrument with TIRS Band 1 specs (IR, pushbroom), Landsat-8 orbit and test with the results as computed on 4 April 2021.
+* test_calc_data_metrics_OLIBlueBand_precomputed: Model instrument with OLI Blue band specs (Optical, pushbroom), Landsat-8 orbit and test with the results as computed on 4 April 2021.
+* test_calc_data_metrics_MODISBand10_precomputed: Model instrument with MODIS Band 10 specs (Optical, whiskbroom), Aqua orbit and test with the results as computed on 4 April 2021.
+* test_calc_data_metrics_MODISBand1_precomputed: Model instrument with MODIS Band 1 specs (Optical, whiskbroom), Aqua orbit and test with the results as computed on 4 April 2021.
+* test_calc_data_metrics_CCAMBlueBand_precomputed: Model instrument with CCAM Blue Band specs (Matrix, optical), Aqua orbit and test with the results as computed on 4 April 2021.
 
 .. note:: The results using the LOWTRAN7 model are computed at resolution wav_step_percm = 5.
 
@@ -583,7 +583,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                               "quantumEff, opticsSysEff, numofReadoutE are guessed."]
                             }
         modis_band10 = PassiveOpticalScannerModel.from_dict(modis_band10_dict)
-        # landsat 8 orbit at 10 Apr 2021 15:07:56.800 UTC  (NIGHT time)                                                                          
+        # Aqua orbit at 10 Apr 2021 15:07:56.800 UTC  (NIGHT time)                                                                          
         sc_orbit_state = {'time [JDUT1]':2459315.130520833,  'x [km]': -5054.315202286442,    'y [km]': -4878.491479401228,    'z [km]': 883.5310463297755, 
                                                             'vx [km/s]': -1.417318347731835, 'vy [km/s]': 0.1319708892386859, 'vz [km/s]': -7.367383505358474 }
         target_coords = {'lat [deg]': 7.127116160568699 , 'lon [deg]': 158.1924750010043} # nadir position of satellite
@@ -645,7 +645,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                               "quantumEff, opticsSysEff, numofReadoutE are guessed."]
                             }
         modis_band1 = PassiveOpticalScannerModel.from_dict(modis_band1_dict)
-        # landsat 8 orbit at 10 Apr 2021 15:07:56.800 UTC  (NIGHT time)                                                                          
+        # Aqua orbit at 10 Apr 2021 15:07:56.800 UTC  (NIGHT time)                                                                          
         sc_orbit_state = {'time [JDUT1]':2459315.130520833,  'x [km]': -5054.315202286442,    'y [km]': -4878.491479401228,    'z [km]': 883.5310463297755, 
                                                             'vx [km/s]': -1.417318347731835, 'vy [km/s]': 0.1319708892386859, 'vz [km/s]': -7.367383505358474 }
         target_coords = {'lat [deg]': 7.127116160568699 , 'lon [deg]': 158.1924750010043} # nadir position of satellite
@@ -700,7 +700,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                 "atmosLossModel": "LOWTRAN7"
                             }
         ccam_blue_band = PassiveOpticalScannerModel.from_dict(ccam_blue_band_dict)
-        # landsat 8 orbit at 10 Apr 2021 15:07:56.800 UTC  (NIGHT time)                                                                          
+        # Aqua orbit at 10 Apr 2021 15:07:56.800 UTC  (NIGHT time)                                                                          
         sc_orbit_state = {'time [JDUT1]':2459315.130520833,  'x [km]': -5054.315202286442,    'y [km]': -4878.491479401228,    'z [km]': 883.5310463297755, 
                                                             'vx [km/s]': -1.417318347731835, 'vy [km/s]': 0.1319708892386859, 'vz [km/s]': -7.367383505358474 }
         target_coords = {'lat [deg]': 7.127116160568699 , 'lon [deg]': 158.1924750010043} # nadir position of satellite

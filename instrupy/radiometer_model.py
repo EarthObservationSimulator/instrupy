@@ -93,7 +93,7 @@ class SwathTypeSAR(EnumEntity):
     FULL = "FULL",
     FIXED = "FIXED"
 
-class SyntheticApertureRadarModel(Entity):
+class RadiometerModel(Entity):
     """A synthetic aperture radar class estimating observation data-metrics.      
       
         :cvar L_r: Reduction in SNR gain due to non-ideal range filtering (see [Pg.9, 1]). Default value is 1.2.
@@ -282,7 +282,7 @@ class SyntheticApertureRadarModel(Entity):
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
         self.numSubSwaths = int(numSubSwaths) if numSubSwaths is not None else None
 
-        super(SyntheticApertureRadarModel,self).__init__(_id, "Synthetic Aperture Radar")
+        super(RadiometerModel,self).__init__(_id, "Radiometer")
         
     @staticmethod
     def from_dict(d):
@@ -309,8 +309,8 @@ class SyntheticApertureRadarModel(Entity):
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
         :paramtype d: dict
 
-        :returns: SyntheticApertureRadarModel object initialized with the input specifications.
-        :rtype: :class:`instrupy.SyntheticApertureRadarModel`
+        :returns: RadiometerModel object initialized with the input specifications.
+        :rtype: :class:`instrupy.RadiometerModel`
 
         """
         # Only side-looking orientation of instrument supported for synthetic aperture radar 
@@ -406,7 +406,7 @@ class SyntheticApertureRadarModel(Entity):
             else:
                 _pointing_option = [Orientation.from_dict(pnt_opt_dict)]
 
-        return SyntheticApertureRadarModel(
+        return RadiometerModel(
                         name = d.get("name", None),
                         mass = d.get("mass", None),
                         volume = d.get("volume", None),
@@ -442,9 +442,9 @@ class SyntheticApertureRadarModel(Entity):
                         )
 
     def to_dict(self):
-        """ Translate the SyntheticApertureRadarModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the RadiometerModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
 
-        :returns: SyntheticApertureRadarModel specifications as python dictionary.
+        :returns: RadiometerModel specifications as python dictionary.
         :rtype: dict
 
         """
@@ -490,7 +490,7 @@ class SyntheticApertureRadarModel(Entity):
                 })
 
     def __repr__(self):
-        return "SyntheticApertureRadarModel.from_dict({})".format(self.to_dict())
+        return "RadiometerModel.from_dict({})".format(self.to_dict())
 
     @staticmethod
     def get_azimuthal_resolution(sc_speed, sc_gnd_speed, D_az):
@@ -526,14 +526,14 @@ class SyntheticApertureRadarModel(Entity):
         """        
         if(sc_orbit_state is not None and target_coords is not None):
         
-            obsv_metrics = SyntheticApertureRadarModel.calc_data_metrics_impl2(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle)
+            obsv_metrics = RadiometerModel.calc_data_metrics_impl2(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle)
 
         elif(alt_km is not None and sc_speed_kmps is not None and sc_gnd_speed_kmps is not None and inc_angle_deg is not None):
         
-            obsv_metrics = SyntheticApertureRadarModel.calc_data_metrics_impl1(self, alt_km, sc_speed_kmps, sc_gnd_speed_kmps, inc_angle_deg, instru_look_angle_from_target_inc_angle)
+            obsv_metrics = RadiometerModel.calc_data_metrics_impl1(self, alt_km, sc_speed_kmps, sc_gnd_speed_kmps, inc_angle_deg, instru_look_angle_from_target_inc_angle)
         
         else:
-            raise RuntimeError("Required set of arguments not present in the SyntheticApertureRadarModel.calc_data_metrics(.) function.")
+            raise RuntimeError("Required set of arguments not present in the RadiometerModel.calc_data_metrics(.) function.")
 
         return obsv_metrics
 
@@ -605,7 +605,7 @@ class SyntheticApertureRadarModel(Entity):
     
         #print("sc_speed_kmps", sc_speed_kmps)
         #print("sc_gnd_speed_kmps", sc_gnd_speed_kmps)
-        obsv_metrics = SyntheticApertureRadarModel.calc_data_metrics_impl1(self, alt_km, sc_speed_kmps, sc_gnd_speed_kmps, np.rad2deg(incidence_angle_rad), instru_look_angle_from_target_inc_angle)
+        obsv_metrics = RadiometerModel.calc_data_metrics_impl1(self, alt_km, sc_speed_kmps, sc_gnd_speed_kmps, np.rad2deg(incidence_angle_rad), instru_look_angle_from_target_inc_angle)
 
         return obsv_metrics
 
@@ -662,17 +662,17 @@ class SyntheticApertureRadarModel(Entity):
         L_radar = 10.0**(self.radarLoss/10.0) # convert to linear units
         F_N = 10.0**(self.systemNoiseFigure/10.0) # convert to linear units
         L_atmos = 10.0**(self.atmosLoss/10.0) # convert to linear units
-        L_r = SyntheticApertureRadarModel.L_r
-        L_a = SyntheticApertureRadarModel.L_a
-        a_wr = SyntheticApertureRadarModel.a_wr
-        a_wa = SyntheticApertureRadarModel.a_wa
+        L_r = RadiometerModel.L_r
+        L_a = RadiometerModel.L_a
+        a_wr = RadiometerModel.a_wr
+        a_wa = RadiometerModel.a_wa
         T = self.sceneNoiseTemp       
 
         #print(tau_p)
         #print(fc)
         #print(self.polType)
         # Note that the nominal look angle is considered to evaluate the operable PRF.
-        (f_P_master, W_gr_obs) = SyntheticApertureRadarModel.prf_constraint_eval(PRFmin_Hz, PRFmax_Hz, sc_speed_kmps, sc_gnd_speed_kmps, alt_km, 
+        (f_P_master, W_gr_obs) = RadiometerModel.prf_constraint_eval(PRFmin_Hz, PRFmax_Hz, sc_speed_kmps, sc_gnd_speed_kmps, alt_km, 
                                                                              instru_look_angle_rad, tau_p, D_az, D_elv, fc,
                                                                              self.polType, self.dualPolPulseConfig, self.dualPolPulseSep, 
                                                                              self.swathType, self.fixedSwathSize, self.numSubSwaths)
@@ -716,7 +716,7 @@ class SyntheticApertureRadarModel(Entity):
             rho_y = a_wr*c/(2*B_T*np.cos(psi_g))
 
             # [1] equation 69 we get minimum possible azimuth resolution (for strip mapping)
-            rho_a = SyntheticApertureRadarModel.get_azimuthal_resolution(sc_speed_kmps, sc_gnd_speed_kmps, D_az)
+            rho_a = RadiometerModel.get_azimuthal_resolution(sc_speed_kmps, sc_gnd_speed_kmps, D_az)
             # modify in case of scansar (multiple sub-swaths => trading off azimuthal resolution)
             rho_a = rho_a*self.numSubSwaths
              
@@ -902,7 +902,7 @@ class SyntheticApertureRadarModel(Entity):
             raise RuntimeError("Unknown swath configuration type.")
         
         # Note that the PRFmin is independent of the number of sub-swaths (PRFmin(stripmap) = PRFmin(scansar)) 
-        PRFmin = PRFmin_f*sc_speed_kmps*1e3/SyntheticApertureRadarModel.get_azimuthal_resolution(sc_speed_kmps, sc_gnd_speed_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
+        PRFmin = PRFmin_f*sc_speed_kmps*1e3/RadiometerModel.get_azimuthal_resolution(sc_speed_kmps, sc_gnd_speed_kmps, D_az) # minimum allowable PRF to satisfy Nyquist sampling criteria [2] equation 5.1.2.1 modified to [2] equation (5.4.4.2)
         
         #print("PRFmax: ", PRFmax)
         #print("PRFmin: ", PRFmin)

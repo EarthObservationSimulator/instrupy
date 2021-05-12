@@ -8,6 +8,7 @@ from instrupy import InstrumentModelFactory, Instrument
 from instrupy.basic_sensor_model import BasicSensorModel
 from instrupy.passive_optical_scanner_model import PassiveOpticalScannerModel
 from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel
+from instrupy.radiometer_model import RadiometerModel
 from instrupy.util import SphericalGeometry, Orientation, ViewGeometry, Maneuver 
 
 class TestInstrumentModelFactory(unittest.TestCase):
@@ -29,6 +30,8 @@ class TestInstrumentModelFactory(unittest.TestCase):
         self.assertEqual(factory._creators['Passive Optical Scanner'], PassiveOpticalScannerModel)
         self.assertIn('Synthetic Aperture Radar', factory._creators)
         self.assertEqual(factory._creators['Synthetic Aperture Radar'], SyntheticApertureRadarModel)
+        self.assertIn('Radiometer', factory._creators)
+        self.assertEqual(factory._creators['Radiometer'], RadiometerModel)
     
     def test_register_instrument_model(self):
         factory = InstrumentModelFactory()
@@ -42,6 +45,8 @@ class TestInstrumentModelFactory(unittest.TestCase):
         self.assertEqual(factory._creators['Passive Optical Scanner'], PassiveOpticalScannerModel)
         self.assertIn('Synthetic Aperture Radar', factory._creators)
         self.assertEqual(factory._creators['Synthetic Aperture Radar'], SyntheticApertureRadarModel)
+        self.assertIn('Radiometer', factory._creators)
+        self.assertEqual(factory._creators['Radiometer'], RadiometerModel)
 
     def test_get_instrument_model(self):
         factory = InstrumentModelFactory()
@@ -62,6 +67,11 @@ class TestInstrumentModelFactory(unittest.TestCase):
         specs = {"@type": 'Synthetic Aperture Radar', "minimumPRF": 2000, "maximumPRF": 8000, "operatingFrequency": 9.6e9, "antennaHeight":5, "antennaWidth":0.5} # in practice additional instrument specs shall be present in the dictionary
         sar_model = factory.get_instrument_model(specs)
         self.assertIsInstance(sar_model, SyntheticApertureRadarModel)
+
+        # RadiometerModel
+        specs = {"@type": 'Radiometer'} # in practice additional instrument specs shall be present in the dictionary
+        rad_model = factory.get_instrument_model(specs)
+        self.assertIsInstance(rad_model, RadiometerModel)
 
         # DummyNewInstrument
         specs = {"@type": 'New Instrument 2021'} # in practice additional instrument specs shall be present in the dictionary
