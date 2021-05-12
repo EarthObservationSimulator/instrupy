@@ -1,1 +1,0 @@
-from .synthetic_aperture_radar import SyntheticApertureRadar

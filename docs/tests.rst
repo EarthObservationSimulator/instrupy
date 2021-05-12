@@ -24,12 +24,6 @@ Testing strategies
 3. Using known inputs, and outputs from external sources (eg: literature, other orbital simulation softwares such as GMAT, STK)
 4. Run tests after making any revisions to the code. This helps to check that the revisions do not have uninteded effects on the results.
 
-:class:`test_public_library`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: test_public_library
-   :members:
-
 :class:`test_basic_sensor_model`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -46,6 +40,12 @@ Testing strategies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: test_synthetic_aperture_radar_model
+   :members:
+
+:class:`test_radiometer_model`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: test_radiometer_model
    :members:
 
 :class:`test_util`
