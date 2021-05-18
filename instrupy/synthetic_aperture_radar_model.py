@@ -23,6 +23,10 @@
 
 .. todo:: Include frequency dependent atmospheric losses in :math:`\\sigma_{NESZ}` calculations.
 
+.. todo:: Update antenna specification parameters to the type :class:`instrupy.util.AntennaSpecs`
+
+.. todo:: Make seperate objects for scanning-technique similar to the one in Radiometer model?
+
 """
 import json
 import copy
@@ -31,7 +35,7 @@ import numpy as np
 import warnings
 from instrupy.util import Entity, EnumEntity, Orientation, SphericalGeometry, ViewGeometry, Maneuver, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
 
-class ScanTechSAR(EnumEntity):
+class ScanTech(EnumEntity):
     """Enumeration of recognized SAR scanning techniques.
     
     :cvar STRIPMAP: Stripmap imaging operation.
@@ -192,7 +196,7 @@ class SyntheticApertureRadarModel(Entity):
         :vartype atmosLoss: float     
 
         :ivar polType: SAR polarization type
-        :vartype polType: :class:`PolTypeSAR`
+        :vartype polType: :class:`instrupy.synthetic_aperture_radar_model.PolTypeSAR`
 
         :ivar dualPolPulseConfig: In case of dual-pol, this parameter indicates the pulse configuration.
         :vartype dualPolPulseConfig: :class:`DualPolPulseConfig` or None
@@ -200,11 +204,11 @@ class SyntheticApertureRadarModel(Entity):
         :ivar dualPolPulseSep: In case of SMAP dual-pol configuration, this parameter indicates the pulse separation in seconds.
         :vartype dualPolPulseSep: float or None
 
-        :ivar scanTechnique: Scanning technique. Accepted values are "Stripmap" or "ScanSAR".
-        :vartype scanTechnique: str
+        :ivar scanTechnique: Scanning technique.
+        :vartype scanTechnique: :class:`instrupy.synthetic_aperture_radar_model.ScanTech`
 
         :ivar swathType: Swath configuration.
-        :vartype swathType: :class:`SwathTypeSAR`       
+        :vartype swathType: :class:`instrupy.synthetic_aperture_radar_model.SwathTypeSAR`       
 
         :ivar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath in kilometers.
         :vartype fixedSwathSize: float or None
@@ -277,7 +281,7 @@ class SyntheticApertureRadarModel(Entity):
         self.polType = PolTypeSAR.get(polType) if polType is not None else None  
         self.dualPolPulseConfig = DualPolPulseConfig.get(dualPolPulseConfig) if dualPolPulseConfig is not None else None  
         self.dualPolPulseSep = float(dualPolPulseSep) if dualPolPulseSep is not None else None  
-        self.scanTechnique = ScanTechSAR.get(scanTechnique) if scanTechnique is not None else None
+        self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None
         self.swathType = SwathTypeSAR.get(swathType) if swathType is not None else None  
         self.fixedSwathSize = float(fixedSwathSize) if fixedSwathSize is not None else None  
         self.numSubSwaths = int(numSubSwaths) if numSubSwaths is not None else None
@@ -295,7 +299,7 @@ class SyntheticApertureRadarModel(Entity):
             :header: Parameter, Default Value
             :widths: 10,40
 
-            scanTech, ScanTechSAR.STRIPMAP
+            scanTech, ScanTech.STRIPMAP
             orientation, Orientation.Convention.SIDE_LOOK at 25 deg
             sceneFieldOfViewGeometry, (Instrument) fieldOfViewGeometry
             polType, PolTypeSAR.SINGLE (single transmit and single receive)
@@ -350,17 +354,17 @@ class SyntheticApertureRadarModel(Entity):
         else: # assign default polarization
             polType = PolTypeSAR.SINGLE            
 
-        _scan = ScanTechSAR.get(d.get("scanTechnique", None))
+        _scan = ScanTech.get(d.get("scanTechnique", None))
         if _scan is None:
-            _scan = ScanTechSAR.STRIPMAP # default scan technique
+            _scan = ScanTech.STRIPMAP # default scan technique
         # Only stripmap and scansar techniques are supported
-        if(_scan == ScanTechSAR.STRIPMAP) or (_scan == ScanTechSAR.SCANSAR):
+        if(_scan == ScanTech.STRIPMAP) or (_scan == ScanTech.SCANSAR):
             
-            if(_scan == ScanTechSAR.SCANSAR):
+            if(_scan == ScanTech.SCANSAR):
                 numSubSwaths = d.get("numSubSwaths",None)                
                 if numSubSwaths is None:
                     numSubSwaths = 1 # default
-            elif(_scan == ScanTechSAR.STRIPMAP):
+            elif(_scan == ScanTech.STRIPMAP):
                 numSubSwaths = d.get("numSubSwaths",None)               
                 if numSubSwaths is not None:
                     warnings.warn("numSubSwaths parameter is not considered for Stripmap operation. It shall be ignored.")
@@ -386,7 +390,7 @@ class SyntheticApertureRadarModel(Entity):
                 if(swathType == SwathTypeSAR.FIXED):
                     
                     fixedSwathSize = swathConfig.get("fixedSwathSize") if swathConfig.get("fixedSwathSize", None) is not None else 10 # default to 10km
-                    if(_scan == ScanTechSAR.SCANSAR):
+                    if(_scan == ScanTech.SCANSAR):
                         fixedSwathSize = None
                         swathConfig = SwathTypeSAR.FULL  
                         warnings.warn("ScanSAR operation supports only FULL swath configuration. Specified FIXED swath configuration is ignored.")
@@ -797,7 +801,7 @@ class SyntheticApertureRadarModel(Entity):
         :param fixed_swath_size_km: In case of fixed swath configuration this parameter indicates the size of the fixed swath. Not applicable for ScanSAR.
         :paramtype fixed_swath_size_km: float
 
-        :param num_sub_swath: Number of subswaths (default = 1). In case of ScanTechSAR.SCANSAR the number of sub-swaths maybe more than 1.
+        :param num_sub_swath: Number of subswaths (default = 1). In case of ScanTech.SCANSAR the number of sub-swaths maybe more than 1.
         :paramtype num_sub_swath: int
 
         :returns: Tuple with the highest possible master PRF which can be used for observation and observed swath-width.

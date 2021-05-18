@@ -1520,3 +1520,6 @@ class TestFileUtilityFunctions(unittest.TestCase):
         self.assertEqual(o["nutrition"],  {
                          'Fat': 0, 'Sodium': 2, 'Protein': 0})
         self.assertEqual(o["nutrition"]["Fat"],  0)
+    
+class TestAntennaSpecs(unittest.TestCase): #TODO
+    pass

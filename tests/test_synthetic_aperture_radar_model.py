@@ -72,7 +72,7 @@ import json
 import numpy as np
 import sys, os
 
-from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel, ScanTechSAR, PolTypeSAR, DualPolPulseConfig, SwathTypeSAR
+from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel, ScanTech, PolTypeSAR, DualPolPulseConfig, SwathTypeSAR
 from instrupy.util import Orientation, SphericalGeometry, ViewGeometry, FileUtilityFunctions, Maneuver
 
 RE = 6378.137
@@ -210,8 +210,8 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(microxsar.polType, PolTypeSAR.SINGLE)
         self.assertIsNone(microxsar.dualPolPulseConfig)
         self.assertIsNone(microxsar.dualPolPulseSep)        
-        self.assertIsInstance(microxsar.scanTechnique, ScanTechSAR) 
-        self.assertEqual(microxsar.scanTechnique, ScanTechSAR.STRIPMAP) 
+        self.assertIsInstance(microxsar.scanTechnique, ScanTech) 
+        self.assertEqual(microxsar.scanTechnique, ScanTech.STRIPMAP) 
         self.assertIsInstance(microxsar.swathType, SwathTypeSAR) 
         self.assertEqual(microxsar.swathType, SwathTypeSAR.FULL) # default value
         self.assertIsNone(microxsar.fixedSwathSize) 
@@ -664,8 +664,8 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(test_sar4.dualPolPulseSep, 0.5*test_sar4.pulseWidth) # default value
         self.assertIsInstance(test_sar4.orientation, Orientation)
         self.assertEqual(test_sar4.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
-        self.assertIsInstance(test_sar4.scanTechnique, ScanTechSAR)
-        self.assertEqual(test_sar4.scanTechnique, ScanTechSAR.STRIPMAP)
+        self.assertIsInstance(test_sar4.scanTechnique, ScanTech)
+        self.assertEqual(test_sar4.scanTechnique, ScanTech.STRIPMAP)
 
         h = 500 # [km]
         orb_speed = orbital_speed(h)
@@ -744,8 +744,8 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsNone(test_sar5.dualPolPulseSep)
         self.assertIsInstance(test_sar5.orientation, Orientation)
         self.assertEqual(test_sar5.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
-        self.assertIsInstance(test_sar5.scanTechnique, ScanTechSAR)
-        self.assertEqual(test_sar5.scanTechnique, ScanTechSAR.STRIPMAP)
+        self.assertIsInstance(test_sar5.scanTechnique, ScanTech)
+        self.assertEqual(test_sar5.scanTechnique, ScanTech.STRIPMAP)
 
         h = 600 # [km]
         orb_speed = orbital_speed(h)
@@ -817,8 +817,8 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         ######## numSubSwaths = 1 ########
         test_sar = SyntheticApertureRadarModel.from_dict(test_sar_dict)
         
-        self.assertIsInstance(test_sar.scanTechnique, ScanTechSAR)
-        self.assertEqual(test_sar.scanTechnique, ScanTechSAR.SCANSAR)
+        self.assertIsInstance(test_sar.scanTechnique, ScanTech)
+        self.assertEqual(test_sar.scanTechnique, ScanTech.SCANSAR)
         self.assertIsInstance(test_sar.numSubSwaths, int)
         self.assertEqual(test_sar.numSubSwaths, 1)
         self.assertIsInstance(test_sar.swathType, SwathTypeSAR)

@@ -1243,7 +1243,150 @@ class Maneuver(Entity):
 
         
         return field_of_regard
-                
+
+class Antenna(Entity):
+    """ Class to handle antenna related parameters and functions.
+
+    :ivar shape: Antenna shape.
+    :vartype shape: :class:`instrupy.util.Antenna.AntennaApertureShape`
+
+    :ivar apertureExcitationProfile: Antenna aperture profile.
+    :vartype apertureExcitationProfile: :class:`instrupy.util.Antenna.AntennaApertureExcitationProfile`
+
+    :ivar height: [meters] Antenna height (in the along-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
+    :vartype height: float
+
+    :ivar width: [meters] Antenna width (in the cross-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
+    :vartype antennaWidth: float
+
+    :ivar apertureEfficiency: Aperture efficiency of antenna (:math:`0 < \\eta_{ap} < 1`).
+    :vartype apertureEfficiency: float
+
+    :ivar phyTemp: Antenna physical temperature in Kelvin.
+    :vartype phyTemp: float
+
+    """
+    class Shape(EnumEntity):
+        """Enumeration of recognized antenna aperture shapes.
+        
+        :cvar RECTANGULAR: Rectangular shape.
+        :vartype RECTANGULAR: str
+
+        :cvar CIRCULAR: Circular shape. 
+        :vartype CIRCULAR: str
+        
+        """
+        RECTANGULAR = "RECTANGULAR",
+        CIRCULAR = "CIRCULAR"
+
+    class ApertureExcitationProfile(EnumEntity):
+        """Enumeration of recognized antenna aperture excitation profiles.
+        
+        :cvar UNIFORM: Uniform excitation profile.
+        :vartype UNIFORM: str
+
+        :cvar COSINE: Cosine excitation profile.
+        :vartype COSINE: str
+        
+        """
+        UNIFORM = "UNIFORM",
+        COSINE = "COSINE"
+    
+    def __init__(self, shape=None, apertureExcitationProfile=None, diameter=None, height=None, width=None, apertureEfficiency=None, phyTemp=None, _id=None):
+        self.shape = shape if shape is not None and isinstance(shape, Antenna.Shape) else None
+        self.apertureExcitationProfile = apertureExcitationProfile if apertureExcitationProfile is not None and isinstance(apertureExcitationProfile, Antenna.ApertureExcitationProfile) else None
+        self.diameter = float(diameter) if diameter is not None else None
+        self.height = float(height) if height is not None else None
+        self.width = float(width) if width is not None else None
+        self.apertureEfficiency = float(apertureEfficiency) if apertureEfficiency is not None else None
+        self.phyTemp = float(phyTemp) if phyTemp is not None else None
+        super(Antenna, self).__init__(_id, "Antenna")
+    
+    @staticmethod
+    def from_dict(d):
+        """Parses an Antenna object from a normalized JSON dictionary.
+        
+        :param d: Dictionary with the antenna specifications.
+        :paramtype d: dict
+
+        :return: Antenna object.
+        :rtype: :class:`instrupy.util.Antenna`
+
+        """             
+        shape =  d.get("shape", None)
+        shape = Antenna.Shape.get(shape) if shape is not None else None
+        apertureExcitationProfile =  d.get("apertureExcitationProfile", None)
+        apertureExcitationProfile = Antenna.ApertureExcitationProfile.get(apertureExcitationProfile) if shape is not None else None
+        return Antenna(
+                shape = shape,
+                apertureExcitationProfile = apertureExcitationProfile,
+                diameter = d.get("diameter", None),
+                height = d.get("height", None),
+                width = d.get("width", None),
+                apertureEfficiency = d.get("apertureEfficiency", None),
+                phyTemp = d.get("phyTemp", None),
+                _id = d.get("@id", None)
+                )
+
+    def to_dict(self):
+        """ Translate the Antenna object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        
+        :return: Antenna object as python dictionary
+        :rtype: dict
+
+        """
+        return dict({"shape": self.shape,
+                     "apertureExcitationProfile": self.apertureExcitationProfile,
+                     "diameter": self.diameter,
+                     "height": self.height, 
+                     "width": self.width,
+                     "apertureEfficiency": self.apertureEfficiency,
+                     "phyTemp": self.phyTemp,
+                     "@id": self._id
+                    })
+    
+    def __repr__(self):
+        return "Antenna.from_dict({})".format(self.to_dict())
+
+    def __eq__(self, other):
+        # Equality test is simple one which compares the data attributes.
+        # note that _id data attribute may be different
+        if(isinstance(self, other.__class__)):
+            return (self.shape==other.shape) and (self.apertureExcitationProfile==other.apertureExcitationProfile) and (self.diameter==other.diameter) and \
+                    (self.height==other.height) and (self.width==other.width) and (self.apertureEfficiency==other.apertureEfficiency) and (self.phyTemp==other.phyTemp)                 
+        else:
+            return NotImplemented
+    
+    def get_spherical_geometry(self, op_frequency):
+        """ Get the spherical geometry from the antenna shape and dimensions.
+
+        :param op_frequency: Operating frequency in Hertz.
+        :paramtype op_frequency: float
+
+        :return: Spherical geometry object.
+        :rtype: :class:`instrupy.util.SphericalGeometry`
+
+        """
+        # calculate instrument FOV based on antenna shape and dimensions
+        op_wavelength =  Constants.speedOfLight/ op_frequency
+
+        if self.shape == Antenna.Shape.RECTANGULAR:
+            # calculate antenna beamwidth and hence instrument FOV 
+            angular_height = np.rad2deg(op_wavelength/ self.height)
+            angular_width = np.rad2deg(op_wavelength/ self.width)
+
+            instru_sph_geom_dict = { "shape": "RECTANGULAR", "angleHeight": angular_height, "angleWidth": angular_width } 
+        
+        elif self.shape == Antenna.Shape.CIRCULAR:
+            
+            cone_angle = np.rad2deg(op_wavelength/ self.diameter)
+            instru_sph_geom_dict = { "shape": "CIRCULAR", "diameter": cone_angle} 
+        
+        else:
+            raise NotImplementedError
+
+        return SphericalGeometry.from_json(instru_sph_geom_dict)
+
 class MathUtilityFunctions:
     """ Class aggregating various mathematical computation functions. """
 
