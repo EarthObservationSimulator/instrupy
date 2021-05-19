@@ -443,7 +443,7 @@ class Orientation(Entity):
     
     def get_pointing_vector_angle_wrt_input_vector(self, vec):
         """ Get the angle between the pointing-vector and an input vector. This funcition may be applied to calculate the off-nadir angle of the
-            instrument pointing.
+            instrument pointing. The pointing axis is assumed to be aligned along the z-axis SENSOR_BODY_FIXED frame.
 
         :param vec: Input vector.
         :paramtype vec: array_like, shape (3, 1), float
@@ -452,11 +452,40 @@ class Orientation(Entity):
         :rtype: float
 
         """
+        pointing_axis_sensor_frame = np.array([0,0,1]) # assumed pointing axis in the SENSOR_BODY_FIXED frame
 
     @staticmethod
-    def get_rotation_matrix(euler_seq1):
-        if euler_seq1 == 1:
-            
+    def get_rotation_matrix(axis, angle_deg):
+        """ Get the rotation matrix corresponding to an input rotation axis (x or y or z) and rotation angle.
+        TODO: Write unittest for this function.
+
+        :param axis: Rotation axis index. Must be 1 or 2 or 3.
+        :paramtype axis: int
+
+        :param angle_deg: Rotation angle in degrees.
+        :paramtype angle_deg: float
+
+        :return: 3x3 rotation matrix.
+        :rtype: np.array, shape (3,3), float
+
+        """
+        angle = np.deg2rad(angle_deg)
+        if axis == 1:
+            return np.array([[1, 0, 0],
+                             [0,  np.cos(angle), np.sin(angle)],
+                             [0, -np.sin(angle), np.cos(angle)]
+                            ])
+        if axis == 2:
+            return np.array([[np.cos(angle),   0, -np.sin(angle)],
+                             [            0,   1,              0],
+                             [np.sin(angle),  0,   np.cos(angle)]
+                            ])        
+        if axis == 3:
+            return np.array([[ np.cos(angle),   np.sin(angle),  0],
+                             [-np.sin(angle),   np.cos(angle),  0],
+                             [              0,              0,  1]
+                            ])
+
 
     class Convention(EnumEntity):
         """ Enumeration of recognized orientation conventions with which an object can be initialized. The rotations below can be specified with respect to 

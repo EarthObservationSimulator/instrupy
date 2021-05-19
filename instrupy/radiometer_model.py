@@ -12,7 +12,7 @@ from typing import Coroutine
 import uuid
 import numpy as np
 import warnings
-from instrupy.util import Entity, EnumEntity, Orientation, SphericalGeometry, ViewGeometry, Maneuver, Antenna, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
+from instrupy.util import Entity, EnumEntity, Orientation,ReferenceFrame, SphericalGeometry, ViewGeometry, Maneuver, Antenna, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
 
 class SystemType(EnumEntity):
     """Enumeration of recognized radiometer systems.
@@ -659,6 +659,22 @@ class FixedScan(Entity):
         else:
             return NotImplemented
     
+    def get_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
+        """ Get the available dwell time per ground-pixel. THe integration time 
+            is set to be around the dwell time.
+
+        :param res_AT_m: Along track pixel resolution in meters.
+        :paramtype res_AT_m: float
+
+        :param sat_speed_kmps: Satellite speed in kilometers per second.
+        :paramtype sat_speed_kmps: float
+
+        :return: Ground-pixel dwell time.
+        :rtype: float
+
+        """
+        return res_AT_m/(sat_speed_kmps*1e3)
+
     def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
         """ Obtain the swath-width.
             In case of fixed-scan mode, there is only 1 imaged ground-pixel per swath. 
@@ -731,6 +747,16 @@ class CrossTrackScan(Entity):
         """Parses an CrossTrackScan object from a normalized JSON dictionary.
         
         :param d: Dictionary with the cross-track scan specifications.
+
+        The following default values are assigned to the object instance parameters in case of 
+        :class:`None` values or missing key/value pairs in the input dictionary.
+
+        .. csv-table:: Default values
+            :header: Parameter, Default Value
+            :widths: 10,40
+
+            interScanOverheadTime, 0
+
         :paramtype d: dict
 
         :return: CrossTrackScan object.
@@ -738,7 +764,7 @@ class CrossTrackScan(Entity):
 
         """             
         return CrossTrackScan( scanWidth = d.get("scanWidth", None),
-                               interScanOverheadTime = d.get("interScanOverheadTime", None),
+                               interScanOverheadTime = d.get("interScanOverheadTime", 0),
                                _id = d.get("@id", None))
     
     def to_dict(self):
@@ -764,6 +790,31 @@ class CrossTrackScan(Entity):
         else:
             return NotImplemented
     
+    def get_dwell_time_per_ground_pixel(self, res_AT_m, iFOV_CT, sat_speed_kmps, **kwargs):
+        """ Get the available dwell time per ground-pixel. THe integration time 
+            is set to be around the dwell time.
+
+        :param res_AT_m: Along track pixel resolution in meters.
+        :paramtype res_AT_m: float
+
+        :param sat_speed_kmps: Satellite speed in kilometers per second.
+        :paramtype sat_speed_kmps: float
+
+        :param iFOV_CT_deg: IFOV (FOV corresponding to the ground-pixel, in degrees) in the cross-track direction.
+        :paramtype iFOV_CT_deg: float
+
+        :return: Ground-pixel dwell time.
+        :rtype: float
+
+        """
+        iFOV_CT_deg = kwargs.get('iFOV_CT_deg')
+        num_ground_pixels_per_strip = self.scanWidth / iFOV_CT_deg
+        time_avail_for_scan = res_AT_m/(sat_speed_kmps*1e3) - self.interScanOverheadTime
+        if time_avail_for_scan > 0:
+            return time_avail_for_scan/num_ground_pixels_per_strip
+        else:
+            return 0
+
     def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
         """ Obtain the swath-width.
             In case of cross-track-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
@@ -788,10 +839,10 @@ class CrossTrackScan(Entity):
         Rs = Re + h 
         gamma_m = instru_look_angle
 
-        if self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
-            iFOV_CT_deg = self.fieldOfView.sph_geom.angle_width
-        elif self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
-            iFOV_CT_deg = self.fieldOfView.sph_geom.diameter
+        if fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_CT_deg = fieldOfView.sph_geom.angle_width
+        elif fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_CT_deg = fieldOfView.sph_geom.diameter
         else:
             raise NotImplementedError
 
@@ -825,6 +876,16 @@ class ConicalScan(Entity):
     :vartype clockAngleRange: float
 
     :ivar interScanOverheadTime: Time in seconds taken from ending current scan to starting next scan. Significant in case of mechanical scanning.
+    
+    The following default values are assigned to the object instance parameters in case of 
+    :class:`None` values or missing key/value pairs in the input dictionary.
+
+    .. csv-table:: Default values
+        :header: Parameter, Default Value
+        :widths: 10,40
+
+        interScanOverheadTime, 0
+    
     :vartype interScanOverheadTime: float
 
     :ivar _id: Unique identifier.
@@ -877,6 +938,33 @@ class ConicalScan(Entity):
             return (self.offNadirAngle==other.offNadirAngle) and (self.clockAngleRange==other.clockAngleRange) and (self.interScanOverheadTime==other.interScanOverheadTime)
         else:
             return NotImplemented
+
+    def get_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
+        """ Get the available dwell time per ground-pixel. THe integration time 
+            is set to be around the dwell time.
+
+        :param res_AT_m: Along track pixel resolution in meters.
+        :paramtype res_AT_m: float
+
+        :param sat_speed_kmps: Satellite speed in kilometers per second.
+        :paramtype sat_speed_kmps: float
+
+        :param iFOV_CT_deg: IFOV (FOV corresponding to the ground-pixel, in degrees) in the cross-track direction, 
+                        (where the ground-pixel considered is the ground-pixel on the ground-track, else the term cross-track doesn't
+                         make sense).
+        :paramtype iFOV_CT_deg: float
+
+        :return: Ground-pixel dwell time.
+        :rtype: float
+
+        """
+        iFOV_CT_deg = kwargs.get('iFOV_CT_deg')
+        num_ground_pixels_per_strip = self.clockAngleRange / iFOV_CT_deg
+        time_avail_for_scan = res_AT_m/(sat_speed_kmps*1e3) - self.interScanOverheadTime
+        if time_avail_for_scan > 0:
+            return time_avail_for_scan/num_ground_pixels_per_strip
+        else:
+            return 0
 
     def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
         """ Obtain the swath-width.
@@ -1249,13 +1337,30 @@ class RadiometerModel(Entity):
         # If the instrument look-angle = target look angle, then it implies that the target is at the middle of the swath.
         if instru_look_angle_from_target_inc_angle is True:
             instru_look_angle = look_angle
-        else:
-            instru_look_angle = look_angle
-            pass # TODO
+        else:           
+            if (self.orientation.ref_frame==ReferenceFrame.NADIR_POINTING or self.orientation.ref_frame==ReferenceFrame.SC_BODY_FIXED):
+                # instrument look angle is calculated assuming the instrument orientation is wrt the NADIR_POINTING frame
+                # through either direct specification or the instrument is aligned to the spacecraft body which in turn is aligned to the 
+                # NADIR_POINTING frame.
+                rot1 = Orientation.get_rotation_matrix(self.orientation.euler_seq1, self.orientation.euler_angle1)
+                rot2 = Orientation.get_rotation_matrix(self.orientation.euler_seq2, self.orientation.euler_angle2)
+                rot3 = Orientation.get_rotation_matrix(self.orientation.euler_seq3, self.orientation.euler_angle3)
+                # assume pointing axis is aligned to the sensor body z-axis
+                # express the pointing axis in the NADIR_POINTING frame
+                rot =  np.matmul(rot3 * np.matmul(rot2 * rot1)) 
+                pointing_axis_in_nadir_pointing_frame = np.matmul(rot, np.array([0,0,1]))
+                # find the angle between the nadir-vector (aligned to the z-axis of the NADIR_POINTING frame) and the pointing-vector.
+                instru_look_angle = np.arccos(np.dot(pointing_axis_in_nadir_pointing_frame, np.array([0,0,1]))) 
 
         swath_width_km = self.scan.get_swath_width(self.fieldOfView, alt_km, instru_look_angle)
 
+        # calculate the dwell time per ground-pixel
+        sat_speed_kmps = GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos, sc_vel)
+        td = self.scan.get_dwell_time_per_ground_pixel(res_AT_m=res_AT_m, sat_speed_kmps=sat_speed_kmps, iFOV_CT_deg=iFOV_CT_deg)
 
+        # calculate the radiometric sensitivity
+        
+        
         obsv_metrics = {}
         obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2) if res_AT_m is not None else np.nan
         obsv_metrics["ground pixel cross-track resolution [m]"] = round(res_CT_m, 2) if res_CT_m is not None else np.nan
