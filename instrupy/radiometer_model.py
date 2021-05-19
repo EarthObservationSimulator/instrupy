@@ -658,6 +658,54 @@ class FixedScan(Entity):
             return True
         else:
             return NotImplemented
+    
+    def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+        """ Obtain the swath-width.
+            In case of fixed-scan mode, there is only 1 imaged ground-pixel per swath. 
+            Swath-width is computed to be equal to the antenna-footprint cross-track size. 
+            See Fig.5.1.3.1 in Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993.
+
+        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
+        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
+
+        :param alt_km: Altitude of observer in kilometers.
+        :paramtype alt_km: float
+
+        :param instru_look_angle: Instrument look angle in radians. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :paramtype instru_look_angle: float
+
+        :return: Swath-width in kilometers.
+        :rtype: float
+
+        """
+        h = alt_km * 1e3
+        Re = Constants.radiusOfEarthInKM * 1e3         
+        Rs = Re + h 
+        gamma_m = instru_look_angle
+
+        if self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_CT = np.deg2rad(self.fieldOfView.sph_geom.angle_width)
+        elif self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_CT = np.deg2rad(self.fieldOfView.sph_geom.diameter)
+        else:
+            raise NotImplementedError
+
+        gamma_n_illum = gamma_m - 0.5*iFOV_CT
+        gamma_f_illum = gamma_m + 0.5*iFOV_CT
+        theta_in_illum = np.arcsin(np.sin(gamma_n_illum)*Rs/Re)
+        theta_horizon = np.arcsin(Re/Rs)
+        try:
+            theta_if_illum = np.arcsin(np.sin(gamma_f_illum)*Rs/Re)
+        except:
+            # beyond horizon, hence set to horizon angle
+            theta_if_illum = theta_horizon
+
+        alpha_n_illum = theta_in_illum - gamma_n_illum
+        alpha_f_illum = theta_if_illum - gamma_f_illum
+        alpha_s_illum = alpha_f_illum - alpha_n_illum
+        W_gr = Re*alpha_s_illum  # swath
+
+        return W_gr*1e-3
 
 class CrossTrackScan(Entity):
     """ Class to handle cross-track scan.
@@ -715,9 +763,60 @@ class CrossTrackScan(Entity):
             return (self.scanWidth==other.scanWidth) and (self.interScanOverheadTime==other.interScanOverheadTime)
         else:
             return NotImplemented
+    
+    def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+        """ Obtain the swath-width.
+            In case of cross-track-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
+            The instru_look_angle corresponds to a (pure) roll. 
+            See Fig.5.1.3.1 in Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993.
+
+        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
+        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
+
+        :param alt_km: Altitude of observer in kilometers.
+        :paramtype alt_km: float
+
+        :param instru_look_angle: Instrument look angle in radians. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :paramtype instru_look_angle: float
+
+        :return: Swath-width in kilometers.
+        :rtype: float
+
+        """
+        h = alt_km * 1e3
+        Re = Constants.radiusOfEarthInKM * 1e3         
+        Rs = Re + h 
+        gamma_m = instru_look_angle
+
+        if self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_CT_deg = self.fieldOfView.sph_geom.angle_width
+        elif self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_CT_deg = self.fieldOfView.sph_geom.diameter
+        else:
+            raise NotImplementedError
+
+        strip_CT_rad = np.deg2rad(self.scanWidth + iFOV_CT_deg)
+
+        gamma_n_illum = gamma_m - 0.5*strip_CT_rad
+        gamma_f_illum = gamma_m + 0.5*strip_CT_rad
+        theta_in_illum = np.arcsin(np.sin(gamma_n_illum)*Rs/Re)
+        theta_horizon = np.arcsin(Re/Rs)
+        try:
+            theta_if_illum = np.arcsin(np.sin(gamma_f_illum)*Rs/Re)
+        except:
+            # beyond horizon, hence set to horizon angle
+            theta_if_illum = theta_horizon
+
+        alpha_n_illum = theta_in_illum - gamma_n_illum
+        alpha_f_illum = theta_if_illum - gamma_f_illum
+        alpha_s_illum = alpha_f_illum - alpha_n_illum
+        W_gr = Re*alpha_s_illum  # swath
+
+        return W_gr*1e-3
 
 class ConicalScan(Entity):
-    """ Class to handle conical scan.
+    """ Class to handle conical scan. 
+        For illustration of off-nadir angle and clock angles see Fig.7 in T. Kawanishi et al., "The Advanced Microwave Scanning Radiometer for the Earth Observing System (AMSR-E), NASDA's contribution to the EOS for global energy and water cycle studies," in IEEE Transactions on Geoscience and Remote Sensing, vol. 41, no. 2, pp. 184-194, Feb. 2003, doi: 10.1109/TGRS.2002.808331.
 
     :ivar offNadirAngle: Off-nadir angle (i.e. the half-cone angle of the conical scan) in degrees.
     :vartype offNadirAngle: float
@@ -778,6 +877,44 @@ class ConicalScan(Entity):
             return (self.offNadirAngle==other.offNadirAngle) and (self.clockAngleRange==other.clockAngleRange) and (self.interScanOverheadTime==other.interScanOverheadTime)
         else:
             return NotImplemented
+
+    def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+        """ Obtain the swath-width.
+            In case of conical-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
+            The "swath" is considered to be the length of the strip-arc. This is different from the length of the scene
+            along the cross-track direction.
+
+        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
+        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
+
+        :param alt_km: Altitude of observer in kilometers.
+        :paramtype alt_km: float
+
+        :param instru_look_angle: Instrument look angle in radians. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :paramtype instru_look_angle: float
+
+        :return: Swath-width in kilometers.
+        :rtype: float
+
+        """
+        if instru_look_angle != 0:
+            raise RuntimeError("Only a 0 deg instrument look angle is supported for the case of conical scan.")
+
+        # calculate the radius of the small-circle on the Earth surface on which the imaged arc lies.
+        h = alt_km * 1e3
+        Re = Constants.radiusOfEarthInKM * 1e3         
+        Rs = Re + h 
+
+        gamma = np.deg2rad(self.offNadirAngle) 
+        theta_i = np.arcsin(np.sin(gamma)*Rs/Re)
+        alpha = theta_i - gamma # here alpha is the earth centered angle
+
+        # small circle radius
+        r = Re * np.sin(alpha)
+
+        arc_len = np.deg2rad(self.clockAngleRange)*r        
+
+        return arc_len*1e-3
 
 class RadiometerModel(Entity):
     """A radiometer class estimating observation data-metrics.      
@@ -1023,6 +1160,108 @@ class RadiometerModel(Entity):
 
     def __repr__(self):
         return "RadiometerModel.from_dict({})".format(self.to_dict())
+
+    def calc_data_metrics(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle=False):
+        """ Calculate typical observation data metrics. This function is invoked by the function ``Instrument.calc_data_metrics(.)`` class in the ``base`` module.
+
+        :param sc_orbit_state: Spacecraft state at the time of observation.
+
+                            Dictionary keys are: 
+                            
+                            * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
+                            * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
+                            * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        :paramtype sc_orbit_state: dict
+
+        
+        :param target_coords: Location of the observation. Also sometimes the Point-Of-Interest (POI).
+
+                            Dictionary keys are: 
+                            
+                            * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+        :paramtype target_coords: dict
+
+        :param instru_look_angle_from_target_inc_angle: Flag (True or False) to indicate if the look angle to the middle of the swath is to be considered:  (1) using the nominal look-angle 
+                                                        (specified in the ``orientation`` attribute of the instrument), 
+                                                        OR
+                                                        (2) the incidence angle at the target. 
+                                                        Default is False.
+        
+        :paramtype instru_look_angle_from_target_inc_angle: bool
+
+        :returns: Calculated observation data metrics.
+                    
+                    Dictionary keys are: 
+                
+                    * :code:`radiometric res [K]` (:class:`float`) Radiometric resolution/ sensitivity.
+                    * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point.
+                    * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point.
+                    * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
+                    * :code:`beam efficiency` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
+
+        :rtype: dict                      
+        """
+        # Observation time in Julian Day UT1
+        tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]
+
+        # Calculate Target cartesian position in EARTH_CENTERED_INERTIAL frame
+        target_pos = GeoUtilityFunctions.geo2eci([target_coords["lat [deg]"], target_coords["lon [deg]"], 0.0], tObs_JDUT1)
+
+        # Spacecraft position in Cartesian coordinates in the EARTH_CENTERED_INERTIAL frame
+        sc_pos = np.array([sc_orbit_state["x [km]"], sc_orbit_state["y [km]"], sc_orbit_state["z [km]"]])  
+        sc_vel = np.array([sc_orbit_state["vx [km/s]"], sc_orbit_state["vy [km/s]"], sc_orbit_state["vz [km/s]"]])  
+
+        alt_km = np.linalg.norm(sc_pos) - Constants.radiusOfEarthInKM # altitude
+
+        #  Calculate the range vector between spacecraft and POI (Target)
+        range_vector_km = target_pos - sc_pos
+        range_km = np.linalg.norm(range_vector_km)
+
+        # Calculate look angle to the target location
+        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos)))
+        
+        # Look angle to corresponding incidence angle conversion for spherical Earth (incidence angle at the target location)
+        incidence_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
+
+        if(instru_look_angle_from_target_inc_angle):
+            instru_look_angle_rad = look_angle # instrument look angle from the target incidence angle
+        else:
+            pass # TODO
+        
+        ############## Calculate the pixel resolution. ##############
+        # The size of the antenna footprint at the target-location corresponds to the pixel dimensions. It is assumed that
+        # in case of rectangular antennas the along-track resolution corresponds to the antenna "height" dimension while the cross-track resolution corresponds to
+        # the antenna "width" dimension.
+        if self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_AT_deg = self.fieldOfView.sph_geom.angle_height
+            iFOV_CT_deg = self.fieldOfView.sph_geom.angle_width
+        elif self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_AT_deg = self.fieldOfView.sph_geom.diameter
+            iFOV_CT_deg = iFOV_AT_deg
+        else:
+            raise NotImplementedError
+
+        res_AT_m = np.deg2rad(iFOV_AT_deg)*range_km*1.0e3/np.cos(incidence_angle)
+        res_CT_m = np.deg2rad(iFOV_CT_deg)*range_km*1.0e3/np.cos(incidence_angle)
+        
+        ############## Calculate the swath-width. ##############
+        # The swath-width is calculated based on the instrument look angle, which may or may-not be equal to the target look angle. 
+        # If the instrument look-angle = target look angle, then it implies that the target is at the middle of the swath.
+        if instru_look_angle_from_target_inc_angle is True:
+            instru_look_angle = look_angle
+        else:
+            instru_look_angle = look_angle
+            pass # TODO
+
+        swath_width_km = self.scan.get_swath_width(self.fieldOfView, alt_km, instru_look_angle)
+
+
+        obsv_metrics = {}
+        obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2) if res_AT_m is not None else np.nan
+        obsv_metrics["ground pixel cross-track resolution [m]"] = round(res_CT_m, 2) if res_CT_m is not None else np.nan
+        obsv_metrics["swath_width_km [km]"] = round(swath_width_km, 2) if swath_width_km is not None else np.nan
+        
+        return obsv_metrics
 
     def get_id(self):
         """ Get the instrument identifier.

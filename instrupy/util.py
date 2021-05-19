@@ -441,6 +441,23 @@ class Orientation(Entity):
         self.euler_seq3 = euler_seq3
         super(Orientation, self).__init__(_id, "Orientation")
     
+    def get_pointing_vector_angle_wrt_input_vector(self, vec):
+        """ Get the angle between the pointing-vector and an input vector. This funcition may be applied to calculate the off-nadir angle of the
+            instrument pointing.
+
+        :param vec: Input vector.
+        :paramtype vec: array_like, shape (3, 1), float
+
+        :return: Angle between the pointing vector and the input vector
+        :rtype: float
+
+        """
+
+    @staticmethod
+    def get_rotation_matrix(euler_seq1):
+        if euler_seq1 == 1:
+            
+
     class Convention(EnumEntity):
         """ Enumeration of recognized orientation conventions with which an object can be initialized. The rotations below can be specified with respect to 
             any of the reference frames given in :class:`instrupy.util.ReferenceFrame`.
