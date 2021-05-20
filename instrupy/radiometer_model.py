@@ -5,6 +5,16 @@
 
         References: [1] Chapter 6,7 in "Microwave Radar and Radiometric Remote Sensing," David Gardner Long , Fawwaz T. Ulaby 2014 
 
+The module consists of separate classes for each of the radiometric systems (listed in ``SystemType``), all with identical interface functions.
+Similarly there are separate classes to handle different scan techniques (listed in ``ScanTech``), all with identical interface functions.  
+By having identical interface functions, the functions can be invoked without explicitly invoking the specified radiometric system class.
+
+Definition of the predetection stage:
+
+From Pg 273, Fig.7-13 in [1] , the predetection stage includes all subsystems between the antenna and the input terminals of the square-law detector.
+The specifications of the radiometric system can be made by either defining the specification of the entire predetection stage or of their individual components.
+
+
 """
 import json
 import copy
@@ -78,21 +88,27 @@ class TotalPowerRadiometerSystem(Entity):
     :ivar predetectionGainVariation: Pre-detection stage gain variation.
     :vartype predetectionGainVariation: float
 
+    :ivar integrationTime: Integration time in seconds.
+    :vartype integrationTime: float
+
+    :ivar bandwidth: Pre-detection bandwidth in (Hertz).
+    :vartype bandwidth: float
+
     :ivar _id: Unique identifier.
     :vartype _id: str or int
 
     """
-    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInputNoiseTemp=None, rfAmpGainVariation=None, 
-                 mixerInputNoiseAmp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
+    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInpNoiseTemp=None, rfAmpGainVariation=None, 
+                 mixerInpNoiseTemp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
                  integratorVoltageGain=None, predetectionGain=None, predetectionInpNoiseTemp=None, predetectionGainVariation=None,
-                 _id=None):
+                 integrationTime=None, bandwidth=None, _id=None):
         
         self.tlLoss = float(tlLoss) if tlLoss is not None else None
         self.tlPhyTemp = float(tlPhyTemp) if tlPhyTemp is not None else None
         self.rfAmpGain = float(rfAmpGain) if rfAmpGain is not None else None
-        self.rfAmpInputNoiseTemp = float(rfAmpInputNoiseTemp) if rfAmpInputNoiseTemp is not None else None
+        self.rfAmpInpNoiseTemp = float(rfAmpInpNoiseTemp) if rfAmpInpNoiseTemp is not None else None
         self.rfAmpGainVariation = float(rfAmpGainVariation) if rfAmpGainVariation is not None else None
-        self.mixerInputNoiseAmp = float(mixerInputNoiseAmp) if mixerInputNoiseAmp is not None else None
+        self.mixerInpNoiseTemp = float(mixerInpNoiseTemp) if mixerInpNoiseTemp is not None else None
         self.ifAmpGain = float(ifAmpGain) if ifAmpGain is not None else None
         self.ifAmpInputNoiseTemp = float(ifAmpInputNoiseTemp) if ifAmpInputNoiseTemp is not None else None
         self.ifAmpGainVariation = float(ifAmpGainVariation) if ifAmpGainVariation is not None else None
@@ -100,6 +116,8 @@ class TotalPowerRadiometerSystem(Entity):
         self.predetectionGain = float(predetectionGain) if predetectionGain is not None else None
         self.predetectionInpNoiseTemp = float(predetectionInpNoiseTemp) if predetectionInpNoiseTemp is not None else None
         self.predetectionGainVariation = float(predetectionGainVariation) if predetectionGainVariation is not None else None
+        self.integrationTime = float(integrationTime) if integrationTime is not None else None
+        self.bandwidth = float(bandwidth) if bandwidth is not None else None
 
         super(TotalPowerRadiometerSystem, self).__init__(_id, "TotalPowerRadiometerSystem")
     
@@ -118,9 +136,9 @@ class TotalPowerRadiometerSystem(Entity):
                 tlLoss = d.get("tlLoss", None),
                 tlPhyTemp = d.get("tlPhyTemp", None),
                 rfAmpGain = d.get("rfAmpGain", None),
-                rfAmpInputNoiseTemp = d.get("rfAmpInputNoiseTemp", None),
+                rfAmpInpNoiseTemp = d.get("rfAmpInpNoiseTemp", None),
                 rfAmpGainVariation = d.get("rfAmpGainVariation", None),
-                mixerInputNoiseAmp = d.get("mixerInputNoiseAmp", None),
+                mixerInpNoiseTemp = d.get("mixerInpNoiseTemp", None),
                 ifAmpGain = d.get("ifAmpGain", None),
                 ifAmpInputNoiseTemp = d.get("ifAmpInputNoiseTemp", None),
                 ifAmpGainVariation = d.get("ifAmpGainVariation", None),
@@ -128,6 +146,8 @@ class TotalPowerRadiometerSystem(Entity):
                 predetectionGain = d.get("predetectionGain", None),
                 predetectionInpNoiseTemp = d.get("predetectionInpNoiseTemp", None),
                 predetectionGainVariation = d.get("predetectionGainVariation", None),
+                integrationTime = d.get("integrationTime", None),
+                bandwidth = d.get("bandwidth", None),
                 _id = d.get("@id", None)
                 )
     
@@ -141,9 +161,9 @@ class TotalPowerRadiometerSystem(Entity):
         return dict({"tlLoss": self.tlLoss,
                      "tlPhyTemp": self.tlPhyTemp,
                      "rfAmpGain": self.rfAmpGain,
-                     "rfAmpInputNoiseTemp": self.rfAmpInputNoiseTemp, 
+                     "rfAmpInpNoiseTemp": self.rfAmpInpNoiseTemp, 
                      "rfAmpGainVariation": self.rfAmpGainVariation,
-                     "mixerInputNoiseAmp": self.mixerInputNoiseAmp,
+                     "mixerInpNoiseTemp": self.mixerInpNoiseTemp,
                      "ifAmpGain": self.ifAmpGain,
                      "ifAmpInputNoiseTemp": self.ifAmpInputNoiseTemp,
                      "ifAmpGainVariation": self.ifAmpGainVariation,
@@ -151,6 +171,8 @@ class TotalPowerRadiometerSystem(Entity):
                      "predetectionGain": self.predetectionGain,
                      "predetectionInpNoiseTemp": self.predetectionInpNoiseTemp,
                      "predetectionGainVariation": self.predetectionGainVariation,
+                     "integrationTime": self.integrationTime,
+                     "bandwidth": self.bandwidth,
                      "@id": self._id
                     })
     
@@ -162,12 +184,68 @@ class TotalPowerRadiometerSystem(Entity):
         # note that _id data attribute may be different
         if(isinstance(self, other.__class__)):
             return (self.tlLoss==other.tlLoss) and (self.tlPhyTemp==other.tlPhyTemp) and (self.rfAmpGain==other.rfAmpGain) and \
-                    (self.rfAmpInputNoiseTemp==other.rfAmpInputNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
-                    (self.mixerInputNoiseAmp==other.mixerInputNoiseAmp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
+                    (self.rfAmpInpNoiseTemp==other.rfAmpInpNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
+                    (self.mixerInpNoiseTemp==other.mixerInpNoiseTemp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
                     (self.ifAmpGainVariation==other.ifAmpGainVariation) and (self.integratorVoltageGain==other.integratorVoltageGain) and (self.predetectionGain==other.predetectionGain) and \
-                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation)                   
+                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation) and \
+                    (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)                  
         else:
             return NotImplemented
+    
+    def compute_radiometric_resolution(self, td):
+        """ Compute the radiometric resolution.
+
+        :param td: dwell time in seconds per ground-pixel
+        :paramtype td: float
+
+        :return: radiometric resolution in Kelvin
+        :rtype: float
+
+        """
+        # initialize the integration time (t_int) to be used for the calculations
+        if self.integrationTime is None:
+            t_int = td
+        if td < self.integrationTime: 
+            t_int = td # dwell time less than specified integration time => the specified integration time cannot be achieved.
+        
+        # Check if the predetection section specifications are available, if so then use them to set the local predetection section variables.
+        # Else use the individual component (of the predetection stage) specifications to 
+
+        # predetection gain
+        if self.predetectionGain is not None:
+            predetection_gain = 10^(self.predetectionGain/10) # convert to linear units
+        else:
+            try: #try to compute the pre-detection section gain from the component specifications
+                # Fig.7-9 in [1] describes the gain of the transmission line as 1/L, where L is the transmission line loss.
+                predetection_gain = (1/10^(self.tlLoss/ 10)) * 10^(self.rfAmpGain/10) * 10^(self.ifAmpGain/10) 
+            except:
+                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
+
+        # predetection noise temperature
+        if self.predetectionInpNoiseTemp is not None:
+            predetection_inp_noise_temp = self.predetectionInpNoiseTemp
+        else:
+            try: #try to compute the predetection noise temperature from the component specifications                
+                L = 10^(self.tlLoss/ 10)
+                G_RF = 10^(self.rfAmpGain/10)
+                G_IF = 10^(self.ifAmpGain/10) 
+                T_REC = self.rfAmpInpNoiseTemp + self.mixerInpNoiseTemp/ G_RF + self.ifAmpInputNoiseTemp/ (G_RF*G_IF)  # Eqn 7.29 in [1]
+                predetection_inp_noise_temp =  (L-1)*self.tlPhyTemp + L*T_REC # Eqn 7.28 in [1]
+            except:
+                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
+
+        # calculate system gain factor (eqn 7.43 in [1])
+        G_s = 2*self.integratorVoltageGain*predetection_gain*Constants.Boltzmann*
+
+        # calculate the system gain variation
+        
+
+        # calculate system temperature 
+
+
+        # calculate the radiometric resolution
+
+        
 
 class UnbalancedDikeRadiometerSystem(Entity):
     """ Class to handle unbalanced Dicke radiometer system. Refer Section 7.6 in [1].
@@ -217,22 +295,28 @@ class UnbalancedDikeRadiometerSystem(Entity):
     :ivar predetectionGainVariation: Pre-detection stage gain variation.
     :vartype predetectionGainVariation: float
 
+    :ivar integrationTime: Integration time in seconds.
+    :vartype integrationTime: float
+
+    :ivar bandwidth: Pre-detection bandwidth in (Hertz).
+    :vartype bandwidth: float
+
     :ivar _id: Unique identifier.
     :vartype _id: str or int
 
     """
-    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInputNoiseTemp=None, rfAmpGainVariation=None, 
-                 mixerInputNoiseAmp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
+    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInpNoiseTemp=None, rfAmpGainVariation=None, 
+                 mixerInpNoiseTemp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
                  dickeSwitchOutputNoiseTemperature=None, referenceTemperature=None,
                  integratorVoltageGain=None, predetectionGain=None, predetectionInpNoiseTemp=None, predetectionGainVariation=None,
-                 _id=None):
+                 integrationTime=None, bandwidth=None, _id=None):
         
         self.tlLoss = float(tlLoss) if tlLoss is not None else None
         self.tlPhyTemp = float(tlPhyTemp) if tlPhyTemp is not None else None
         self.rfAmpGain = float(rfAmpGain) if rfAmpGain is not None else None
-        self.rfAmpInputNoiseTemp = float(rfAmpInputNoiseTemp) if rfAmpInputNoiseTemp is not None else None
+        self.rfAmpInpNoiseTemp = float(rfAmpInpNoiseTemp) if rfAmpInpNoiseTemp is not None else None
         self.rfAmpGainVariation = float(rfAmpGainVariation) if rfAmpGainVariation is not None else None
-        self.mixerInputNoiseAmp = float(mixerInputNoiseAmp) if mixerInputNoiseAmp is not None else None
+        self.mixerInpNoiseTemp = float(mixerInpNoiseTemp) if mixerInpNoiseTemp is not None else None
         self.ifAmpGain = float(ifAmpGain) if ifAmpGain is not None else None
         self.ifAmpInputNoiseTemp = float(ifAmpInputNoiseTemp) if ifAmpInputNoiseTemp is not None else None
         self.ifAmpGainVariation = float(ifAmpGainVariation) if ifAmpGainVariation is not None else None
@@ -242,6 +326,8 @@ class UnbalancedDikeRadiometerSystem(Entity):
         self.predetectionGain = float(predetectionGain) if predetectionGain is not None else None
         self.predetectionInpNoiseTemp = float(predetectionInpNoiseTemp) if predetectionInpNoiseTemp is not None else None
         self.predetectionGainVariation = float(predetectionGainVariation) if predetectionGainVariation is not None else None
+        self.integrationTime = float(integrationTime) if integrationTime is not None else None
+        self.bandwidth = float(bandwidth) if bandwidth is not None else None
 
         super(UnbalancedDikeRadiometerSystem, self).__init__(_id, "UnbalancedDikeRadiometerSystem")
     
@@ -260,9 +346,9 @@ class UnbalancedDikeRadiometerSystem(Entity):
                 tlLoss = d.get("tlLoss", None),
                 tlPhyTemp = d.get("tlPhyTemp", None),
                 rfAmpGain = d.get("rfAmpGain", None),
-                rfAmpInputNoiseTemp = d.get("rfAmpInputNoiseTemp", None),
+                rfAmpInpNoiseTemp = d.get("rfAmpInpNoiseTemp", None),
                 rfAmpGainVariation = d.get("rfAmpGainVariation", None),
-                mixerInputNoiseAmp = d.get("mixerInputNoiseAmp", None),
+                mixerInpNoiseTemp = d.get("mixerInpNoiseTemp", None),
                 ifAmpGain = d.get("ifAmpGain", None),
                 ifAmpInputNoiseTemp = d.get("ifAmpInputNoiseTemp", None),
                 ifAmpGainVariation = d.get("ifAmpGainVariation", None),
@@ -272,6 +358,8 @@ class UnbalancedDikeRadiometerSystem(Entity):
                 predetectionGain = d.get("predetectionGain", None),
                 predetectionInpNoiseTemp = d.get("predetectionInpNoiseTemp", None),
                 predetectionGainVariation = d.get("predetectionGainVariation", None),
+                integrationTime = d.get("integrationTime", None),
+                bandwidth = d.get("bandwidth", None),
                 _id = d.get("@id", None)
                 )
     
@@ -285,9 +373,9 @@ class UnbalancedDikeRadiometerSystem(Entity):
         return dict({"tlLoss": self.tlLoss,
                      "tlPhyTemp": self.tlPhyTemp,
                      "rfAmpGain": self.rfAmpGain,
-                     "rfAmpInputNoiseTemp": self.rfAmpInputNoiseTemp, 
+                     "rfAmpInpNoiseTemp": self.rfAmpInpNoiseTemp, 
                      "rfAmpGainVariation": self.rfAmpGainVariation,
-                     "mixerInputNoiseAmp": self.mixerInputNoiseAmp,
+                     "mixerInpNoiseTemp": self.mixerInpNoiseTemp,
                      "ifAmpGain": self.ifAmpGain,
                      "ifAmpInputNoiseTemp": self.ifAmpInputNoiseTemp,
                      "ifAmpGainVariation": self.ifAmpGainVariation,
@@ -297,6 +385,8 @@ class UnbalancedDikeRadiometerSystem(Entity):
                      "predetectionGain": self.predetectionGain,
                      "predetectionInpNoiseTemp": self.predetectionInpNoiseTemp,
                      "predetectionGainVariation": self.predetectionGainVariation,
+                     "integrationTime": self.integrationTime,
+                     "bandwidth": self.bandwidth,
                      "@id": self._id
                     })
     
@@ -308,11 +398,12 @@ class UnbalancedDikeRadiometerSystem(Entity):
         # note that _id data attribute may be different
         if(isinstance(self, other.__class__)):
             return (self.tlLoss==other.tlLoss) and (self.tlPhyTemp==other.tlPhyTemp) and (self.rfAmpGain==other.rfAmpGain) and \
-                    (self.rfAmpInputNoiseTemp==other.rfAmpInputNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
-                    (self.mixerInputNoiseAmp==other.mixerInputNoiseAmp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
+                    (self.rfAmpInpNoiseTemp==other.rfAmpInpNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
+                    (self.mixerInpNoiseTemp==other.mixerInpNoiseTemp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
                     (self.ifAmpGainVariation==other.ifAmpGainVariation) and (self.dickeSwitchOutputNoiseTemperature==other.dickeSwitchOutputNoiseTemperature) and (self.referenceTemperature==other.referenceTemperature) and \
                     (self.integratorVoltageGain==other.integratorVoltageGain) and (self.predetectionGain==other.predetectionGain) and \
-                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation)                   
+                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation) and \
+                    (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)         
         else:
             return NotImplemented
 
@@ -361,22 +452,28 @@ class BalancedDikeRadiometerSystem(Entity):
     :ivar predetectionGainVariation: Pre-detection stage gain variation.
     :vartype predetectionGainVariation: float
 
+    :ivar integrationTime: Integration time in seconds.
+    :vartype integrationTime: float
+
+    :ivar bandwidth: Pre-detection bandwidth in (Hertz).
+    :vartype bandwidth: float
+
     :ivar _id: Unique identifier.
     :vartype _id: str or int
 
     """
-    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInputNoiseTemp=None, rfAmpGainVariation=None, 
-                 mixerInputNoiseAmp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
+    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInpNoiseTemp=None, rfAmpGainVariation=None, 
+                 mixerInpNoiseTemp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
                  dickeSwitchOutputNoiseTemperature=None,
                  integratorVoltageGain=None, predetectionGain=None, predetectionInpNoiseTemp=None, predetectionGainVariation=None,
-                 _id=None):
+                 integrationTime=None, bandwidth=None, _id=None):
         
         self.tlLoss = float(tlLoss) if tlLoss is not None else None
         self.tlPhyTemp = float(tlPhyTemp) if tlPhyTemp is not None else None
         self.rfAmpGain = float(rfAmpGain) if rfAmpGain is not None else None
-        self.rfAmpInputNoiseTemp = float(rfAmpInputNoiseTemp) if rfAmpInputNoiseTemp is not None else None
+        self.rfAmpInpNoiseTemp = float(rfAmpInpNoiseTemp) if rfAmpInpNoiseTemp is not None else None
         self.rfAmpGainVariation = float(rfAmpGainVariation) if rfAmpGainVariation is not None else None
-        self.mixerInputNoiseAmp = float(mixerInputNoiseAmp) if mixerInputNoiseAmp is not None else None
+        self.mixerInpNoiseTemp = float(mixerInpNoiseTemp) if mixerInpNoiseTemp is not None else None
         self.ifAmpGain = float(ifAmpGain) if ifAmpGain is not None else None
         self.ifAmpInputNoiseTemp = float(ifAmpInputNoiseTemp) if ifAmpInputNoiseTemp is not None else None
         self.ifAmpGainVariation = float(ifAmpGainVariation) if ifAmpGainVariation is not None else None
@@ -385,6 +482,8 @@ class BalancedDikeRadiometerSystem(Entity):
         self.predetectionGain = float(predetectionGain) if predetectionGain is not None else None
         self.predetectionInpNoiseTemp = float(predetectionInpNoiseTemp) if predetectionInpNoiseTemp is not None else None
         self.predetectionGainVariation = float(predetectionGainVariation) if predetectionGainVariation is not None else None
+        self.integrationTime = float(integrationTime) if integrationTime is not None else None
+        self.bandwidth = float(bandwidth) if bandwidth is not None else None
 
         super(BalancedDikeRadiometerSystem, self).__init__(_id, "BalancedDikeRadiometerSystem")
     
@@ -403,9 +502,9 @@ class BalancedDikeRadiometerSystem(Entity):
                 tlLoss = d.get("tlLoss", None),
                 tlPhyTemp = d.get("tlPhyTemp", None),
                 rfAmpGain = d.get("rfAmpGain", None),
-                rfAmpInputNoiseTemp = d.get("rfAmpInputNoiseTemp", None),
+                rfAmpInpNoiseTemp = d.get("rfAmpInpNoiseTemp", None),
                 rfAmpGainVariation = d.get("rfAmpGainVariation", None),
-                mixerInputNoiseAmp = d.get("mixerInputNoiseAmp", None),
+                mixerInpNoiseTemp = d.get("mixerInpNoiseTemp", None),
                 ifAmpGain = d.get("ifAmpGain", None),
                 ifAmpInputNoiseTemp = d.get("ifAmpInputNoiseTemp", None),
                 ifAmpGainVariation = d.get("ifAmpGainVariation", None),
@@ -414,6 +513,8 @@ class BalancedDikeRadiometerSystem(Entity):
                 predetectionGain = d.get("predetectionGain", None),
                 predetectionInpNoiseTemp = d.get("predetectionInpNoiseTemp", None),
                 predetectionGainVariation = d.get("predetectionGainVariation", None),
+                integrationTime = d.get("integrationTime", None),
+                bandwidth = d.get("bandwidth", None),
                 _id = d.get("@id", None)
                 )
     
@@ -427,9 +528,9 @@ class BalancedDikeRadiometerSystem(Entity):
         return dict({"tlLoss": self.tlLoss,
                      "tlPhyTemp": self.tlPhyTemp,
                      "rfAmpGain": self.rfAmpGain,
-                     "rfAmpInputNoiseTemp": self.rfAmpInputNoiseTemp, 
+                     "rfAmpInpNoiseTemp": self.rfAmpInpNoiseTemp, 
                      "rfAmpGainVariation": self.rfAmpGainVariation,
-                     "mixerInputNoiseAmp": self.mixerInputNoiseAmp,
+                     "mixerInpNoiseTemp": self.mixerInpNoiseTemp,
                      "ifAmpGain": self.ifAmpGain,
                      "ifAmpInputNoiseTemp": self.ifAmpInputNoiseTemp,
                      "ifAmpGainVariation": self.ifAmpGainVariation,
@@ -438,6 +539,8 @@ class BalancedDikeRadiometerSystem(Entity):
                      "predetectionGain": self.predetectionGain,
                      "predetectionInpNoiseTemp": self.predetectionInpNoiseTemp,
                      "predetectionGainVariation": self.predetectionGainVariation,
+                     "integrationTime": self.integrationTime,
+                     "bandwidth": self.bandwidth,
                      "@id": self._id
                     })
     
@@ -449,11 +552,12 @@ class BalancedDikeRadiometerSystem(Entity):
         # note that _id data attribute may be different
         if(isinstance(self, other.__class__)):
             return (self.tlLoss==other.tlLoss) and (self.tlPhyTemp==other.tlPhyTemp) and (self.rfAmpGain==other.rfAmpGain) and \
-                    (self.rfAmpInputNoiseTemp==other.rfAmpInputNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
-                    (self.mixerInputNoiseAmp==other.mixerInputNoiseAmp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
+                    (self.rfAmpInpNoiseTemp==other.rfAmpInpNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
+                    (self.mixerInpNoiseTemp==other.mixerInpNoiseTemp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
                     (self.ifAmpGainVariation==other.ifAmpGainVariation) and (self.dickeSwitchOutputNoiseTemperature==other.dickeSwitchOutputNoiseTemperature) and \
                     (self.integratorVoltageGain==other.integratorVoltageGain) and (self.predetectionGain==other.predetectionGain) and \
-                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation)                   
+                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation)  and \
+                    (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)         
         else:
             return NotImplemented
 
@@ -502,22 +606,28 @@ class NoiseAddingRadiometerSystem(Entity):
     :ivar predetectionGainVariation: Pre-detection stage gain variation.
     :vartype predetectionGainVariation: float
 
+    :ivar integrationTime: Integration time in seconds.
+    :vartype integrationTime: float
+
+    :ivar bandwidth: Pre-detection bandwidth in (Hertz).
+    :vartype bandwidth: float
+
     :ivar _id: Unique identifier.
     :vartype _id: str or int
 
     """
-    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInputNoiseTemp=None, rfAmpGainVariation=None, 
-                 mixerInputNoiseAmp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
+    def __init__(self, tlLoss=None, tlPhyTemp=None, rfAmpGain=None, rfAmpInpNoiseTemp=None, rfAmpGainVariation=None, 
+                 mixerInpNoiseTemp=None, ifAmpGain=None, ifAmpInputNoiseTemp=None, ifAmpGainVariation=None, 
                  excessNoiseTemperature=None,
                  integratorVoltageGain=None, predetectionGain=None, predetectionInpNoiseTemp=None, predetectionGainVariation=None,
-                 _id=None):
+                 integrationTime=None, bandwidth=None, _id=None):
         
         self.tlLoss = float(tlLoss) if tlLoss is not None else None
         self.tlPhyTemp = float(tlPhyTemp) if tlPhyTemp is not None else None
         self.rfAmpGain = float(rfAmpGain) if rfAmpGain is not None else None
-        self.rfAmpInputNoiseTemp = float(rfAmpInputNoiseTemp) if rfAmpInputNoiseTemp is not None else None
+        self.rfAmpInpNoiseTemp = float(rfAmpInpNoiseTemp) if rfAmpInpNoiseTemp is not None else None
         self.rfAmpGainVariation = float(rfAmpGainVariation) if rfAmpGainVariation is not None else None
-        self.mixerInputNoiseAmp = float(mixerInputNoiseAmp) if mixerInputNoiseAmp is not None else None
+        self.mixerInpNoiseTemp = float(mixerInpNoiseTemp) if mixerInpNoiseTemp is not None else None
         self.ifAmpGain = float(ifAmpGain) if ifAmpGain is not None else None
         self.ifAmpInputNoiseTemp = float(ifAmpInputNoiseTemp) if ifAmpInputNoiseTemp is not None else None
         self.ifAmpGainVariation = float(ifAmpGainVariation) if ifAmpGainVariation is not None else None
@@ -526,6 +636,8 @@ class NoiseAddingRadiometerSystem(Entity):
         self.predetectionGain = float(predetectionGain) if predetectionGain is not None else None
         self.predetectionInpNoiseTemp = float(predetectionInpNoiseTemp) if predetectionInpNoiseTemp is not None else None
         self.predetectionGainVariation = float(predetectionGainVariation) if predetectionGainVariation is not None else None
+        self.integrationTime = float(integrationTime) if integrationTime is not None else None
+        self.bandwidth = float(bandwidth) if bandwidth is not None else None
 
         super(NoiseAddingRadiometerSystem, self).__init__(_id, "NoiseAddingRadiometerSystem")
     
@@ -544,9 +656,9 @@ class NoiseAddingRadiometerSystem(Entity):
                 tlLoss = d.get("tlLoss", None),
                 tlPhyTemp = d.get("tlPhyTemp", None),
                 rfAmpGain = d.get("rfAmpGain", None),
-                rfAmpInputNoiseTemp = d.get("rfAmpInputNoiseTemp", None),
+                rfAmpInpNoiseTemp = d.get("rfAmpInpNoiseTemp", None),
                 rfAmpGainVariation = d.get("rfAmpGainVariation", None),
-                mixerInputNoiseAmp = d.get("mixerInputNoiseAmp", None),
+                mixerInpNoiseTemp = d.get("mixerInpNoiseTemp", None),
                 ifAmpGain = d.get("ifAmpGain", None),
                 ifAmpInputNoiseTemp = d.get("ifAmpInputNoiseTemp", None),
                 ifAmpGainVariation = d.get("ifAmpGainVariation", None),
@@ -555,6 +667,8 @@ class NoiseAddingRadiometerSystem(Entity):
                 predetectionGain = d.get("predetectionGain", None),
                 predetectionInpNoiseTemp = d.get("predetectionInpNoiseTemp", None),
                 predetectionGainVariation = d.get("predetectionGainVariation", None),
+                integrationTime  = d.get("integrationTime", None),
+                bandwidth = d.get("bandwidth", None),
                 _id = d.get("@id", None)
                 )
     
@@ -568,9 +682,9 @@ class NoiseAddingRadiometerSystem(Entity):
         return dict({"tlLoss": self.tlLoss,
                      "tlPhyTemp": self.tlPhyTemp,
                      "rfAmpGain": self.rfAmpGain,
-                     "rfAmpInputNoiseTemp": self.rfAmpInputNoiseTemp, 
+                     "rfAmpInpNoiseTemp": self.rfAmpInpNoiseTemp, 
                      "rfAmpGainVariation": self.rfAmpGainVariation,
-                     "mixerInputNoiseAmp": self.mixerInputNoiseAmp,
+                     "mixerInpNoiseTemp": self.mixerInpNoiseTemp,
                      "ifAmpGain": self.ifAmpGain,
                      "ifAmpInputNoiseTemp": self.ifAmpInputNoiseTemp,
                      "ifAmpGainVariation": self.ifAmpGainVariation,
@@ -579,6 +693,8 @@ class NoiseAddingRadiometerSystem(Entity):
                      "predetectionGain": self.predetectionGain,
                      "predetectionInpNoiseTemp": self.predetectionInpNoiseTemp,
                      "predetectionGainVariation": self.predetectionGainVariation,
+                     "integrationTime": self.integrationTime,
+                     "bandwidth": self.bandwidth,
                      "@id": self._id
                     })
     
@@ -590,11 +706,12 @@ class NoiseAddingRadiometerSystem(Entity):
         # note that _id data attribute may be different
         if(isinstance(self, other.__class__)):
             return (self.tlLoss==other.tlLoss) and (self.tlPhyTemp==other.tlPhyTemp) and (self.rfAmpGain==other.rfAmpGain) and \
-                    (self.rfAmpInputNoiseTemp==other.rfAmpInputNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
-                    (self.mixerInputNoiseAmp==other.mixerInputNoiseAmp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
+                    (self.rfAmpInpNoiseTemp==other.rfAmpInpNoiseTemp) and (self.rfAmpGainVariation==other.rfAmpGainVariation) and \
+                    (self.mixerInpNoiseTemp==other.mixerInpNoiseTemp) and (self.ifAmpGain==other.ifAmpGain) and (self.ifAmpInputNoiseTemp==other.ifAmpInputNoiseTemp) and \
                     (self.ifAmpGainVariation==other.ifAmpGainVariation) and (self.excessNoiseTemperature==other.excessNoiseTemperature) and \
                     (self.integratorVoltageGain==other.integratorVoltageGain) and (self.predetectionGain==other.predetectionGain) and \
-                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation)                   
+                    (self.predetectionInpNoiseTemp==other.predetectionInpNoiseTemp) and (self.predetectionGainVariation==other.predetectionGainVariation) and \
+                    (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)         
         else:
             return NotImplemented
 
@@ -659,7 +776,7 @@ class FixedScan(Entity):
         else:
             return NotImplemented
     
-    def get_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
+    def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. THe integration time 
             is set to be around the dwell time.
 
@@ -675,7 +792,7 @@ class FixedScan(Entity):
         """
         return res_AT_m/(sat_speed_kmps*1e3)
 
-    def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+    def compute_swath_width(self, fieldOfView, alt_km, instru_look_angle):
         """ Obtain the swath-width.
             In case of fixed-scan mode, there is only 1 imaged ground-pixel per swath. 
             Swath-width is computed to be equal to the antenna-footprint cross-track size. 
@@ -790,7 +907,7 @@ class CrossTrackScan(Entity):
         else:
             return NotImplemented
     
-    def get_dwell_time_per_ground_pixel(self, res_AT_m, iFOV_CT, sat_speed_kmps, **kwargs):
+    def compute_dwell_time_per_ground_pixel(self, res_AT_m, iFOV_CT, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. THe integration time 
             is set to be around the dwell time.
 
@@ -815,7 +932,7 @@ class CrossTrackScan(Entity):
         else:
             return 0
 
-    def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+    def compute_swath_width(self, fieldOfView, alt_km, instru_look_angle):
         """ Obtain the swath-width.
             In case of cross-track-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
             The instru_look_angle corresponds to a (pure) roll. 
@@ -939,7 +1056,7 @@ class ConicalScan(Entity):
         else:
             return NotImplemented
 
-    def get_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
+    def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. THe integration time 
             is set to be around the dwell time.
 
@@ -966,7 +1083,7 @@ class ConicalScan(Entity):
         else:
             return 0
 
-    def get_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+    def compute_swath_width(self, fieldOfView, alt_km, instru_look_angle):
         """ Obtain the swath-width.
             In case of conical-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
             The "swath" is considered to be the length of the strip-arc. This is different from the length of the scene
@@ -1051,9 +1168,6 @@ class RadiometerModel(Entity):
     :ivar operatingFrequency: Operating radar center frequency in (Hertz).
     :vartype operatingFrequency: float
 
-    :ivar bandwidth: Pre-detection bandwidth in (Hertz).
-    :vartype bandwidth: float
-
     :ivar systemType: Radiometer system type.
     :vartype: :class:`instrupy.radiometer_model.SystemType`
     
@@ -1073,7 +1187,7 @@ class RadiometerModel(Entity):
     def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None, 
             fieldOfViewGeometry=None, sceneFieldOfViewGeometry=None, maneuver=None, pointingOption=None, 
             dataRate=None, bitsPerPixel=None, antenna=None, operatingFrequency=None, 
-            bandwidth=None, systemType=None, system=None, scanTechnique=None, 
+            systemType=None, system=None, scanTechnique=None, 
             scan=None, _id=None):
         """ Initialization. All except the below two parameters have identical description as that of the corresponding class instance variables.
 
@@ -1106,7 +1220,6 @@ class RadiometerModel(Entity):
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.antenna = copy.deepcopy(antenna) if antenna is not None and isinstance(antenna, Antenna) else None
         self.operatingFrequency = float(operatingFrequency) if operatingFrequency is not None else None
-        self.bandwidth = float(bandwidth) if bandwidth is not None else None
         self.systemType = SystemType.get(systemType) if systemType is not None else None
         self.system = copy.deepcopy(system) if system is not None and (isinstance(system, TotalPowerRadiometerSystem) or isinstance(system, UnbalancedDikeRadiometerSystem) or isinstance(system, BalancedDikeRadiometerSystem) or isinstance(system, NoiseAddingRadiometerSystem))  else None
         self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None
@@ -1202,7 +1315,6 @@ class RadiometerModel(Entity):
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         antenna = antenna,
                         operatingFrequency = d.get("operatingFrequency", None),
-                        bandwidth = d.get("bandwidth", None),
                         systemType = systemType,
                         system = system,
                         scanTechnique = scanTechnique,
@@ -1240,7 +1352,6 @@ class RadiometerModel(Entity):
                 "bitsPerPixel": self.bitsPerPixel,                
                 "antenna": antenna_dict,
                 "operatingFrequency": self.operatingFrequency,
-                "bandwidth": self.bandwidth,
                 "system": system_dict,
                 "scan": scan_dict,
                 "@id": self._id
@@ -1310,11 +1421,6 @@ class RadiometerModel(Entity):
         
         # Look angle to corresponding incidence angle conversion for spherical Earth (incidence angle at the target location)
         incidence_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
-
-        if(instru_look_angle_from_target_inc_angle):
-            instru_look_angle_rad = look_angle # instrument look angle from the target incidence angle
-        else:
-            pass # TODO
         
         ############## Calculate the pixel resolution. ##############
         # The size of the antenna footprint at the target-location corresponds to the pixel dimensions. It is assumed that
@@ -1352,14 +1458,14 @@ class RadiometerModel(Entity):
                 # find the angle between the nadir-vector (aligned to the z-axis of the NADIR_POINTING frame) and the pointing-vector.
                 instru_look_angle = np.arccos(np.dot(pointing_axis_in_nadir_pointing_frame, np.array([0,0,1]))) 
 
-        swath_width_km = self.scan.get_swath_width(self.fieldOfView, alt_km, instru_look_angle)
+        swath_width_km = self.scan.compute_swath_width(self.fieldOfView, alt_km, instru_look_angle)
 
         # calculate the dwell time per ground-pixel
         sat_speed_kmps = GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos, sc_vel)
-        td = self.scan.get_dwell_time_per_ground_pixel(res_AT_m=res_AT_m, sat_speed_kmps=sat_speed_kmps, iFOV_CT_deg=iFOV_CT_deg)
+        td = self.scan.compute_dwell_time_per_ground_pixel(res_AT_m=res_AT_m, sat_speed_kmps=sat_speed_kmps, iFOV_CT_deg=iFOV_CT_deg)
 
         # calculate the radiometric sensitivity
-        
+
         
         obsv_metrics = {}
         obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2) if res_AT_m is not None else np.nan
