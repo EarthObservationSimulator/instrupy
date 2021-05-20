@@ -61,7 +61,7 @@ class TotalPowerRadiometerSystem(Entity):
     :ivar rfAmpInpNoiseTemp: RF amplifier input noise temperature in Kelvin.
     :vartype rfAmpInpNoiseTemp: float
 
-    :ivar rfAmpGainVariation: RF amplifier gain variation.
+    :ivar rfAmpGainVariation: RF amplifier gain variation. Linear units.
     :vartype rfAmpGainVariation: float
 
     :ivar mixerInpNoiseAmp: Mixer input noise temperature in Kelvin.
@@ -73,7 +73,7 @@ class TotalPowerRadiometerSystem(Entity):
     :ivar ifAmpInpNoiseTemp: Intermediate frequency amplifier input noise temperature in Kelvin.
     :vartype ifAmpInpNoiseTemp: float
 
-    :ivar ifAmpGainVariation: IF amplifier gain variation.
+    :ivar ifAmpGainVariation: IF amplifier gain variation. Linear units.
     :vartype ifAmpGainVariation: float
 
     :ivar integratorVoltageGain: Integrator voltage gain (unitless).
@@ -85,7 +85,7 @@ class TotalPowerRadiometerSystem(Entity):
     :ivar predetectionInpNoiseTemp: Pre-detection input noise temperature in Kelvin.
     :vartype predetectionInpNoiseTemp: float
 
-    :ivar predetectionGainVariation: Pre-detection stage gain variation.
+    :ivar predetectionGainVariation: Pre-detection stage gain variation. Linear units.
     :vartype predetectionGainVariation: float
 
     :ivar integrationTime: Integration time in seconds.
@@ -192,11 +192,17 @@ class TotalPowerRadiometerSystem(Entity):
         else:
             return NotImplemented
     
-    def compute_radiometric_resolution(self, td):
+    def compute_radiometric_resolution(self, td, antenna, T_A_q):
         """ Compute the radiometric resolution.
 
         :param td: dwell time in seconds per ground-pixel
         :paramtype td: float
+
+        :param antenna: Antenna specifications.
+        :paramtype antenna: :class:`instrupy.util.Antenna`
+
+        :param T_A_q: Brightness temperature from scene (mainlobe and sidelobes of antenna eqn 6.37 in [1]
+        :paramtype T_A_q: float
 
         :return: radiometric resolution in Kelvin
         :rtype: float
@@ -211,22 +217,31 @@ class TotalPowerRadiometerSystem(Entity):
         # Check if the predetection section specifications are available, if so then use them to set the local predetection section variables.
         # Else use the individual component (of the predetection stage) specifications to 
 
+        # Transmission line loss, required for varions calculations which follow
+        L = 10^(self.tlLoss/ 10)
+
         # predetection gain
         if self.predetectionGain is not None:
             predetection_gain = 10^(self.predetectionGain/10) # convert to linear units
+            predetection_gain_minus = predetection_gain - 0.5*self.predetectionGainVariation
+            predetection_gain_plus = predetection_gain + 0.5*self.predetectionGainVariation
         else:
             try: #try to compute the pre-detection section gain from the component specifications
                 # Fig.7-9 in [1] describes the gain of the transmission line as 1/L, where L is the transmission line loss.
-                predetection_gain = (1/10^(self.tlLoss/ 10)) * 10^(self.rfAmpGain/10) * 10^(self.ifAmpGain/10) 
+                G_TL = 1/10^(self.tlLoss/ 10) # transmission line "gain"
+                G_RF = 10^(self.rfAmpGain/10)
+                G_IF = 10^(self.ifAmpGain/10)
+                predetection_gain = G_TL * G_RF * G_IF
+                predetection_gain_minus = G_TL * (G_RF - 0.5*self.rfAmpGainVariation)* (G_IF - 0.5*self.ifAmpGainVariation) 
+                predetection_gain_plus = G_TL * (G_RF + 0.5*self.rfAmpGainVariation)* (G_IF + 0.5*self.ifAmpGainVariation) 
             except:
-                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
+                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")        
 
         # predetection noise temperature
         if self.predetectionInpNoiseTemp is not None:
             predetection_inp_noise_temp = self.predetectionInpNoiseTemp
         else:
-            try: #try to compute the predetection noise temperature from the component specifications                
-                L = 10^(self.tlLoss/ 10)
+            try: #try to compute the predetection noise temperature from the component specifications                               
                 G_RF = 10^(self.rfAmpGain/10)
                 G_IF = 10^(self.ifAmpGain/10) 
                 T_REC = self.rfAmpInpNoiseTemp + self.mixerInpNoiseTemp/ G_RF + self.ifAmpInputNoiseTemp/ (G_RF*G_IF)  # Eqn 7.29 in [1]
@@ -235,17 +250,22 @@ class TotalPowerRadiometerSystem(Entity):
                 raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
 
         # calculate system gain factor (eqn 7.43 in [1])
-        G_s = 2*self.integratorVoltageGain*predetection_gain*Constants.Boltzmann*
+        G_s = 2*self.integratorVoltageGain*predetection_gain*Constants.Boltzmann*self.bandwidth
 
         # calculate the system gain variation
-        
+        G_s_minus = 2*self.integratorVoltageGain*predetection_gain_minus*Constants.Boltzmann*self.bandwidth
+        G_s_plus = 2*self.integratorVoltageGain*predetection_gain_plus*Constants.Boltzmann*self.bandwidth
+        G_s_delta = G_s_plus - G_s_minus        
 
-        # calculate system temperature 
-
+        # calculate system temperature         
+        T_REC_q = (L-1)*self.tlPhyTemp + L*T_REC# receiver (including the transmission line) input noise-temperature eqn 7.28 in [1]. 'q' stands for quote.
+        psi = antenna.radiationEfficiency # antenna radiation efficiency = 1/ antenna loss
+        T_SYS = psi*T_A_q + (1-psi)*antenna.phyTemp + T_REC_q # eqn 7.31 in [1]
 
         # calculate the radiometric resolution
+        resolution = T_SYS*(1/(self.bandwidth*t_int + (G_s_delta/G_s)^2))^0.5
 
-        
+        return resolution        
 
 class UnbalancedDikeRadiometerSystem(Entity):
     """ Class to handle unbalanced Dicke radiometer system. Refer Section 7.6 in [1].
@@ -262,7 +282,7 @@ class UnbalancedDikeRadiometerSystem(Entity):
     :ivar rfAmpInpNoiseTemp: RF amplifier input noise temperature in Kelvin.
     :vartype rfAmpInpNoiseTemp: float
 
-    :ivar rfAmpGainVariation: RF amplifier gain variation.
+    :ivar rfAmpGainVariation: RF amplifier gain variation. Linear units.
     :vartype rfAmpGainVariation: float
 
     :ivar mixerInpNoiseAmp: Mixer input noise temperature in Kelvin.
@@ -274,7 +294,7 @@ class UnbalancedDikeRadiometerSystem(Entity):
     :ivar ifAmpInpNoiseTemp: Intermediate frequency amplifier input noise temperature in Kelvin.
     :vartype ifAmpInpNoiseTemp: float
 
-    :ivar ifAmpGainVariation: IF amplifier gain variation.
+    :ivar ifAmpGainVariation: IF amplifier gain variation. Linear units.
     :vartype ifAmpGainVariation: float
 
     :ivar dickeSwitchOutputNoiseTemperature: Dicke switch noise temperature in Kelvin referenced to the output port.
@@ -292,7 +312,7 @@ class UnbalancedDikeRadiometerSystem(Entity):
     :ivar predetectionInpNoiseTemp: Pre-detection input noise temperature in Kelvin.
     :vartype predetectionInpNoiseTemp: float
 
-    :ivar predetectionGainVariation: Pre-detection stage gain variation.
+    :ivar predetectionGainVariation: Pre-detection stage gain variation. Linear units.
     :vartype predetectionGainVariation: float
 
     :ivar integrationTime: Integration time in seconds.
@@ -422,7 +442,7 @@ class BalancedDikeRadiometerSystem(Entity):
     :ivar rfAmpInpNoiseTemp: RF amplifier input noise temperature in Kelvin.
     :vartype rfAmpInpNoiseTemp: float
 
-    :ivar rfAmpGainVariation: RF amplifier gain variation.
+    :ivar rfAmpGainVariation: RF amplifier gain variation. Linear units.
     :vartype rfAmpGainVariation: float
 
     :ivar mixerInpNoiseAmp: Mixer input noise temperature in Kelvin.
@@ -434,7 +454,7 @@ class BalancedDikeRadiometerSystem(Entity):
     :ivar ifAmpInpNoiseTemp: Intermediate frequency amplifier input noise temperature in Kelvin.
     :vartype ifAmpInpNoiseTemp: float
 
-    :ivar ifAmpGainVariation: IF amplifier gain variation.
+    :ivar ifAmpGainVariation: IF amplifier gain variation. Linear units.
     :vartype ifAmpGainVariation: float
 
     :ivar dickeSwitchOutputNoiseTemperature: Dicke switch noise temperature in Kelvin referenced to the output port.
@@ -449,7 +469,7 @@ class BalancedDikeRadiometerSystem(Entity):
     :ivar predetectionInpNoiseTemp: Pre-detection input noise temperature in Kelvin.
     :vartype predetectionInpNoiseTemp: float
 
-    :ivar predetectionGainVariation: Pre-detection stage gain variation.
+    :ivar predetectionGainVariation: Pre-detection stage gain variation. Linear units.
     :vartype predetectionGainVariation: float
 
     :ivar integrationTime: Integration time in seconds.
@@ -576,7 +596,7 @@ class NoiseAddingRadiometerSystem(Entity):
     :ivar rfAmpInpNoiseTemp: RF amplifier input noise temperature in Kelvin.
     :vartype rfAmpInpNoiseTemp: float
 
-    :ivar rfAmpGainVariation: RF amplifier gain variation.
+    :ivar rfAmpGainVariation: RF amplifier gain variation. Linear units.
     :vartype rfAmpGainVariation: float
 
     :ivar mixerInpNoiseAmp: Mixer input noise temperature in Kelvin.
@@ -588,7 +608,7 @@ class NoiseAddingRadiometerSystem(Entity):
     :ivar ifAmpInpNoiseTemp: Intermediate frequency amplifier input noise temperature in Kelvin.
     :vartype ifAmpInpNoiseTemp: float
 
-    :ivar ifAmpGainVariation: IF amplifier gain variation.
+    :ivar ifAmpGainVariation: IF amplifier gain variation. Linear units.
     :vartype ifAmpGainVariation: float
 
     :ivar excessNoiseTemperature: Excess noise temperature (added noise to the receiver input during the diode ON half-cycle) in Kelvin referenced to the output port.
@@ -603,7 +623,7 @@ class NoiseAddingRadiometerSystem(Entity):
     :ivar predetectionInpNoiseTemp: Pre-detection input noise temperature in Kelvin.
     :vartype predetectionInpNoiseTemp: float
 
-    :ivar predetectionGainVariation: Pre-detection stage gain variation.
+    :ivar predetectionGainVariation: Pre-detection stage gain variation. Linear units.
     :vartype predetectionGainVariation: float
 
     :ivar integrationTime: Integration time in seconds.

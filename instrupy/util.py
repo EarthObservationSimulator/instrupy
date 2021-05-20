@@ -1308,6 +1308,9 @@ class Antenna(Entity):
     :ivar apertureEfficiency: Aperture efficiency of antenna (:math:`0 < \\eta_{ap} < 1`).
     :vartype apertureEfficiency: float
 
+    :ivar radiationEfficiency: Radiation efficiency of antenna (:math:`0 < \\psi < 1`).
+    :vartype radiationEfficiency: float
+
     :ivar phyTemp: Antenna physical temperature in Kelvin.
     :vartype phyTemp: float
 
@@ -1338,13 +1341,14 @@ class Antenna(Entity):
         UNIFORM = "UNIFORM",
         COSINE = "COSINE"
     
-    def __init__(self, shape=None, apertureExcitationProfile=None, diameter=None, height=None, width=None, apertureEfficiency=None, phyTemp=None, _id=None):
+    def __init__(self, shape=None, apertureExcitationProfile=None, diameter=None, height=None, width=None, apertureEfficiency=None, radiationEfficiency=None, phyTemp=None, _id=None):
         self.shape = shape if shape is not None and isinstance(shape, Antenna.Shape) else None
         self.apertureExcitationProfile = apertureExcitationProfile if apertureExcitationProfile is not None and isinstance(apertureExcitationProfile, Antenna.ApertureExcitationProfile) else None
         self.diameter = float(diameter) if diameter is not None else None
         self.height = float(height) if height is not None else None
         self.width = float(width) if width is not None else None
         self.apertureEfficiency = float(apertureEfficiency) if apertureEfficiency is not None else None
+        self.radiationEfficiency = float(radiationEfficiency) if radiationEfficiency is not None else None
         self.phyTemp = float(phyTemp) if phyTemp is not None else None
         super(Antenna, self).__init__(_id, "Antenna")
     
@@ -1370,6 +1374,7 @@ class Antenna(Entity):
                 height = d.get("height", None),
                 width = d.get("width", None),
                 apertureEfficiency = d.get("apertureEfficiency", None),
+                radiationEfficiency = d.get("radiationEfficiency", None),
                 phyTemp = d.get("phyTemp", None),
                 _id = d.get("@id", None)
                 )
@@ -1387,6 +1392,7 @@ class Antenna(Entity):
                      "height": self.height, 
                      "width": self.width,
                      "apertureEfficiency": self.apertureEfficiency,
+                     "radiationEfficiency": self.radiationEfficiency,
                      "phyTemp": self.phyTemp,
                      "@id": self._id
                     })
@@ -1399,7 +1405,7 @@ class Antenna(Entity):
         # note that _id data attribute may be different
         if(isinstance(self, other.__class__)):
             return (self.shape==other.shape) and (self.apertureExcitationProfile==other.apertureExcitationProfile) and (self.diameter==other.diameter) and \
-                    (self.height==other.height) and (self.width==other.width) and (self.apertureEfficiency==other.apertureEfficiency) and (self.phyTemp==other.phyTemp)                 
+                    (self.height==other.height) and (self.width==other.width) and (self.apertureEfficiency==other.apertureEfficiency) and (self.radiationEfficiency==other.radiationEfficiency) and (self.phyTemp==other.phyTemp)                 
         else:
             return NotImplemented
     
