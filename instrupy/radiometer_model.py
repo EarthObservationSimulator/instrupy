@@ -18,11 +18,16 @@ The specifications of the radiometric system can be made by either defining the 
 """
 import json
 import copy
+from os import stat
 from typing import Coroutine
 import uuid
 import numpy as np
 import warnings
+from collections import namedtuple
 from instrupy.util import Entity, EnumEntity, Orientation,ReferenceFrame, SphericalGeometry, ViewGeometry, Maneuver, Antenna, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
+
+PredetectionSectionParams = namedtuple("PredetectionSectionParams", ["G", "G_p", "G_m", "T_REC_q", "B"])
+SystemParams = namedtuple("SystemParams", ["G_s_bar", "G_s_delta", "T_A", "T_SYS"])
 
 class SystemType(EnumEntity):
     """Enumeration of recognized radiometer systems.
@@ -192,8 +197,149 @@ class TotalPowerRadiometerSystem(Entity):
         else:
             return NotImplemented
     
+    
+    @staticmethod
+    def compute_integration_time(td, integration_time_spec=None):
+        """ Compute integration time.
+
+        :param td: Dwell time in seconds per ground-pixel.
+        :paramtype td: float
+        
+        :param integration_time_spec: Integration time specification in seconds.
+        :paramtype integration_time_spec: float        
+
+        :return: Integration time in seconds.
+        :rtype: float
+
+        """
+        # initialize the integration time (t_int) to be used for the calculations
+        if integration_time_spec is None:
+            t_int = td
+        else:
+            if td < integration_time_spec: 
+                t_int = td # dwell time less than specified integration time => the specified integration time cannot be achieved.
+            else:
+                t_int = integration_time_spec
+        
+        return t_int
+
+    @staticmethod
+    def compute_predetection_sec_params(tlLoss, predetectionBandwidth, tlPhyTemp=None, predetectionGain=None, predetectionGainVariation=None, predetectionInpNoiseTemp=None,
+                                            rfAmpGain=None, ifAmpGain=None, rfAmpGainVariation=None, ifAmpGainVariation=None,
+                                            rfAmpInpNoiseTemp=None, mixerInpNoiseTemp=None, ifAmpInputNoiseTemp=None
+                                            ):
+        """ Compute predetection section parameters.
+
+        :param tlLoss: Transmission line loss in decibels.
+        :paramtype tlLoss: float
+
+        :param predetectionBandwidth: Pre-detection bandwidth in (Hertz).
+        :paramtype predetectionBandwidth: float
+
+        :param tlPhyTemp: Transmission line physical temperature in Kelvin.
+        :paramtype tlPhyTemp: float
+
+        :param rfAmpGain: RF amplifier gain in decibels.
+        :paramtype rfAmpGain: float
+
+        :param rfAmpInpNoiseTemp: RF amplifier input noise temperature in Kelvin.
+        :paramtype rfAmpInpNoiseTemp: float
+
+        :param rfAmpGainVariation: RF amplifier gain variation. Linear units.
+        :paramtype rfAmpGainVariation: float
+
+        :param mixerInpNoiseAmp: Mixer input noise temperature in Kelvin.
+        :paramtype mixerInpNoiseAmp: float
+
+        :param ifAmpGain: Intermediate frequency amplifier gain in decibels.
+        :paramtype ifAmpGain: float
+
+        :param ifAmpInpNoiseTemp: Intermediate frequency amplifier input noise temperature in Kelvin.
+        :paramtype ifAmpInpNoiseTemp: float
+
+        :param ifAmpGainVariation: IF amplifier gain variation. Linear units.
+        :paramtype ifAmpGainVariation: float
+
+        :return: Predetection section parameters. Namedtuple <gain, gain minus, gain plus, receiver (including transmission line) noise temperature, bandwidth>
+        :rtype: :class:`instrupy.radiometer_model.PredetectionSectionParams` 
+
+        """        
+        # Transmission line loss, required for varions calculations which follow.
+        L = 10**(tlLoss/ 10)
+
+        # Check if the predetection section specifications are directly available, if so then use them to set the local predetection section variables.
+        # Else use the individual component (of the predetection stage) specifications to calculate the predetection section parameters.
+
+        # predetection gain
+        if predetectionGain is not None:
+            predetection_gain = 10**(predetectionGain/10) # convert to linear units
+            predetection_gain_minus = predetection_gain - 0.5*predetectionGainVariation
+            predetection_gain_plus = predetection_gain + 0.5*predetectionGainVariation
+        else:
+            try: #try to compute the pre-detection section gain from the component specifications
+                # Fig.7-9 in [1] describes the gain of the transmission line as 1/L, where L is the transmission line loss.
+                G_TL = 1/L # transmission line "gain"
+                G_RF = 10**(rfAmpGain/10)
+                G_IF = 10**(ifAmpGain/10)
+                predetection_gain = G_TL * G_RF * G_IF
+                predetection_gain_minus = G_TL * (G_RF - 0.5*rfAmpGainVariation) * (G_IF - 0.5*ifAmpGainVariation) 
+                predetection_gain_plus = G_TL * (G_RF + 0.5*rfAmpGainVariation) * (G_IF + 0.5*ifAmpGainVariation) 
+            except:
+                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")        
+
+        # predetection noise temperature
+        if predetectionInpNoiseTemp is not None:
+            T_REC_q = predetectionInpNoiseTemp
+        else:
+            try: #try to compute the predetection noise temperature from the component specifications                               
+                G_RF = 10**(rfAmpGain/10)
+                G_IF = 10**(ifAmpGain/10) 
+                T_REC = rfAmpInpNoiseTemp + mixerInpNoiseTemp/ G_RF + ifAmpInputNoiseTemp/ (G_RF*G_IF)  # Eqn 7.29 in [1]
+                T_REC_q = (L-1)*tlPhyTemp + L*T_REC # receiver (including the transmission line) input noise-temperature eqn 7.28 in [1]. 'q' stands for quote.
+            except:
+                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
+        
+        return PredetectionSectionParams(predetection_gain, predetection_gain_minus, predetection_gain_plus, T_REC_q, predetectionBandwidth)
+    
+    @staticmethod
+    def compute_system_params(antenna, pd_sec_params, integratorVoltageGain, T_A_q):
+        """ Calculate the radiometric system parameters from the antenna, predetection section, integrator specifications and the target brightness temperature. 
+
+        :param antenna: Antenna specifications.
+        :paramtype antenna: :class:`instrupy.util.Antenna`
+
+        :param pd_sec_params: Predetection section parameters. Namedtuple <gain, gain minus, gain plus, receiver (including transmission line) noise temperature, bandwidth>
+        :paramtype pd_sec_params: :class:`instrupy.radiometer_model.PredetectionSectionParams` 
+
+        :param integratorVoltageGain: Integrator voltage gain (unitless).
+        :paramtype integratorVoltageGain: float
+
+        :param T_A_q: Brightness temperature from target (mainlobe and sidelobes of antenna eqn 6.37 in [1]).
+        :paramtype T_A_q: float
+
+        :return: Radiometric system parameters as a namedtuple <average system gain, system gain variation, antenna radiometric temperature, system radiometric temperature>.
+        :rtype: :class:`instrupy.radiometer_model.SystemParams` 
+
+        """
+        # calculate system gain factor (eqn 7.43 in [1])
+        G_s = 2*integratorVoltageGain*pd_sec_params.G*Constants.Boltzmann*pd_sec_params.B        
+
+        # calculate the system gain variation
+        G_s_minus = 2*integratorVoltageGain*pd_sec_params.G_m*Constants.Boltzmann*pd_sec_params.B
+        G_s_plus = 2*integratorVoltageGain*pd_sec_params.G_p*Constants.Boltzmann*pd_sec_params.B
+        G_s_delta = G_s_plus - G_s_minus        
+
+        G_s_bar = G_s # average system power gain, TODO: check
+
+        # calculate system temperature                 
+        psi = antenna.radiationEfficiency # antenna radiation efficiency = 1/ antenna loss
+        T_A = psi*T_A_q + (1-psi)*antenna.phyTemp
+        T_SYS = T_A + pd_sec_params.T_REC_q # eqn 7.31 in [1]
+
+        return SystemParams(G_s_bar, G_s_delta, T_A, T_SYS)
+    
     def compute_radiometric_resolution(self, td, antenna, T_A_q):
-        """ Compute the radiometric resolution.
+        """ Compute the radiometric resolution of a total power radiometer.
 
         :param td: dwell time in seconds per ground-pixel
         :paramtype td: float
@@ -201,69 +347,31 @@ class TotalPowerRadiometerSystem(Entity):
         :param antenna: Antenna specifications.
         :paramtype antenna: :class:`instrupy.util.Antenna`
 
-        :param T_A_q: Brightness temperature from scene (mainlobe and sidelobes of antenna eqn 6.37 in [1]
+        :param T_A_q: Brightness temperature from target (mainlobe and sidelobes of antenna eqn 6.37 in [1]).
         :paramtype T_A_q: float
 
-        :return: radiometric resolution in Kelvin
+        :return: Radiometric resolution in Kelvin.
         :rtype: float
 
         """
-        # initialize the integration time (t_int) to be used for the calculations
-        if self.integrationTime is None:
-            t_int = td
-        if td < self.integrationTime: 
-            t_int = td # dwell time less than specified integration time => the specified integration time cannot be achieved.
         
-        # Check if the predetection section specifications are available, if so then use them to set the local predetection section variables.
-        # Else use the individual component (of the predetection stage) specifications to 
+        t_int = TotalPowerRadiometerSystem.compute_integration_time(td, self.integrationTime)       
 
-        # Transmission line loss, required for varions calculations which follow
-        L = 10^(self.tlLoss/ 10)
+        pd_sec_params = TotalPowerRadiometerSystem.compute_predetection_sec_params(self.tlLoss, self.bandwidth, self.tlPhyTemp, self.predetectionGain, self.predetectionGainVariation, self.predetectionInpNoiseTemp,
+                                            self.rfAmpGain, self.ifAmpGain, self.rfAmpGainVariation, self.ifAmpGainVariation,
+                                            self.rfAmpInpNoiseTemp, self.mixerInpNoiseTemp, self.ifAmpInputNoiseTemp
+                                            )   
+        
+        sys_params = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, self.integratorVoltageGain, T_A_q)
 
-        # predetection gain
-        if self.predetectionGain is not None:
-            predetection_gain = 10^(self.predetectionGain/10) # convert to linear units
-            predetection_gain_minus = predetection_gain - 0.5*self.predetectionGainVariation
-            predetection_gain_plus = predetection_gain + 0.5*self.predetectionGainVariation
-        else:
-            try: #try to compute the pre-detection section gain from the component specifications
-                # Fig.7-9 in [1] describes the gain of the transmission line as 1/L, where L is the transmission line loss.
-                G_TL = 1/10^(self.tlLoss/ 10) # transmission line "gain"
-                G_RF = 10^(self.rfAmpGain/10)
-                G_IF = 10^(self.ifAmpGain/10)
-                predetection_gain = G_TL * G_RF * G_IF
-                predetection_gain_minus = G_TL * (G_RF - 0.5*self.rfAmpGainVariation)* (G_IF - 0.5*self.ifAmpGainVariation) 
-                predetection_gain_plus = G_TL * (G_RF + 0.5*self.rfAmpGainVariation)* (G_IF + 0.5*self.ifAmpGainVariation) 
-            except:
-                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")        
+        # copy values to variables with shorter names
+        T_SYS = sys_params.T_SYS
+        G_s_bar = sys_params.G_s_bar
+        G_s_delta = sys_params.G_s_delta
+        B = pd_sec_params.B
 
-        # predetection noise temperature
-        if self.predetectionInpNoiseTemp is not None:
-            predetection_inp_noise_temp = self.predetectionInpNoiseTemp
-        else:
-            try: #try to compute the predetection noise temperature from the component specifications                               
-                G_RF = 10^(self.rfAmpGain/10)
-                G_IF = 10^(self.ifAmpGain/10) 
-                T_REC = self.rfAmpInpNoiseTemp + self.mixerInpNoiseTemp/ G_RF + self.ifAmpInputNoiseTemp/ (G_RF*G_IF)  # Eqn 7.29 in [1]
-                predetection_inp_noise_temp =  (L-1)*self.tlPhyTemp + L*T_REC # Eqn 7.28 in [1]
-            except:
-                raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
-
-        # calculate system gain factor (eqn 7.43 in [1])
-        G_s = 2*self.integratorVoltageGain*predetection_gain*Constants.Boltzmann*self.bandwidth
-
-        # calculate the system gain variation
-        G_s_minus = 2*self.integratorVoltageGain*predetection_gain_minus*Constants.Boltzmann*self.bandwidth
-        G_s_plus = 2*self.integratorVoltageGain*predetection_gain_plus*Constants.Boltzmann*self.bandwidth
-        G_s_delta = G_s_plus - G_s_minus        
-
-        # calculate system temperature         
-        T_REC_q = (L-1)*self.tlPhyTemp + L*T_REC# receiver (including the transmission line) input noise-temperature eqn 7.28 in [1]. 'q' stands for quote.
-        psi = antenna.radiationEfficiency # antenna radiation efficiency = 1/ antenna loss
-        T_SYS = psi*T_A_q + (1-psi)*antenna.phyTemp + T_REC_q # eqn 7.31 in [1]
-
-        # calculate the radiometric resolution
-        resolution = T_SYS*(1/(self.bandwidth*t_int + (G_s_delta/G_s)^2))^0.5
+        # calculate the radiometric resolution, eqn 7.58 in [1]
+        resolution = T_SYS*(1/(B*t_int + (G_s_delta/G_s_bar)**2))**0.5
 
         return resolution        
 
@@ -427,6 +535,48 @@ class UnbalancedDikeRadiometerSystem(Entity):
         else:
             return NotImplemented
 
+    def compute_radiometric_resolution(self, td, antenna, T_A_q):
+        """ Compute the radiometric resolution of an unbalanced Dicke radiometer.
+        
+        Note that the predetection stage in Dicke radiometers include the noise from the Dicke switch referenced to the switch output port.
+
+        :param td: dwell time in seconds per ground-pixel
+        :paramtype td: float
+
+        :param antenna: Antenna specifications.
+        :paramtype antenna: :class:`instrupy.util.Antenna`
+
+        :param T_A_q: Brightness temperature from target (mainlobe and sidelobes of antenna eqn 6.37 in [1]).
+        :paramtype T_A_q: float
+
+        :return: Radiometric resolution in Kelvin.
+        :rtype: float
+
+        """
+        t_int = TotalPowerRadiometerSystem.compute_integration_time(td, self.integrationTime)
+
+        pd_sec_params = TotalPowerRadiometerSystem.compute_predetection_sec_params(self.tlLoss, self.tlPhyTemp, self.predetectionGain, self.predetectionGainVariation, self.predetectionInpNoiseTemp,
+                                            self.rfAmpGain, self.ifAmpGain, self.rfAmpGainVariation, self.ifAmpGainVariation,
+                                            self.rfAmpInpNoiseTemp, self.mixerInpNoiseTemp, self.ifAmpInputNoiseTemp
+                                            )
+        pd_sec_params.T_REC_q =  pd_sec_params.T_REC_q + self.dickeSwitchOutputNoiseTemperature # add the Dicke switch output noise temperature
+
+        sys_params = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, self.integratorVoltageGain, T_A_q)
+        
+        # copy values to variables with shorter names
+        T_REF = self.referenceTemperature
+        T_SYS = sys_params.T_SYS
+        G_s_bar = sys_params.G_s_bar
+        G_s_delta = sys_params.G_s_delta
+        T_A = sys_params.T_A
+        T_REC_q = pd_sec_params.T_REC_q
+        B = pd_sec_params.B
+        
+        # calculate the radiometric resolution, eqn 7.68 in [1]
+        resolution = (2*T_SYS**2 + 2*(T_REF + T_REC_q)**2)/(B*t_int) + ((G_s_delta/G_s_bar)**2)*(T_A - T_REF)**2
+        resolution = resolution**0.5
+        return resolution
+
 class BalancedDikeRadiometerSystem(Entity):
     """ Class to handle balanced Dicke radiometer System. Refer Section 7.6 and 7.7 in [1].
 
@@ -580,6 +730,41 @@ class BalancedDikeRadiometerSystem(Entity):
                     (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)         
         else:
             return NotImplemented
+    
+    def compute_radiometric_resolution(self, td, antenna, T_A_q):
+        """ Compute the radiometric resolution of an unbalanced Dicke radiometer.
+
+        :param td: dwell time in seconds per ground-pixel
+        :paramtype td: float
+
+        :param antenna: Antenna specifications.
+        :paramtype antenna: :class:`instrupy.util.Antenna`
+
+        :param T_A_q: Brightness temperature from target (mainlobe and sidelobes of antenna eqn 6.37 in [1]).
+        :paramtype T_A_q: float
+
+        :return: Radiometric resolution in Kelvin.
+        :rtype: float
+
+        """
+        t_int = TotalPowerRadiometerSystem.compute_integration_time(td, self.integrationTime)
+        
+        pd_sec_params = TotalPowerRadiometerSystem.compute_predetection_sec_params(self.tlLoss, self.tlPhyTemp, self.predetectionGain, self.predetectionGainVariation, self.predetectionInpNoiseTemp,
+                                    self.rfAmpGain, self.ifAmpGain, self.rfAmpGainVariation, self.ifAmpGainVariation,
+                                    self.rfAmpInpNoiseTemp, self.mixerInpNoiseTemp, self.ifAmpInputNoiseTemp
+                                    )
+        pd_sec_params.T_REC_q =  pd_sec_params.T_REC_q + self.dickeSwitchOutputNoiseTemperature # add the Dicke switch output noise temperature
+
+        sys_params = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, self.integratorVoltageGain, T_A_q)
+        
+        # copy values to variables with shorter names
+        T_SYS = sys_params.T_SYS
+        B = pd_sec_params.B
+
+        # calculate the radiometric resolution, eqn 7.69 in [1]
+        resolution = 2*T_SYS/(B*t_int)**0.5
+
+        return resolution
 
 class NoiseAddingRadiometerSystem(Entity):
     """ Class to handle noise-adding radiometer system. Refer Section 7.9 in [1].
@@ -734,6 +919,40 @@ class NoiseAddingRadiometerSystem(Entity):
                     (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)         
         else:
             return NotImplemented
+    
+    def compute_radiometric_resolution(self, td, antenna, T_A_q):
+        """ Compute the radiometric resolution of a total power radiometer.
+
+        :param td: dwell time in seconds per ground-pixel
+        :paramtype td: float
+
+        :param antenna: Antenna specifications.
+        :paramtype antenna: :class:`instrupy.util.Antenna`
+
+        :param T_A_q: Brightness temperature from target (mainlobe and sidelobes of antenna eqn 6.37 in [1]).
+        :paramtype T_A_q: float
+
+        :return: Radiometric resolution in Kelvin.
+        :rtype: float
+
+        """
+        t_int = TotalPowerRadiometerSystem.compute_integration_time(td, self.integrationTime)
+        
+        pd_sec_params = TotalPowerRadiometerSystem.compute_predetection_sec_params(self.tlLoss, self.tlPhyTemp, self.predetectionGain, self.predetectionGainVariation, self.predetectionInpNoiseTemp,
+                                    self.rfAmpGain, self.ifAmpGain, self.rfAmpGainVariation, self.ifAmpGainVariation,
+                                    self.rfAmpInpNoiseTemp, self.mixerInpNoiseTemp, self.ifAmpInputNoiseTemp
+                                    )
+
+        sys_params = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, self.integratorVoltageGain, T_A_q)
+        
+        # copy values to variables with shorter names
+        T_SYS = sys_params.T_SYS
+        B = pd_sec_params.B
+
+        # calculate the radiometric resolution, eqn 7.87 in [1]
+        resolution = 2*T_SYS/(B*t_int)**0.5 * (1 + 2*T_SYS/self.excessNoiseTemperature)
+
+        return resolution   
 
 class ScanTech(EnumEntity):
     """Enumeration of recognized radiometer scanning techniques. See Section 7.12 in [1].
@@ -1200,6 +1419,9 @@ class RadiometerModel(Entity):
     :ivar scan: Scan object.
     :vartype scan: :class:`instrupy.radiometer_model.FixedScan` or :class:`instrupy.radiometer_model.CrossTrackScan` or :class:`instrupy.radiometer_model.ConicalScan`.
 
+    :ivar targetBrightnessTemp: Target brightness temperature in Kelvin.
+    :vartype targetBrightnessTemp: float
+
     :ivar _id: Unique identifier.
     :vartype _id: str or int
           
@@ -1208,7 +1430,7 @@ class RadiometerModel(Entity):
             fieldOfViewGeometry=None, sceneFieldOfViewGeometry=None, maneuver=None, pointingOption=None, 
             dataRate=None, bitsPerPixel=None, antenna=None, operatingFrequency=None, 
             systemType=None, system=None, scanTechnique=None, 
-            scan=None, _id=None):
+            scan=None, targetBrightnessTemp=None, _id=None):
         """ Initialization. All except the below two parameters have identical description as that of the corresponding class instance variables.
 
         :param fieldOfViewGeometry: Instrument field-of-view spherical geometry.
@@ -1244,6 +1466,7 @@ class RadiometerModel(Entity):
         self.system = copy.deepcopy(system) if system is not None and (isinstance(system, TotalPowerRadiometerSystem) or isinstance(system, UnbalancedDikeRadiometerSystem) or isinstance(system, BalancedDikeRadiometerSystem) or isinstance(system, NoiseAddingRadiometerSystem))  else None
         self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None
         self.scan = copy.deepcopy(scan) if scan is not None and (isinstance(scan, FixedScan) or isinstance(scan, CrossTrackScan) or isinstance(scan, ConicalScan)) else None
+        self.targetBrightnessTemp = float(targetBrightnessTemp) if targetBrightnessTemp is not None else None     
 
         super(RadiometerModel,self).__init__(_id, "Radiometer")
         
@@ -1261,6 +1484,7 @@ class RadiometerModel(Entity):
             scanTech, ScanTech.Fixed
             orientation, Orientation.Convention.REF_FRAME_ALIGNED
             sceneFieldOfViewGeometry, (Instrument) fieldOfViewGeometry
+            targetBrightnessTemp, 290 Kelvin
             _id, random string
         
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
@@ -1339,6 +1563,7 @@ class RadiometerModel(Entity):
                         system = system,
                         scanTechnique = scanTechnique,
                         scan = scan,
+                        targetBrightnessTemp = d.get("targetBrightnessTemp", 290),
                         _id = d.get("@id", uuid.uuid4())
                         )
 
@@ -1374,6 +1599,7 @@ class RadiometerModel(Entity):
                 "operatingFrequency": self.operatingFrequency,
                 "system": system_dict,
                 "scan": scan_dict,
+                "targetBrightnessTemp": self.targetBrightnessTemp,
                 "@id": self._id
                 })
 
@@ -1484,13 +1710,14 @@ class RadiometerModel(Entity):
         sat_speed_kmps = GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos, sc_vel)
         td = self.scan.compute_dwell_time_per_ground_pixel(res_AT_m=res_AT_m, sat_speed_kmps=sat_speed_kmps, iFOV_CT_deg=iFOV_CT_deg)
 
-        # calculate the radiometric sensitivity
-
+        # calculate the radiometric resolution
+        rad_res = self.system.compute_radiometric_resolution(td, self.antenna, self.targetBrightnessTemp)
         
         obsv_metrics = {}
         obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2) if res_AT_m is not None else np.nan
         obsv_metrics["ground pixel cross-track resolution [m]"] = round(res_CT_m, 2) if res_CT_m is not None else np.nan
         obsv_metrics["swath_width_km [km]"] = round(swath_width_km, 2) if swath_width_km is not None else np.nan
+        obsv_metrics["sensitivity [K]"] = round(rad_res, 2) if rad_res is not None else np.nan
         
         return obsv_metrics
 
