@@ -1,4 +1,4 @@
-"""Unit tests for instrupy.basic_sensor.basic_sensor_model.
+"""Unit tests for instrupy.basic_sensor_model.
 """
 import unittest
 import numpy as np

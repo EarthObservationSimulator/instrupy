@@ -1,4 +1,4 @@
-"""Unit tests for instrupy.passive_optical_sensor.passive_optical_sensor_model
+"""Unit tests for instrupy.passive_optical_sensor_model
 
 Tests:
 

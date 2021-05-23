@@ -1,4 +1,4 @@
-"""Unit tests for instrupy.synthetic_aperture_radar.synthetic_aperture_radar_model.
+"""Unit tests for instrupy.synthetic_aperture_radar_model.
 
 Tests:
 

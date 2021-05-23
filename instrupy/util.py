@@ -3,6 +3,10 @@
 
 :synopsis: *Utility classes and functions for the :class:`instrupy` package.*
 
+References:
+
+[1] Chapter 6,7 in "Microwave Radar and Radiometric Remote Sensing," David Gardner Long , Fawwaz T. Ulaby 2014 
+
 """
 from __future__ import division 
 import json
@@ -1410,7 +1414,7 @@ class Antenna(Entity):
             return NotImplemented
     
     def get_spherical_geometry(self, op_frequency):
-        """ Get the spherical geometry from the antenna shape and dimensions.
+        """ Get the spherical geometry from the antenna shape, dimensions and aperture excitation profile.
 
         :param op_frequency: Operating frequency in Hertz.
         :paramtype op_frequency: float
@@ -1422,22 +1426,50 @@ class Antenna(Entity):
         # calculate instrument FOV based on antenna shape and dimensions
         op_wavelength =  Constants.speedOfLight/ op_frequency
 
-        if self.shape == Antenna.Shape.RECTANGULAR:
-            # calculate antenna beamwidth and hence instrument FOV 
-            angular_height = np.rad2deg(op_wavelength/ self.height)
-            angular_width = np.rad2deg(op_wavelength/ self.width)
+        if self.apertureExcitationProfile==Antenna.ApertureExcitationProfile.UNIFORM:
+            if self.shape == Antenna.Shape.RECTANGULAR:
+                # calculate antenna beamwidth and hence instrument FOV. eqn 3.56a, 3.56b in [1]
+                angular_height = np.rad2deg(0.88*op_wavelength/ self.height)
+                angular_width = np.rad2deg(0.88*op_wavelength/ self.width)
 
-            instru_sph_geom_dict = { "shape": "RECTANGULAR", "angleHeight": angular_height, "angleWidth": angular_width } 
-        
-        elif self.shape == Antenna.Shape.CIRCULAR:
+                instru_sph_geom_dict = { "shape": "RECTANGULAR", "angleHeight": angular_height, "angleWidth": angular_width } 
             
-            cone_angle = np.rad2deg(op_wavelength/ self.diameter)
-            instru_sph_geom_dict = { "shape": "CIRCULAR", "diameter": cone_angle} 
-        
+            elif self.shape == Antenna.Shape.CIRCULAR:
+                
+                cone_angle = np.rad2deg(op_wavelength/ self.diameter) # eqn 3.66 in [1]
+                instru_sph_geom_dict = { "shape": "CIRCULAR", "diameter": cone_angle} 
+            
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
 
         return SphericalGeometry.from_json(instru_sph_geom_dict)
+    
+    def get_beam_efficiency(self, op_frequency):
+        """ Get the beam-efficiency.
+
+        :param op_frequency: Operating frequency in Hertz.
+        :paramtype op_frequency: float
+
+        :return: Beam-efficiency or NaN in case result could not be computed.
+        :rtype: float or np.NaN
+
+        """
+        # calculate instrument FOV based on antenna shape and dimensions
+        op_wavelength =  Constants.speedOfLight/ op_frequency
+
+        if self.apertureExcitationProfile==Antenna.ApertureExcitationProfile.UNIFORM:
+            if self.shape == Antenna.Shape.RECTANGULAR:
+                if self.height==self.width: # square antenna
+                    return op_wavelength/self.height # Eqn 3.73a in [1]
+
+        if self.apertureExcitationProfile==Antenna.ApertureExcitationProfile.COSINE:
+            if self.shape == Antenna.Shape.RECTANGULAR:
+                if self.height==self.width: # square antenna
+                    return 1.5*op_wavelength/self.height # Eqn 3.73a in [1]    
+        
+        return np.NaN # return NaN if control reaches this stage.
 
 class MathUtilityFunctions:
     """ Class aggregating various mathematical computation functions. """
