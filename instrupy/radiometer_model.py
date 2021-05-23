@@ -209,8 +209,7 @@ class TotalPowerRadiometerSystem(Entity):
                     (self.integrationTime==other.integrationTime)  and (self.bandwidth==other.bandwidth)                  
         else:
             return NotImplemented
-    
-    
+        
     @staticmethod
     def compute_integration_time(td, integration_time_spec=None):
         """ Compute integration time.
@@ -373,8 +372,7 @@ class TotalPowerRadiometerSystem(Entity):
         :return: Radiometric resolution in Kelvin.
         :rtype: float
 
-        """
-        
+        """        
         t_int = TotalPowerRadiometerSystem.compute_integration_time(td, self.integrationTime)       
 
         pd_sec_params = TotalPowerRadiometerSystem.compute_predetection_sec_params(self.bandwidth, self.tlLoss, self.tlPhyTemp, self.predetectionGain, self.predetectionGainVariation, self.predetectionInpNoiseTemp,

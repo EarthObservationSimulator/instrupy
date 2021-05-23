@@ -13,7 +13,7 @@ from instrupy.radiometer_model import PredetectionSectionParams, SystemParams
 from instrupy.radiometer_model import RadiometerModel, SystemType, TotalPowerRadiometerSystem, UnbalancedDikeRadiometerSystem, \
                                       BalancedDikeRadiometerSystem, NoiseAddingRadiometerSystem, \
                                       ScanTech, FixedScan, CrossTrackScan, ConicalScan
-from instrupy.util import Orientation, SphericalGeometry, ViewGeometry, FileUtilityFunctions, Maneuver
+from instrupy.util import Antenna, Orientation, SphericalGeometry, ViewGeometry, FileUtilityFunctions, Maneuver
 
 
 class TestTotalPowerRadiometerSystem(unittest.TestCase):   
@@ -47,6 +47,7 @@ class TestTotalPowerRadiometerSystem(unittest.TestCase):
         """   
         # See [1] Section 7-3.1 for the source of some of the receiver specs specified below. Section 7.5 lists a normalaized gain variation specs of 10^-2.
         o = TotalPowerRadiometerSystem.from_json(self.tpr_sys1_json) 
+        self.assertIsInstance(o, TotalPowerRadiometerSystem)
         self.assertEqual(o._id, 121) 
         self.assertEqual(o._type, "TotalPowerRadiometerSystem")
         self.assertEqual(o.tlLoss, 0.5)
@@ -68,6 +69,7 @@ class TestTotalPowerRadiometerSystem(unittest.TestCase):
         self.assertEqual(o.bandwidth, 10e6)
 
         o = TotalPowerRadiometerSystem.from_json(self.tpr_sys2_json) 
+        self.assertIsInstance(o, TotalPowerRadiometerSystem)
         self.assertIsNone(o._id) 
         self.assertEqual(o._type, "TotalPowerRadiometerSystem")
         self.assertIsNone(o.tlLoss)
@@ -115,6 +117,7 @@ class TestTotalPowerRadiometerSystem(unittest.TestCase):
         x = TotalPowerRadiometerSystem.compute_predetection_sec_params(predetectionBandwidth=10e6, tlLoss=0.5, tlPhyTemp=290,
                                             rfAmpGain=30, mixerGain=23, ifAmpGain=30, rfAmpGainVariation=10,  mixerGainVariation=2, ifAmpGainVariation=10,
                                             rfAmpInpNoiseTemp=200, mixerInpNoiseTemp=1200, ifAmpInputNoiseTemp=100)
+        self.assertIsInstance(x, PredetectionSectionParams)
         self.assertAlmostEqual(x.G, 177827941.00389218)
         self.assertAlmostEqual(x.G_p, 180510851.84124476)
         self.assertAlmostEqual(x.G_m, 175171746.5823525)
@@ -122,6 +125,7 @@ class TestTotalPowerRadiometerSystem(unittest.TestCase):
         self.assertAlmostEqual(x.B, 10000000.0)
 
         x = TotalPowerRadiometerSystem.compute_predetection_sec_params(predetectionBandwidth=15e6, predetectionGain=90, predetectionGainVariation=10000000, predetectionInpNoiseTemp=300)
+        self.assertIsInstance(x, PredetectionSectionParams)
         self.assertAlmostEqual(x.G, 1000000000)
         self.assertAlmostEqual(x.G_p, 1005000000)
         self.assertAlmostEqual(x.G_m, 995000000)
@@ -132,6 +136,7 @@ class TestTotalPowerRadiometerSystem(unittest.TestCase):
         x = TotalPowerRadiometerSystem.compute_predetection_sec_params(predetectionBandwidth=10e6, tlLoss=0.5, tlPhyTemp=290,
                                             rfAmpGain=1, mixerGain=23, ifAmpGain=30, rfAmpGainVariation=0,  mixerGainVariation=2, ifAmpGainVariation=10,
                                             rfAmpInpNoiseTemp=0, mixerInpNoiseTemp=1200, ifAmpInputNoiseTemp=100)
+        self.assertIsInstance(x, PredetectionSectionParams)
         self.assertAlmostEqual(x.G, 223872.1138568339)
         self.assertAlmostEqual(x.G_p, 226119.10297269153)
         self.assertAlmostEqual(x.G_m, 221636.34492551928)
@@ -139,11 +144,32 @@ class TestTotalPowerRadiometerSystem(unittest.TestCase):
         self.assertAlmostEqual(x.B, 10000000.0)                                
 
     def test_compute_system_params(self):
-        pass
+        antenna = Antenna.from_dict({"radiationEfficiency": 0.8, "phyTemp": 270})
+        pd_sec_params = TotalPowerRadiometerSystem.compute_predetection_sec_params(predetectionBandwidth=10e6, tlLoss=0.5, tlPhyTemp=290,
+                                            rfAmpGain=30, mixerGain=23, ifAmpGain=30, rfAmpGainVariation=10,  mixerGainVariation=2, ifAmpGainVariation=10,
+                                            rfAmpInpNoiseTemp=200, mixerInpNoiseTemp=1200, ifAmpInputNoiseTemp=100)
+        G = 180000000
+        pd_sec_params = PredetectionSectionParams(G=G, G_p=G+0.01*G, G_m=G-0.01*G, T_REC_q=260, B=10e6)
+        x = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, integratorVoltageGain=1000, T_A_q=290)
+        self.assertIsInstance(x, SystemParams)
+        self.assertAlmostEqual(x.G_s_delta/x.G_s_bar, 0.02)
+        self.assertAlmostEqual(x.T_A, 286)
+        self.assertAlmostEqual(x.T_SYS, 546)
 
     def test_compute_radiometric_resolution(self):
-        pass
+        antenna = Antenna.from_dict({"radiationEfficiency": 0.8, "phyTemp": 270})
 
+        o = TotalPowerRadiometerSystem.from_json(self.tpr_sys1_json) # note that these is 100ms integration time specification
+        self.assertEqual(o.compute_radiometric_resolution(td=200e-3, antenna=antenna, T_A_q=300), 0.555135576704759) 
+        self.assertEqual(o.compute_radiometric_resolution(td=200e-3, antenna=antenna, T_A_q=600), 0.7951355765965862)
+        self.assertEqual(o.compute_radiometric_resolution(td=500e-3, antenna=antenna, T_A_q=300), 0.555135576704759)        
+        self.assertEqual(o.compute_radiometric_resolution(td=50e-3, antenna=antenna, T_A_q=300), 0.7850802611778284) 
+
+        antenna = Antenna.from_dict({"radiationEfficiency": 0.8, "phyTemp": 350})        
+        self.assertEqual(o.compute_radiometric_resolution(td=200e-3, antenna=antenna, T_A_q=300), 0.5711355766975474) 
+
+        antenna = Antenna.from_dict({"radiationEfficiency": 0.5, "phyTemp": 270})        
+        self.assertEqual(o.compute_radiometric_resolution(td=200e-3, antenna=antenna, T_A_q=300), 0.5461355767088155) # reduced radiantion-efficiency appears to make the radiometer more sensitive
 
 class TestUnbalancedDikeRadiometerSystem(unittest.TestCase):   
     pass
