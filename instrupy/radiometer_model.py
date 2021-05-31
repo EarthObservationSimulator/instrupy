@@ -389,7 +389,7 @@ class TotalPowerRadiometerSystem(Entity):
         B = pd_sec_params.B
 
         # calculate the radiometric resolution, eqn 7.58 in [1]
-        resolution = T_SYS*(1/(B*t_int + (G_s_delta/G_s_bar)**2))**0.5
+        resolution = T_SYS*(1/(B*t_int) + ((G_s_delta/G_s_bar)**2))**0.5
 
         return resolution        
 
@@ -590,10 +590,9 @@ class UnbalancedDikeRadiometerSystem(Entity):
                                             self.rfAmpGain, self.mixerGain, self.ifAmpGain, self.rfAmpGainVariation, self.mixerGainVariation, self.ifAmpGainVariation,
                                             self.rfAmpInpNoiseTemp, self.mixerInpNoiseTemp, self.ifAmpInputNoiseTemp
                                             )
-        pd_sec_params.T_REC_q =  pd_sec_params.T_REC_q + self.dickeSwitchOutputNoiseTemperature # add the Dicke switch output noise temperature
-
+        if self.dickeSwitchOutputNoiseTemperature: # self.dickeSwitchOutputNoiseTemperature could be none in case the entire predetection system parameters are specified instead of the component-wise specification.
+            pd_sec_params = pd_sec_params._replace(T_REC_q=pd_sec_params.T_REC_q + self.dickeSwitchOutputNoiseTemperature) # add the Dicke switch output noise temperature
         sys_params = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, self.integratorVoltageGain, T_A_q)
-        
         # copy values to variables with shorter names
         T_REF = self.referenceTemperature
         T_SYS = sys_params.T_SYS
@@ -797,7 +796,8 @@ class BalancedDikeRadiometerSystem(Entity):
                                     self.rfAmpGain, self.mixerGain, self.ifAmpGain, self.rfAmpGainVariation, self.mixerGainVariation, self.ifAmpGainVariation,
                                     self.rfAmpInpNoiseTemp, self.mixerInpNoiseTemp, self.ifAmpInputNoiseTemp
                                     )
-        pd_sec_params.T_REC_q =  pd_sec_params.T_REC_q + self.dickeSwitchOutputNoiseTemperature # add the Dicke switch output noise temperature
+        if self.dickeSwitchOutputNoiseTemperature: # self.dickeSwitchOutputNoiseTemperature could be none in case the entire predetection system parameters are specified instead of the component-wise specification.
+            pd_sec_params = pd_sec_params._replace(T_REC_q=pd_sec_params.T_REC_q + self.dickeSwitchOutputNoiseTemperature) # add the Dicke switch output noise temperature
 
         sys_params = TotalPowerRadiometerSystem.compute_system_params(antenna, pd_sec_params, self.integratorVoltageGain, T_A_q)
         
@@ -1088,20 +1088,20 @@ class FixedScan(Entity):
         """
         return res_AT_m/(sat_speed_kmps*1e3)
 
-    def compute_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+    def compute_swath_width(self, alt_km, instru_look_angle_deg, fieldOfView):
         """ Obtain the swath-width.
             In case of fixed-scan mode, there is only 1 imaged ground-pixel per swath. 
             Swath-width is computed to be equal to the antenna-footprint cross-track size. 
             See Fig.5.1.3.1 in Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993.
 
-        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
-        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
-
         :param alt_km: Altitude of observer in kilometers.
         :paramtype alt_km: float
 
-        :param instru_look_angle: Instrument look angle in radians. This correspond to the off-nadir angle at which the ground-pixel is imaged.
-        :paramtype instru_look_angle: float
+        :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :paramtype instru_look_angle_deg: float
+
+        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
+        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
         :return: Swath-width in kilometers.
         :rtype: float
@@ -1110,28 +1110,35 @@ class FixedScan(Entity):
         h = alt_km * 1e3
         Re = Constants.radiusOfEarthInKM * 1e3         
         Rs = Re + h 
-        gamma_m = instru_look_angle
+        gamma_m = np.deg2rad(instru_look_angle_deg)
 
-        if self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
-            iFOV_CT = np.deg2rad(self.fieldOfView.sph_geom.angle_width)
-        elif self.fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
-            iFOV_CT = np.deg2rad(self.fieldOfView.sph_geom.diameter)
+        if fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_CT = np.deg2rad(fieldOfView.sph_geom.angle_width)
+        elif fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_CT = np.deg2rad(fieldOfView.sph_geom.diameter)
         else:
             raise NotImplementedError
 
         gamma_n_illum = gamma_m - 0.5*iFOV_CT
         gamma_f_illum = gamma_m + 0.5*iFOV_CT
-        theta_in_illum = np.arcsin(np.sin(gamma_n_illum)*Rs/Re)
         theta_horizon = np.arcsin(Re/Rs)
-        try:
-            theta_if_illum = np.arcsin(np.sin(gamma_f_illum)*Rs/Re)
-        except:
-            # beyond horizon, hence set to horizon angle
-            theta_if_illum = theta_horizon
+        
+        theta_in_illum = np.arcsin(np.sin(abs(gamma_n_illum))*Rs/Re)
+        if np.isnan(theta_in_illum):            
+            theta_in_illum = theta_horizon # beyond horizon, hence set to horizon angle
 
-        alpha_n_illum = theta_in_illum - gamma_n_illum
-        alpha_f_illum = theta_if_illum - gamma_f_illum
-        alpha_s_illum = alpha_f_illum - alpha_n_illum
+        theta_if_illum = np.arcsin(np.sin(abs(gamma_f_illum))*Rs/Re)
+        if np.isnan(theta_if_illum):
+            theta_if_illum = theta_horizon # beyond horizon, hence set to horizon angle
+
+        alpha_n_illum = theta_in_illum - abs(gamma_n_illum)
+        alpha_f_illum = theta_if_illum - abs(gamma_f_illum)
+
+        if gamma_n_illum < 0: # NOT completely sidelooking
+            alpha_s_illum = alpha_f_illum + alpha_n_illum
+        else:
+            alpha_s_illum = abs(alpha_f_illum - alpha_n_illum)
+
         W_gr = Re*alpha_s_illum  # swath
 
         return W_gr*1e-3
@@ -1204,7 +1211,7 @@ class CrossTrackScan(Entity):
         else:
             return NotImplemented
     
-    def compute_dwell_time_per_ground_pixel(self, res_AT_m, iFOV_CT, sat_speed_kmps, **kwargs):
+    def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. THe integration time 
             is set to be around the dwell time.
 
@@ -1229,20 +1236,20 @@ class CrossTrackScan(Entity):
         else:
             return 0
 
-    def compute_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+    def compute_swath_width(self, alt_km, instru_look_angle_deg, fieldOfView):
         """ Obtain the swath-width.
             In case of cross-track-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
             The instru_look_angle corresponds to a (pure) roll. 
-            See Fig.5.1.3.1 in Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993.
-
-        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
-        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
+            See Fig.5.1.3.1 in Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993
 
         :param alt_km: Altitude of observer in kilometers.
         :paramtype alt_km: float
 
-        :param instru_look_angle: Instrument look angle in radians. This correspond to the off-nadir angle at which the ground-pixel is imaged.
-        :paramtype instru_look_angle: float
+        :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :paramtype instru_look_angle_deg: float
+        
+        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
+        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
         :return: Swath-width in kilometers.
         :rtype: float
@@ -1251,7 +1258,7 @@ class CrossTrackScan(Entity):
         h = alt_km * 1e3
         Re = Constants.radiusOfEarthInKM * 1e3         
         Rs = Re + h 
-        gamma_m = instru_look_angle
+        gamma_m = np.deg2rad(instru_look_angle_deg)
 
         if fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
             iFOV_CT_deg = fieldOfView.sph_geom.angle_width
@@ -1264,18 +1271,25 @@ class CrossTrackScan(Entity):
 
         gamma_n_illum = gamma_m - 0.5*strip_CT_rad
         gamma_f_illum = gamma_m + 0.5*strip_CT_rad
-        theta_in_illum = np.arcsin(np.sin(gamma_n_illum)*Rs/Re)
         theta_horizon = np.arcsin(Re/Rs)
-        try:
-            theta_if_illum = np.arcsin(np.sin(gamma_f_illum)*Rs/Re)
-        except:
-            # beyond horizon, hence set to horizon angle
-            theta_if_illum = theta_horizon
+        
+        theta_in_illum = np.arcsin(np.sin(abs(gamma_n_illum))*Rs/Re)
+        if np.isnan(theta_in_illum):            
+            theta_in_illum = theta_horizon # beyond horizon, hence set to horizon angle
 
-        alpha_n_illum = theta_in_illum - gamma_n_illum
-        alpha_f_illum = theta_if_illum - gamma_f_illum
-        alpha_s_illum = alpha_f_illum - alpha_n_illum
-        W_gr = Re*alpha_s_illum  # swath
+        theta_if_illum = np.arcsin(np.sin(abs(gamma_f_illum))*Rs/Re)
+        if np.isnan(theta_if_illum):
+            theta_if_illum = theta_horizon # beyond horizon, hence set to horizon angle
+
+        alpha_n_illum = theta_in_illum - abs(gamma_n_illum)
+        alpha_f_illum = theta_if_illum - abs(gamma_f_illum)
+
+        if gamma_n_illum < 0: # NOT completely sidelooking
+            alpha_s_illum = alpha_f_illum + alpha_n_illum
+        else:
+            alpha_s_illum = abs(alpha_f_illum - alpha_n_illum)
+
+        W_gr = Re*abs(alpha_s_illum)  # swath
 
         return W_gr*1e-3
 
@@ -1381,26 +1395,26 @@ class ConicalScan(Entity):
         else:
             return 0
 
-    def compute_swath_width(self, fieldOfView, alt_km, instru_look_angle):
+    def compute_swath_width(self, alt_km, instru_look_angle_deg, fieldOfView=None):
         """ Obtain the swath-width.
             In case of conical-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
             The "swath" is considered to be the length of the strip-arc. This is different from the length of the scene
             along the cross-track direction.
 
-        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
-        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
-
         :param alt_km: Altitude of observer in kilometers.
         :paramtype alt_km: float
 
-        :param instru_look_angle: Instrument look angle in radians. This correspond to the off-nadir angle at which the ground-pixel is imaged.
-        :paramtype instru_look_angle: float
+        :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :paramtype instru_look_angle_deg: float
+
+        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation). Not required for the case of conical-scan.
+        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
         :return: Swath-width in kilometers.
         :rtype: float
 
         """
-        if instru_look_angle != 0:
+        if instru_look_angle_deg != 0:
             raise RuntimeError("Only a 0 deg instrument look angle is supported for the case of conical scan.")
 
         # calculate the radius of the small-circle on the Earth surface on which the imaged arc lies.
@@ -1763,7 +1777,7 @@ class RadiometerModel(Entity):
                 # find the angle between the nadir-vector (aligned to the z-axis of the NADIR_POINTING frame) and the pointing-vector.
                 instru_look_angle = np.arccos(np.dot(pointing_axis_in_nadir_pointing_frame, np.array([0,0,1]))) 
 
-        swath_width_km = self.scan.compute_swath_width(self.fieldOfView, alt_km, instru_look_angle)
+        swath_width_km = self.scan.compute_swath_width(alt_km, np.rad2deg(instru_look_angle), self.fieldOfView)
 
         # calculate the dwell time per ground-pixel
         sat_speed_kmps = GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos, sc_vel)

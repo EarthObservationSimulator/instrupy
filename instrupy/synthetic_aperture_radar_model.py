@@ -839,9 +839,8 @@ class SyntheticApertureRadarModel(Entity):
         gamma_f_illum = gamma_m + 0.5*theta_elv
         theta_in_illum = np.arcsin(np.sin(gamma_n_illum)*Rs/Re)
         theta_horizon = np.arcsin(Re/Rs)
-        try:
-            theta_if_illum = np.arcsin(np.sin(gamma_f_illum)*Rs/Re)
-        except:
+        theta_if_illum = np.arcsin(np.sin(gamma_f_illum)*Rs/Re)
+        if(np.isnan(theta_if_illum)):
             # beyond horizon, hence set to horizon angle
             theta_if_illum = theta_horizon
 
