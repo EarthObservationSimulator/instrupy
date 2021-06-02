@@ -318,7 +318,7 @@ class SyntheticApertureRadarModel(Entity):
 
         """
         # Only side-looking orientation of instrument supported for synthetic aperture radar 
-        orien_dict = d.get("orientation", {"convention": "SIDE_LOOK", "sideLookAngle":25})
+        orien_dict = d.get("orientation", {"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":25})
         orien_conv= orien_dict.get("convention",None)
         if(orien_conv is None):
             raise Exception("Please specify valid Orientation convention.")

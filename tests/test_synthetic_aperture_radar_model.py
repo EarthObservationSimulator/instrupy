@@ -89,6 +89,7 @@ microxsar_json_str =   '{"@type": "Synthetic Aperture Radar",' \
                         '"volume": 0.343,' \
                         '"power": 1100,' \
                         '"orientation": {' \
+                        '   "referenceFrame": "SC_BODY_FIXED",' \
                         '    "convention": "SIDE_LOOK",' \
                         '    "sideLookAngle": 30' \
                         '},' \
@@ -111,6 +112,7 @@ microxsar_json_str =   '{"@type": "Synthetic Aperture Radar",' \
 # SEASAT
 seasat_json_str =  '{"@type": "Synthetic Aperture Radar",' \
                     '"orientation": {' \
+                    '   "referenceFrame": "SC_BODY_FIXED",' \
                     '    "convention": "SIDE_LOOK",' \
                     '    "sideLookAngle": 20.5' \
                     '},' \
@@ -130,6 +132,7 @@ seasat_json_str =  '{"@type": "Synthetic Aperture Radar",' \
 # ERS1
 ers1_json_str = '{"@type": "Synthetic Aperture Radar",' \
                 '   "orientation": {' \
+                '   "referenceFrame": "SC_BODY_FIXED",' \
                 '      "convention": "SIDE_LOOK",' \
                 '      "sideLookAngle": 20' \
                 '  },' \
@@ -167,7 +170,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(microxsar.volume, 0.343)
         self.assertIsInstance(microxsar.power, float)
         self.assertEqual(microxsar.power, 1100)
-        self.assertEqual(microxsar.orientation, Orientation.from_json({"convention":"Euler", "eulerSeq1":1, "eulerSeq2":2, "eulerSeq3":3, "eulerAngle1":0, "eulerAngle2":30, "eulerAngle3":0}))
+        self.assertEqual(microxsar.orientation, Orientation.from_json({"referenceFrame": "SC_BODY_FIXED", "convention":"Euler", "eulerSeq1":1, "eulerSeq2":2, "eulerSeq3":3, "eulerAngle1":0, "eulerAngle2":30, "eulerAngle3":0}))
         self.assertIsInstance(microxsar.orientation, Orientation)
         self.assertIsInstance(microxsar.fieldOfView, ViewGeometry)         
         self.assertAlmostEqual(microxsar.fieldOfView.sph_geom.get_fov_height_and_width()[0], 0.3635, places = 2)
@@ -227,6 +230,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"volume": 0.343,' 
                                                   '"power": 1100,' 
                                                   '"orientation": {'
+                                                  '   "referenceFrame": "SC_BODY_FIXED",'
                                                   '   "convention": "Euler",'
                                                   '   "eulerAngle1": 0,'
                                                   '   "eulerAngle2": 10,'
@@ -256,8 +260,9 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"volume": 0.343,' 
                                                   '"power": 1100,' 
                                                   '"orientation": {'
-                                                  '    "convention": "SIDE_LOOK",'
-                                                  '    "sideLookAngle": 30'
+                                                  '   "referenceFrame": "SC_BODY_FIXED",'
+                                                  '   "convention": "SIDE_LOOK",'
+                                                  '   "sideLookAngle": 30'
                                                   '},'
                                                   '"dataRate": 2000,'
                                                   '"bitsPerPixel": 16,'
@@ -406,6 +411,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         
         test_sar1_json_str = '{"@type": "Synthetic Aperture Radar",' \
                     '"orientation": {' \
+                    '   "referenceFrame": "SC_BODY_FIXED",' \
                     '    "convention": "SIDE_LOOK",' \
                     '    "sideLookAngle": 30' \
                     '},' \
@@ -508,7 +514,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar2.dualPolPulseConfig, DualPolPulseConfig)
         self.assertEqual(test_sar2.dualPolPulseConfig, DualPolPulseConfig.AIRSAR)
         self.assertIsInstance(test_sar2.orientation, Orientation)
-        self.assertEqual(test_sar2.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar2.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         
         h = 500 # [km]
         orb_speed = orbital_speed(h)
@@ -584,7 +590,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar3.dualPolPulseSep, float)
         self.assertEqual(test_sar3.dualPolPulseSep, 0.5*test_sar3.pulseWidth) # default value
         self.assertIsInstance(test_sar3.orientation, Orientation)
-        self.assertEqual(test_sar3.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar3.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         
         h = 500 # [km]
         orb_speed = orbital_speed(h)
@@ -663,7 +669,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar4.dualPolPulseSep, float)
         self.assertEqual(test_sar4.dualPolPulseSep, 0.5*test_sar4.pulseWidth) # default value
         self.assertIsInstance(test_sar4.orientation, Orientation)
-        self.assertEqual(test_sar4.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar4.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         self.assertIsInstance(test_sar4.scanTechnique, ScanTech)
         self.assertEqual(test_sar4.scanTechnique, ScanTech.STRIPMAP)
 
@@ -743,7 +749,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(test_sar5.dualPolPulseConfig, DualPolPulseConfig.AIRSAR)
         self.assertIsNone(test_sar5.dualPolPulseSep)
         self.assertIsInstance(test_sar5.orientation, Orientation)
-        self.assertEqual(test_sar5.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar5.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         self.assertIsInstance(test_sar5.scanTechnique, ScanTech)
         self.assertEqual(test_sar5.scanTechnique, ScanTech.STRIPMAP)
 
@@ -830,7 +836,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar.dualPolPulseSep, float)
         self.assertEqual(test_sar.dualPolPulseSep, 2e-6)
         self.assertIsInstance(test_sar.orientation, Orientation)
-        self.assertEqual(test_sar.orientation, Orientation.from_dict({"convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation    
+        self.assertEqual(test_sar.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation    
         self.assertIsInstance(test_sar.atmosLoss, float)
         self.assertEqual(test_sar.atmosLoss, 1)     
 

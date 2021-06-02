@@ -407,7 +407,7 @@ class TestInstrument(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["look angle [deg]"], 0, delta = 0.1)
         self.assertAlmostEqual(obsv_metrics["solar zenith [deg]"], 20.335, delta = 0.1) # precomputed value at the epoch and (lat=0, lon=0) position
 
-         # in-correct mode-id
+        # incorrect mode-id
         obsv_metrics = TestInstrument.bs1.calc_data_metrics("abc", SpacecraftOrbitState, TargetCoords)
         self.assertAlmostEqual(obsv_metrics["observation range [km]"], 500, delta = 1)
         self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 0, delta = 0.1)

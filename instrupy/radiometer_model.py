@@ -1479,15 +1479,9 @@ class RadiometerModel(Entity):
 
     :ivar operatingFrequency: Operating radar center frequency in (Hertz).
     :vartype operatingFrequency: float
-
-    :ivar systemType: Radiometer system type.
-    :vartype: :class:`instrupy.radiometer_model.SystemType`
     
     :ivar system: Radiometer system object.
     :varytype system: :class:`instrupy.radiometer_model.TotalPowerRadiometerSystem` or :class:`instrupy.radiometer_model.UnbalancedDikeRadiometerSystem` or :class:`instrupy.radiometer_model.BalancedDikeRadiometerSystem` or :class:`instrupy.radiometer_model.NoiseAddingRadiometerSystem`
-    
-    :ivar scanTechnique: Scanning technique.
-    :vartype scanTechnique: :class:`instrupy.radiometer_model.ScanTech`
     
     :ivar scan: Scan object.
     :vartype scan: :class:`instrupy.radiometer_model.FixedScan` or :class:`instrupy.radiometer_model.CrossTrackScan` or :class:`instrupy.radiometer_model.ConicalScan`.
@@ -1502,8 +1496,7 @@ class RadiometerModel(Entity):
     def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None, 
             fieldOfViewGeometry=None, sceneFieldOfViewGeometry=None, maneuver=None, pointingOption=None, 
             dataRate=None, bitsPerPixel=None, antenna=None, operatingFrequency=None, 
-            systemType=None, system=None, scanTechnique=None, 
-            scan=None, targetBrightnessTemp=None, _id=None):
+            system=None, scan=None, targetBrightnessTemp=None, _id=None):
         """ Initialization. All except the below two parameters have identical description as that of the corresponding class instance variables.
 
         :param fieldOfViewGeometry: Instrument field-of-view spherical geometry.
@@ -1535,9 +1528,7 @@ class RadiometerModel(Entity):
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.antenna = copy.deepcopy(antenna) if antenna is not None and isinstance(antenna, Antenna) else None
         self.operatingFrequency = float(operatingFrequency) if operatingFrequency is not None else None
-        self.systemType = SystemType.get(systemType) if systemType is not None else None
         self.system = copy.deepcopy(system) if system is not None and (isinstance(system, TotalPowerRadiometerSystem) or isinstance(system, UnbalancedDikeRadiometerSystem) or isinstance(system, BalancedDikeRadiometerSystem) or isinstance(system, NoiseAddingRadiometerSystem))  else None
-        self.scanTechnique = ScanTech.get(scanTechnique) if scanTechnique is not None else None
         self.scan = copy.deepcopy(scan) if scan is not None and (isinstance(scan, FixedScan) or isinstance(scan, CrossTrackScan) or isinstance(scan, ConicalScan)) else None
         self.targetBrightnessTemp = float(targetBrightnessTemp) if targetBrightnessTemp is not None else None     
 
@@ -1568,12 +1559,11 @@ class RadiometerModel(Entity):
 
         """
         # Only side-looking orientation of instrument supported for synthetic aperture radar 
-        orien_dict = d.get("orientation", {"convention": "REF_FRAME_ALIGNED"})
+        orien_dict = d.get("orientation", {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"})
         orientation = Orientation.from_dict(orien_dict)
 
         # parse maneuver
-        maneuver_dict =  d.get("maneuver", None)
-        maneuver = Maneuver.from_dict(maneuver_dict)
+        maneuver = Maneuver.from_json(d.get("maneuver", None))
 
         # parse antenna object and get the field-of-view geometry
         antenna_dict = d.get("antenna", None)
@@ -1596,7 +1586,7 @@ class RadiometerModel(Entity):
             else:
                 _pointing_option = [Orientation.from_dict(pnt_opt_dict)]
 
-        # parse the system object
+        # parse the system and the systemType objects
         system_lookup = { 'TOTAL_POWER' : TotalPowerRadiometerSystem,  'UNBALANCED_DICKE': UnbalancedDikeRadiometerSystem, 
                           'BALANCED_DICKE': BalancedDikeRadiometerSystem, 'NOISE_ADDING': NoiseAddingRadiometerSystem}
         system_dict = d.get("system", None)
@@ -1607,7 +1597,7 @@ class RadiometerModel(Entity):
             systemType = None
             system = None
 
-        # parse the scan object
+        # parse the scan and the scanTechnique objects
         scan_lookup = { 'FIXED':FixedScan, 'CROSS_TRACK':CrossTrackScan, 'CONICAL':ConicalScan}
         scan_dict = d.get("scan", None)
         if scan_dict:
@@ -1632,9 +1622,7 @@ class RadiometerModel(Entity):
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         antenna = antenna,
                         operatingFrequency = d.get("operatingFrequency", None),
-                        systemType = systemType,
                         system = system,
-                        scanTechnique = scanTechnique,
                         scan = scan,
                         targetBrightnessTemp = d.get("targetBrightnessTemp", 290),
                         _id = d.get("@id", uuid.uuid4())

@@ -2,6 +2,8 @@
 
 References: [1] Chapter 6,7 in "Microwave Radar and Radiometric Remote Sensing," David Gardner Long , Fawwaz T. Ulaby 2014 
 
+@TODO Include rectangular antenna tests
+
 """
 
 import unittest
@@ -587,7 +589,6 @@ class TestCrossTrackScan(unittest.TestCase):
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 60, "interScanOverheadTime": 1e-3}') 
         self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, fieldOfView=fieldOfView), 60*np.pi/180*500, delta=75) 
 
-
 class TestConicalScan(unittest.TestCase):   
     def test_from_json(self):
         """ Test typical initialization of the ConicalScan object
@@ -626,4 +627,136 @@ class TestConicalScan(unittest.TestCase):
             o.compute_swath_width(alt_km=500, instru_look_angle_deg=30) # instrument look angle is not 0 degrees
 
 class TestRadiometerModel(unittest.TestCase):   
-    pass
+    
+    @classmethod
+    def setUpClass(cls):
+
+        cls.radio1_json = '{"@type": "Radiometer", "name": "ray1", "mass": 50, "volume": 3, "power": 10,' \
+                          ' "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},' \
+                          ' "bitsPerPixel": 16,' \
+                          ' "operatingFrequency": 1.25e9,' \
+                          ' "antenna": {"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM",' \
+                          '             "radiationEfficiency": 0.8, "phyTemp": 300},' \
+                          ' "system": {"tlLoss": 0.5, "tlPhyTemp": 290, ' \
+                          '            "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200, ' \
+                          '            "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200,' \
+                          '            "mixerGainVariation": 2, "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100,' \
+                          '            "ifAmpGainVariation": 10, "integratorVoltageGain": 1, "integrationTime": 100e-3,' \
+                          '            "bandwidth": 10e6, "@type": "TOTAL_POWER"},' \
+                          ' "scan": {"@type": "FIXED"},' \
+                          ' "targetBrightnessTemp": 345' \
+                          '}'
+
+        cls.radio2_json = '{"@type": "Radiometer", "name": "ray2", "mass": 50, ' \
+                          ' "operatingFrequency": 1.25e9,' \
+                          ' "antenna": {"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM",' \
+                          '             "radiationEfficiency": 0.75, "phyTemp": 300},' \
+                          ' "system": { "predetectionGain": 83, "predetectionInpNoiseTemp": 700, ' \
+                          '             "predetectionGainVariation": 1995262.314968883, "integrationTime": 1, ' \
+                          '             "bandwidth": 100e6, "referenceTemperature": 300, "integratorVoltageGain": 1,' \
+                          '             "@type": "UNBALANCED_DICKE"},' \
+                          ' "scan": {"@type": "CROSS_TRACK", "scanWidth": 120, "interScanOverheadTime": 1e-3},' \
+                          ' "targetBrightnessTemp": 301' \
+                          '}'
+
+        cls.radio3_json = '{"@type": "Radiometer", "@id": "ray3",' \
+                          ' "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":30},' \
+                          ' "bitsPerPixel": 16,' \
+                          ' "operatingFrequency": 1.25e9,' \
+                          ' "antenna": {"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM",' \
+                          '             "radiationEfficiency": 1, "phyTemp": 300},' \
+                          ' "system": { "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,' \
+                          '             "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,' \
+                          '             "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, "dickeSwitchOutputNoiseTemperature": 90,' \
+                          '             "integratorVoltageGain": 1, "integrationTime": 1, "bandwidth": 100e6, "@type": "BALANCED_DICKE"},' \
+                          ' "scan": {"@type": "CONICAL", "offNadirAngle": 30, "clockAngleRange": 60, "interScanOverheadTime": 1e-3},' \
+                          ' "targetBrightnessTemp": 295' \
+                          '}'
+        
+        cls.radio4_json = '{"@type": "Radiometer", "@id": "ray4",' \
+                          ' "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":-30},' \
+                          ' "operatingFrequency": 1.25e9,' \
+                          ' "antenna": {"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM",' \
+                          '             "radiationEfficiency": 1, "phyTemp": 300},' \
+                          ' "system": { "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,' \
+                          '             "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,' \
+                          '             "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, "excessNoiseTemperature": 1000,' \
+                          '             "integratorVoltageGain": 1, "integrationTime": 1, "bandwidth": 100e6, "@type": "NOISE_ADDING"},' \
+                          ' "scan": {"@type": "FIXED"},' \
+                          ' "targetBrightnessTemp": 295' \
+                          '}'
+
+
+    def test_from_json(self):
+        """ Test typical initializations of the RadiometerModel object
+        """   
+        o = RadiometerModel.from_json(self.radio1_json)
+        self.assertIsInstance(o, RadiometerModel)
+        self.assertIsNotNone(o._id)
+        self.assertEqual(o.name, "ray1")
+        self.assertEqual(o.mass, 50)
+        self.assertEqual(o.volume, 3)
+        self.assertEqual(o.power, 10)
+        self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}))
+        self.assertEqual(o.bitsPerPixel, 16)
+        self.assertEqual(o.operatingFrequency, 1.25e9)
+        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 0.8, "phyTemp": 300}))
+        self.assertEqual(o.system, TotalPowerRadiometerSystem.from_dict({"tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200, "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2, 
+                                                                         "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, 
+                                                                         "integratorVoltageGain": 1, "integrationTime": 100e-3, "bandwidth": 10e6}))
+        self.assertEqual(o.scan, FixedScan.from_dict({}))
+        self.assertEqual(o.targetBrightnessTemp, 345)
+
+        o = RadiometerModel.from_json(self.radio2_json)
+        self.assertIsInstance(o, RadiometerModel)
+        self.assertIsNotNone(o._id)
+        self.assertEqual(o.name, "ray2")
+        self.assertEqual(o.mass, 50)
+        self.assertIsNone(o.volume)
+        self.assertIsNone(o.power)
+        self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}))
+        self.assertIsNone(o.bitsPerPixel)
+        self.assertEqual(o.operatingFrequency, 1.25e9)
+        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 0.75, "phyTemp": 300}))
+        self.assertEqual(o.system, UnbalancedDikeRadiometerSystem.from_dict({ "predetectionGain": 83, "predetectionInpNoiseTemp": 700,
+                                                                          "predetectionGainVariation": 1995262.314968883, "integrationTime": 1,
+                                                                          "bandwidth": 100e6, "referenceTemperature": 300, "integratorVoltageGain": 1,
+                                                                          "@type": "UNBALANCED_DICKE"}))
+        self.assertEqual(o.scan, CrossTrackScan.from_dict({"scanWidth": 120, "interScanOverheadTime": 1e-3}))
+        self.assertEqual(o.targetBrightnessTemp, 301)         
+
+        o = RadiometerModel.from_json(self.radio3_json)
+        self.assertIsInstance(o, RadiometerModel)
+        self.assertEqual(o._id, "ray3")
+        self.assertIsNone(o.name)
+        self.assertIsNone(o.mass)
+        self.assertIsNone(o.volume)
+        self.assertIsNone(o.power)
+        self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":30}))
+        self.assertEqual(o.bitsPerPixel, 16)
+        self.assertEqual(o.operatingFrequency, 1.25e9)
+        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 1, "phyTemp": 300}))
+        self.assertEqual(o.system, BalancedDikeRadiometerSystem.from_dict({ "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,
+                                                                              "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,
+                                                                              "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, "dickeSwitchOutputNoiseTemperature": 90,
+                                                                              "integratorVoltageGain": 1, "integrationTime": 1, "bandwidth": 100e6, "@type": "BALANCED_DICKE"}))
+        self.assertEqual(o.scan, ConicalScan.from_dict({"offNadirAngle": 30, "clockAngleRange": 60, "interScanOverheadTime": 1e-3}))
+        self.assertEqual(o.targetBrightnessTemp, 295)
+
+        o = RadiometerModel.from_json(self.radio4_json)
+        self.assertIsInstance(o, RadiometerModel)
+        self.assertEqual(o._id, "ray4")
+        self.assertIsNone(o.name)
+        self.assertIsNone(o.mass)
+        self.assertIsNone(o.volume)
+        self.assertIsNone(o.power)
+        self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":-30}))
+        self.assertIsNone(o.bitsPerPixel)
+        self.assertEqual(o.operatingFrequency, 1.25e9)
+        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 1, "phyTemp": 300}))
+        self.assertEqual(o.system, NoiseAddingRadiometerSystem.from_dict({ "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,
+                                                                              "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,
+                                                                              "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, "excessNoiseTemperature": 1000,
+                                                                              "integratorVoltageGain": 1, "integrationTime": 1, "bandwidth": 100e6, "@type": "NOISE_ADDING"}))
+        self.assertEqual(o.scan, FixedScan.from_dict({}))
+        self.assertEqual(o.targetBrightnessTemp, 295)
