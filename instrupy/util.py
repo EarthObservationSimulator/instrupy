@@ -1390,8 +1390,8 @@ class Antenna(Entity):
         :rtype: dict
 
         """
-        return dict({"shape": self.shape,
-                     "apertureExcitationProfile": self.apertureExcitationProfile,
+        return dict({"shape": self.shape.value,
+                     "apertureExcitationProfile": self.apertureExcitationProfile.value,
                      "diameter": self.diameter,
                      "height": self.height, 
                      "width": self.width,

@@ -760,3 +760,68 @@ class TestRadiometerModel(unittest.TestCase):
                                                                               "integratorVoltageGain": 1, "integrationTime": 1, "bandwidth": 100e6, "@type": "NOISE_ADDING"}))
         self.assertEqual(o.scan, FixedScan.from_dict({}))
         self.assertEqual(o.targetBrightnessTemp, 295)
+    
+    def test_to_dict(self):
+        o = RadiometerModel.from_json(self.radio1_json)
+        _id = o._id # id is generated randomly
+        self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': 'ray1', 'mass': 50.0, 'volume': 3.0, 'power': 10.0, 
+                                       'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 0.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'maneuver': None, 'pointingOption': None, 'dataRate': None, 'bitsPerPixel': 16, 
+                                       'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 1.0, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 0.8, 'phyTemp': 300.0, '@id': None}, 
+                                       'operatingFrequency': 1250000000.0, 
+                                       'system': {'tlLoss': 0.5, 'tlPhyTemp': 290.0, 'rfAmpGain': 30.0, 'rfAmpInpNoiseTemp': 200.0, 'rfAmpGainVariation': 10.0, 
+                                                  'mixerGain,': 23.0, 'mixerInpNoiseTemp': 1200.0, 'mixerGainVariation': 2.0, 
+                                                  'ifAmpGain': 30.0, 'ifAmpInputNoiseTemp': 100.0, 'ifAmpGainVariation': 10.0, 
+                                                  'integratorVoltageGain': 1.0, 'predetectionGain': None, 'predetectionInpNoiseTemp': None, 
+                                                  'predetectionGainVariation': None, 'integrationTime': 0.1, 'bandwidth': 10000000.0, '@id': None, '@type': 'TOTAL_POWER'}, 
+                                        'scan': {'@id': None, '@type': 'FIXED'}, 'targetBrightnessTemp': 345.0, '@id': _id})
+
+        o = RadiometerModel.from_json(self.radio2_json)
+        _id = o._id # id is generated randomly
+        self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': 'ray2', 'mass': 50.0, 'volume': None, 'power': None, 
+                                       'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 0.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'maneuver': None, 'pointingOption': None, 'dataRate': None, 'bitsPerPixel': None, 
+                                       'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 1.0, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 0.75, 'phyTemp': 300.0, '@id': None}, 
+                                       'operatingFrequency': 1250000000.0, 
+                                       'system': {'tlLoss': None, 'tlPhyTemp': None, 'rfAmpGain': None, 'rfAmpInpNoiseTemp': None, 'rfAmpGainVariation': None, 
+                                                  'mixerGain,': None, 'mixerInpNoiseTemp': None, 'mixerGainVariation': None, 
+                                                  'ifAmpGain': None, 'ifAmpInputNoiseTemp': None, 'ifAmpGainVariation': None, 
+                                                  'dickeSwitchOutputNoiseTemperature': None, 'referenceTemperature': 300.0, 
+                                                  'integratorVoltageGain': 1.0, 'predetectionGain': 83.0, 'predetectionInpNoiseTemp': 700.0, 'predetectionGainVariation': 1995262.314968883, 
+                                                  'integrationTime': 1.0, 'bandwidth': 100000000.0, '@id': None, '@type': 'UNBALANCED_DICKE'}, 
+                                       'scan': {'scanWidth': 120.0, 'interScanOverheadTime': 0.001, '@id': None, '@type': 'CROSS_TRACK'}, 
+                                       'targetBrightnessTemp': 301.0, '@id': _id})
+
+        o = RadiometerModel.from_json(self.radio3_json)
+        self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': None, 'mass': None, 'volume': None, 'power': None, 
+                            'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 30.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 
+                            'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                            'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                            'maneuver': None, 'pointingOption': None, 'dataRate': None, 'bitsPerPixel': 16, 
+                            'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 1.0, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 1.0, 'phyTemp': 300.0, '@id': None}, 
+                            'operatingFrequency': 1250000000.0, 
+                            'system': {'tlLoss': 0.5, 'tlPhyTemp': 290.0, 'rfAmpGain': 30.0, 'rfAmpInpNoiseTemp': 200.0, 'rfAmpGainVariation': 10.0, 
+                                       'mixerGain,': 23.0, 'mixerInpNoiseTemp': 1200.0, 'mixerGainVariation': 2.0, 
+                                       'ifAmpGain': 30.0, 'ifAmpInputNoiseTemp': 100.0, 'ifAmpGainVariation': 10.0, 
+                                       'dickeSwitchOutputNoiseTemperature': 90.0, 'integratorVoltageGain': 1.0, 
+                                       'predetectionGain': None, 'predetectionInpNoiseTemp': None, 'predetectionGainVariation': None, 
+                                       'integrationTime': 1.0, 'bandwidth': 100000000.0, '@id': None, '@type': 'BALANCED_DICKE'}, 
+                            'scan': {'offNadirAngle': 30.0, 'clockAngleRange': 60.0, 'interScanOverheadTime': 0.001, '@id': None, '@type': 'CONICAL'}, 
+                            'targetBrightnessTemp': 295.0, '@id': 'ray3'})
+        
+        o = RadiometerModel.from_json(self.radio4_json)
+        self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': None, 'mass': None, 'volume': None, 'power': None, 
+                                       'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 330.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 
+                                       'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'maneuver': None, 'pointingOption': None, 'dataRate': None, 'bitsPerPixel': None, 
+                                       'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 1.0, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 1.0, 'phyTemp': 300.0, '@id': None}, 
+                                       'operatingFrequency': 1250000000.0, 
+                                       'system': {'tlLoss': 0.5, 'tlPhyTemp': 290.0, 'rfAmpGain': 30.0, 'rfAmpInpNoiseTemp': 200.0, 'rfAmpGainVariation': 10.0, 
+                                                  'mixerGain,': 23.0, 'mixerInpNoiseTemp': 1200.0, 'mixerGainVariation': 2.0, 
+                                                  'ifAmpGain': 30.0, 'ifAmpInputNoiseTemp': 100.0, 'ifAmpGainVariation': 10.0, 
+                                                  'excessNoiseTemperature': 1000.0, 'integratorVoltageGain': 1.0, 'predetectionGain': None, 'predetectionInpNoiseTemp': None, 'predetectionGainVariation': None, 
+                                                  'integrationTime': 1.0, 'bandwidth': 100000000.0, '@id': None, '@type': 'NOISE_ADDING'}, 
+                                        'scan': {'@id': None, '@type': 'FIXED'}, 'targetBrightnessTemp': 295.0, '@id': 'ray4'})

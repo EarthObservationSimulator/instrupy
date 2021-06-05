@@ -1625,7 +1625,7 @@ class RadiometerModel(Entity):
                         system = system,
                         scan = scan,
                         targetBrightnessTemp = d.get("targetBrightnessTemp", 290),
-                        _id = d.get("@id", uuid.uuid4())
+                        _id = str(d.get("@id", uuid.uuid4()))
                         )
 
     def to_dict(self):
