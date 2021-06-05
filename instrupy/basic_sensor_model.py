@@ -263,6 +263,8 @@ class BasicSensorModel(Entity):
                     * :code:`look angle [deg]` (:class:`float`) Look angle in degrees at target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
                     * :code:`observation range [km]` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
                     * :code:`solar zenith [deg]` (:class:`float`) Solar Zenith angle in degrees during observation.
+                
+                    .. todo:: Include AT, CT footprint size calculations.
 
         :rtype: dict                      
         """

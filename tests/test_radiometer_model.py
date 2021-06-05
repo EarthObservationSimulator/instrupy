@@ -649,7 +649,7 @@ class TestRadiometerModel(unittest.TestCase):
 
         cls.radio2_json = '{"@type": "Radiometer", "name": "ray2", "mass": 50, ' \
                           ' "operatingFrequency": 1.25e9,' \
-                          ' "antenna": {"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM",' \
+                          ' "antenna": {"shape": "RECTANGULAR", "height": 1, "width": 1, "apertureExcitationProfile": "UNIFORM",' \
                           '             "radiationEfficiency": 0.75, "phyTemp": 300},' \
                           ' "system": { "predetectionGain": 83, "predetectionInpNoiseTemp": 700, ' \
                           '             "predetectionGainVariation": 1995262.314968883, "integrationTime": 1, ' \
@@ -660,10 +660,10 @@ class TestRadiometerModel(unittest.TestCase):
                           '}'
 
         cls.radio3_json = '{"@type": "Radiometer", "@id": "ray3",' \
-                          ' "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":30},' \
+                          ' "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},' \
                           ' "bitsPerPixel": 16,' \
                           ' "operatingFrequency": 1.25e9,' \
-                          ' "antenna": {"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM",' \
+                          ' "antenna": {"shape": "CIRCULAR", "diameter": 3.5, "apertureExcitationProfile": "UNIFORM",' \
                           '             "radiationEfficiency": 1, "phyTemp": 300},' \
                           ' "system": { "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,' \
                           '             "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,' \
@@ -717,7 +717,7 @@ class TestRadiometerModel(unittest.TestCase):
         self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}))
         self.assertIsNone(o.bitsPerPixel)
         self.assertEqual(o.operatingFrequency, 1.25e9)
-        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 0.75, "phyTemp": 300}))
+        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "RECTANGULAR", "height": 1, "width":1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 0.75, "phyTemp": 300}))
         self.assertEqual(o.system, UnbalancedDikeRadiometerSystem.from_dict({ "predetectionGain": 83, "predetectionInpNoiseTemp": 700,
                                                                           "predetectionGainVariation": 1995262.314968883, "integrationTime": 1,
                                                                           "bandwidth": 100e6, "referenceTemperature": 300, "integratorVoltageGain": 1,
@@ -732,10 +732,10 @@ class TestRadiometerModel(unittest.TestCase):
         self.assertIsNone(o.mass)
         self.assertIsNone(o.volume)
         self.assertIsNone(o.power)
-        self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":30}))
+        self.assertEqual(o.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}))
         self.assertEqual(o.bitsPerPixel, 16)
         self.assertEqual(o.operatingFrequency, 1.25e9)
-        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 1, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 1, "phyTemp": 300}))
+        self.assertEqual(o.antenna, Antenna.from_dict({"shape": "CIRCULAR", "diameter": 3.5, "apertureExcitationProfile": "UNIFORM", "radiationEfficiency": 1, "phyTemp": 300}))
         self.assertEqual(o.system, BalancedDikeRadiometerSystem.from_dict({ "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,
                                                                               "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,
                                                                               "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, "dickeSwitchOutputNoiseTemperature": 90,
@@ -780,10 +780,11 @@ class TestRadiometerModel(unittest.TestCase):
         o = RadiometerModel.from_json(self.radio2_json)
         _id = o._id # id is generated randomly
         self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': 'ray2', 'mass': 50.0, 'volume': None, 'power': None, 
-                                       'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 0.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
-                                       'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                                       'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 0.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 
+                                       'fieldOfViewGeometry': {'shape': 'RECTANGULAR', 'angleHeight': 12.092497171570107, 'angleWidth': 12.092497171570086, '@id': None}, 
+                                       'sceneFieldOfViewGeometry': {'shape': 'RECTANGULAR', 'angleHeight': 12.092497171570107, 'angleWidth': 12.092497171570086, '@id': None}, 
                                        'maneuver': None, 'pointingOption': None, 'dataRate': None, 'bitsPerPixel': None, 
-                                       'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 1.0, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 0.75, 'phyTemp': 300.0, '@id': None}, 
+                                       'antenna': {'shape': 'RECTANGULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': None, 'height': 1.0, 'width': 1.0, 'apertureEfficiency': None, 'radiationEfficiency': 0.75, 'phyTemp': 300.0, '@id': None}, 
                                        'operatingFrequency': 1250000000.0, 
                                        'system': {'tlLoss': None, 'tlPhyTemp': None, 'rfAmpGain': None, 'rfAmpInpNoiseTemp': None, 'rfAmpGainVariation': None, 
                                                   'mixerGain,': None, 'mixerInpNoiseTemp': None, 'mixerGainVariation': None, 
@@ -796,11 +797,11 @@ class TestRadiometerModel(unittest.TestCase):
 
         o = RadiometerModel.from_json(self.radio3_json)
         self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': None, 'mass': None, 'volume': None, 'power': None, 
-                            'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 30.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 
-                            'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
-                            'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 13.741474058602394, '@id': None}, 
+                            'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 0.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 
+                            'fieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 3.9261354453149697, '@id': None}, 
+                            'sceneFieldOfViewGeometry': {'shape': 'CIRCULAR', 'diameter': 3.9261354453149697, '@id': None}, 
                             'maneuver': None, 'pointingOption': None, 'dataRate': None, 'bitsPerPixel': 16, 
-                            'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 1.0, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 1.0, 'phyTemp': 300.0, '@id': None}, 
+                            'antenna': {'shape': 'CIRCULAR', 'apertureExcitationProfile': 'UNIFORM', 'diameter': 3.5, 'height': None, 'width': None, 'apertureEfficiency': None, 'radiationEfficiency': 1.0, 'phyTemp': 300.0, '@id': None}, 
                             'operatingFrequency': 1250000000.0, 
                             'system': {'tlLoss': 0.5, 'tlPhyTemp': 290.0, 'rfAmpGain': 30.0, 'rfAmpInpNoiseTemp': 200.0, 'rfAmpGainVariation': 10.0, 
                                        'mixerGain,': 23.0, 'mixerInpNoiseTemp': 1200.0, 'mixerGainVariation': 2.0, 
@@ -825,3 +826,43 @@ class TestRadiometerModel(unittest.TestCase):
                                                   'excessNoiseTemperature': 1000.0, 'integratorVoltageGain': 1.0, 'predetectionGain': None, 'predetectionInpNoiseTemp': None, 'predetectionGainVariation': None, 
                                                   'integrationTime': 1.0, 'bandwidth': 100000000.0, '@id': None, '@type': 'NOISE_ADDING'}, 
                                         'scan': {'@id': None, '@type': 'FIXED'}, 'targetBrightnessTemp': 295.0, '@id': 'ray4'})
+    
+    def test_calc_data_metrics(self):
+
+        epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
+        SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
+        TargetCoords = {'lat [deg]': 0, 'lon [deg]': 0}
+
+        o = RadiometerModel.from_json(self.radio1_json)
+        data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=False)
+        
+        self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 119917.0, 'ground pixel cross-track resolution [m]': 119917.02, 
+                                        'swath-width [m]': 120565.56, 'sensitivity [K]': 17.94, 'incidence angle [deg]': 0.03, 'beam efficiency': np.nan})
+
+        print("----------------------------------------------------------------")
+        o = RadiometerModel.from_json(self.radio2_json)
+        TargetCoords = {'lat [deg]': 5, 'lon [deg]': 0} # target pixel somewhere on the cross-track direction.
+        data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=False)
+        
+        self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 161269.89, 'ground pixel cross-track resolution [m]': 260072.11, 'swath-width [m]': 3159185.93, 
+                                        'sensitivity [K]': 0.2, 'incidence angle [deg]': 51.68, 'beam efficiency': 0.24})
+        print("----------------------------------------------------------------")
+
+        o = RadiometerModel.from_json(self.radio3_json)
+        TargetCoords = {'lat [deg]': 0, 'lon [deg]': 2.62}
+        data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=False)
+        
+        # calculated pixels resolutions are not accurate since the imaged pixel is not at side-looking geometry      
+        self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 40047.33, 'ground pixel cross-track resolution [m]': 47491.27, 
+                                        'swath-width [m]': 306358.49, 'sensitivity [K]': 0.21, 'incidence angle [deg]': 32.51, 'beam efficiency': np.nan})
+        
+        print("----------------------------------------------------------------")
+        o = RadiometerModel.from_json(self.radio4_json)
+        TargetCoords = {'lat [deg]': -2.62, 'lon [deg]': 0}
+        data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=False)
+        self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 140198.56, 'ground pixel cross-track resolution [m]': 166301.75, 
+                                        'swath-width [m]': 168745.48, 'sensitivity [K]': 0.23, 'incidence angle [deg]': 32.54, 'beam efficiency': np.nan})
+
+
+        
+
