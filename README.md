@@ -37,13 +37,24 @@ If a Fortran compiler is not already installed, install `gfortran` as follows:
 
 * Windows: https://www.scivision.dev/windows-gcc-gfortran-cmake-make-install/
 
+## Directory structure
+
+```
+C:.
+├───docs
+├───examples (example specs)
+│   ├───example_instrument_specs
+│
+├───instrupy (primary source files)
+├───tests (test scripts)
+├───third_party
+│   └───lowtran-2.4.1
+├───TBD (old files)
+```
+
 ## Examples
 
-* Specifications of example instruments (in the required JSON format) is present in the 
-  `instrupy/examples/example_instrument_specs/` directory.
-
-* The folder `instrupy/examples/` contains few examples generated upon execution of `instrupy/bin/instrument_module` which
-  has been deprecated.
+Specifications of example instruments (in the required JSON format) is present in the `instrupy/examples/example_instrument_specs/` directory.
 
 ## License and Copyright
 
