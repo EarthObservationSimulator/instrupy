@@ -1369,7 +1369,7 @@ class ConicalScan(Entity):
             return NotImplemented
 
     def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
-        """ Get the available dwell time per ground-pixel. THe integration time 
+        """ Get the available dwell time per ground-pixel. The integration time 
             is set to be around the dwell time.
 
         :param res_AT_m: Along track pixel resolution in meters.
@@ -1379,8 +1379,7 @@ class ConicalScan(Entity):
         :paramtype sat_speed_kmps: float
 
         :param iFOV_CT_deg: IFOV (FOV corresponding to the ground-pixel, in degrees) in the cross-track direction, 
-                        (where the ground-pixel considered is the ground-pixel on the ground-track, else the term cross-track doesn't
-                         make sense).
+                            (where the ground-pixel considered is the ground-pixel on the ground-track, else the term cross-track doesn't make sense).
         :paramtype iFOV_CT_deg: float
 
         :return: Ground-pixel dwell time.

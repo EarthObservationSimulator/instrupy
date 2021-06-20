@@ -1,13 +1,8 @@
-###############################################################################
-# Project:        TATC for instrument module using Python
-# Created by:     Joey Gurganus
-# Date:           2019.04.17
-###############################################################################
-#
 PROJECT := InstruPy
 
 .DEFAULT_GOAL := all
 
+TEST = tests
 DOC = docs
 
 .PHONY: docs docs_clean
@@ -36,13 +31,8 @@ install:
 	pip install -e .
 
 runtest:
-	@nosetests --exe
-
-testlog:
-	@nosetests --nologcapture --exe
-
-fulltest:
-	@nosetests --nologcapture -v --exe
+	-X=`pwd`; \
+	cd $$X; cd $(TEST); python -m unittest discover
 
 clean: docs_clean
 	@echo "Cleaning up..."

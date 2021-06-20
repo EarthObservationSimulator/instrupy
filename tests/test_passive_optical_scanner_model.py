@@ -11,8 +11,7 @@ Tests:
 * test_calc_data_metrics_smad_truth: Test with SMAD 3rd ed truth data (firesat example).
 
 For the below tests refer to the following article more context:
-V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 
-            2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020.
+V. Ravindra and S. Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020.
 
 * test_calc_data_metrics_TIRSBand1_precomputed: Model instrument with TIRS Band 1 specs (IR, pushbroom), Landsat-8 orbit and test with the results as computed on 4 April 2021.
 * test_calc_data_metrics_OLIBlueBand_precomputed: Model instrument with OLI Blue band specs (Optical, pushbroom), Landsat-8 orbit and test with the results as computed on 4 April 2021.

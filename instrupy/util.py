@@ -954,7 +954,7 @@ class ViewGeometry(Entity):
         NADIR_POINTING reference frame. 
 
     :ivar orien: Orientation of the sensor (and hence the spherical geometry which is described in the SENSOR_BODY_FIXED frame).
-    :vartype orien: :class:`instrupy.util.Orientation
+    :vartype orien: :class:`instrupy.util.Orientation`
     
     :ivar sph_geom: Spherical geometry object associated with the FOV/ Scene FOV/ FOR.
     :vartype sph_geom: :class:`instrupy.util.SphericalGeometry`

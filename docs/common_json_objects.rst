@@ -186,7 +186,7 @@ Example:
 .. _fieldOfViewGeometry_json_obj:
 
 :code:`fieldOfViewGeometry` JSON object format
-========================================
+================================================
 The :code:`fieldOfViewGeometry` is characterized by the key :code:`shape` definition. Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR`
 and :code:`CUSTOM`.
 

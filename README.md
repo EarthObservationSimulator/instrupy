@@ -11,12 +11,31 @@ For a detailed description see the following articles:
 
 ## Install
 
-Requires: `python 3.8`, `gfortran`, `pip`, `lowtran`
+Requires: `python 3.8`, `pip`, `gfortran`,  `lowtran`
 
 1. Run `make` from the root repo directory.
 2. Run tests using the `make runtest` command and get the *OK* message.
 
 Find the documentation in: `instrupy/docs/_build/html/user_json_desc.html`
+
+### Lowtran
+
+Lowtran python package allows the execution of the LOWTRAN7 model. This is assumed to estimate the atmospheric losses for the visible and near-visible spectrum. 
+
+The package is is available publicly here:
+https://pypi.org/project/lowtran/
+
+An backup copy is present in the `third_party\lowtran-2.4.1` folder.
+
+This package requires the `gfortran` Fortran compiler. 
+
+If a Fortran compiler is not already installed, install `gfortran` as follows:
+
+* Linux: `apt install gfortran`
+
+* Mac: `brew install gcc`
+
+* Windows: https://www.scivision.dev/windows-gcc-gfortran-cmake-make-install/
 
 ## Examples
 

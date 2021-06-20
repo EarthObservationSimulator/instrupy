@@ -8,7 +8,7 @@ It should be helpful if you plan to extend InstruPy with custom components.
    
    instrupy
    instrupy.base
-   instrupy.basic_sensor.basic_sensor_model
+   instrupy.basic_sensor_model
    instrupy.passive_optical_scanner_model
    instrupy.synthetic_aperture_radar_model
    instrupy.radiometer_model

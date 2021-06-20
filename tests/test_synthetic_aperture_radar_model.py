@@ -514,7 +514,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar2.dualPolPulseConfig, DualPolPulseConfig)
         self.assertEqual(test_sar2.dualPolPulseConfig, DualPolPulseConfig.AIRSAR)
         self.assertIsInstance(test_sar2.orientation, Orientation)
-        self.assertEqual(test_sar2.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar2.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         
         h = 500 # [km]
         orb_speed = orbital_speed(h)
@@ -590,7 +590,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar3.dualPolPulseSep, float)
         self.assertEqual(test_sar3.dualPolPulseSep, 0.5*test_sar3.pulseWidth) # default value
         self.assertIsInstance(test_sar3.orientation, Orientation)
-        self.assertEqual(test_sar3.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar3.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         
         h = 500 # [km]
         orb_speed = orbital_speed(h)
@@ -669,7 +669,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar4.dualPolPulseSep, float)
         self.assertEqual(test_sar4.dualPolPulseSep, 0.5*test_sar4.pulseWidth) # default value
         self.assertIsInstance(test_sar4.orientation, Orientation)
-        self.assertEqual(test_sar4.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar4.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         self.assertIsInstance(test_sar4.scanTechnique, ScanTech)
         self.assertEqual(test_sar4.scanTechnique, ScanTech.STRIPMAP)
 
@@ -749,7 +749,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(test_sar5.dualPolPulseConfig, DualPolPulseConfig.AIRSAR)
         self.assertIsNone(test_sar5.dualPolPulseSep)
         self.assertIsInstance(test_sar5.orientation, Orientation)
-        self.assertEqual(test_sar5.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
+        self.assertEqual(test_sar5.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation
         self.assertIsInstance(test_sar5.scanTechnique, ScanTech)
         self.assertEqual(test_sar5.scanTechnique, ScanTech.STRIPMAP)
 
@@ -836,7 +836,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertIsInstance(test_sar.dualPolPulseSep, float)
         self.assertEqual(test_sar.dualPolPulseSep, 2e-6)
         self.assertIsInstance(test_sar.orientation, Orientation)
-        self.assertEqual(test_sar.orientation, Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation    
+        self.assertEqual(test_sar.orientation, Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK", "sideLookAngle":25})) # default orientation    
         self.assertIsInstance(test_sar.atmosLoss, float)
         self.assertEqual(test_sar.atmosLoss, 1)     
 

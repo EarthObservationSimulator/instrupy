@@ -839,14 +839,12 @@ class TestRadiometerModel(unittest.TestCase):
         self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 119917.0, 'ground pixel cross-track resolution [m]': 119917.02, 
                                         'swath-width [m]': 120565.56, 'sensitivity [K]': 17.94, 'incidence angle [deg]': 0.03, 'beam efficiency': np.nan})
 
-        print("----------------------------------------------------------------")
         o = RadiometerModel.from_json(self.radio2_json)
         TargetCoords = {'lat [deg]': 5, 'lon [deg]': 0} # target pixel somewhere on the cross-track direction.
         data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=False)
         
         self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 161269.89, 'ground pixel cross-track resolution [m]': 260072.11, 'swath-width [m]': 3159185.93, 
                                         'sensitivity [K]': 0.2, 'incidence angle [deg]': 51.68, 'beam efficiency': 0.24})
-        print("----------------------------------------------------------------")
 
         o = RadiometerModel.from_json(self.radio3_json)
         TargetCoords = {'lat [deg]': 0, 'lon [deg]': 2.62}
@@ -856,7 +854,6 @@ class TestRadiometerModel(unittest.TestCase):
         self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 40047.33, 'ground pixel cross-track resolution [m]': 47491.27, 
                                         'swath-width [m]': 306358.49, 'sensitivity [K]': 0.21, 'incidence angle [deg]': 32.51, 'beam efficiency': np.nan})
         
-        print("----------------------------------------------------------------")
         o = RadiometerModel.from_json(self.radio4_json)
         TargetCoords = {'lat [deg]': -2.62, 'lon [deg]': 0}
         data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=False)

@@ -183,7 +183,6 @@ intersphinx_mapping = {
     'python': ('http://docs.python.org/3.8', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'pycodestyle': ('https://pycodestyle.readthedocs.io/en/latest/', None),
-    'nose': ('https://nose.readthedocs.io/en/latest/', None),
 }
 
 
