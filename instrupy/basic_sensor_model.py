@@ -286,7 +286,11 @@ class BasicSensorModel(Entity):
         range_km = np.linalg.norm(range_vector_km)
 
         # Calculate look angle
-        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos)))
+        # below snippet required to prevent invalid 'x' due to numerical errors
+        x = np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos))
+        if abs(x-1) < 1e-7:
+            x=1
+        look_angle = np.arccos(x)
         look_angle_deg = np.rad2deg(look_angle)
         
         # Look angle to corresponding incidence angle conversion for spherical Earth

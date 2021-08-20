@@ -412,7 +412,13 @@ class PassiveOpticalScannerModel(Entity):
         range_vector_km = target_pos - sc_pos
 
         alt_km = np.linalg.norm(sc_pos) - Constants.radiusOfEarthInKM
-        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos)))
+
+        # below snippet required to prevent invalid 'x' due to numerical errors
+        x = np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos))
+        if abs(x-1) < 1e-7:
+            x=1
+        look_angle = np.arccos(x)
+        
         incidence_angle_rad = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
         
         range_vec_norm_km = np.linalg.norm(range_vector_km)
@@ -591,7 +597,13 @@ class PassiveOpticalScannerModel(Entity):
         obs2tar_vec_km = np.array(tar_pos_km) - np.array(obs_pos_km)
         distance_km = np.linalg.norm(obs2tar_vec_km)
         alt_km = np.linalg.norm(obs_pos_km) - Constants.radiusOfEarthInKM
-        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km)))
+
+        # below snippet required to prevent invalid 'x' due to numerical errors
+        x = np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km))
+        if abs(x-1) < 1e-7:
+            x=1
+        look_angle = np.arccos(x)
+
         obs_inc_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
  
         # estimate total radiance from the surface [photons/s/m2/sr] to the direction of the observer                     
@@ -683,7 +695,13 @@ class PassiveOpticalScannerModel(Entity):
         """
         obs2tar_vec_km = np.array(tar_pos_km) - np.array(obs_pos_km)
         alt_km = np.linalg.norm(obs_pos_km) - Constants.radiusOfEarthInKM
-        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km)))
+        
+        # below snippet required to prevent invalid 'x' due to numerical errors
+        x = np.dot(MathUtilityFunctions.normalize(obs2tar_vec_km), -1*MathUtilityFunctions.normalize(obs_pos_km))
+        if abs(x-1) < 1e-7:
+            x=1
+        look_angle = np.arccos(x)
+
         obs_inc_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
 
         # calculate solar incidence angle

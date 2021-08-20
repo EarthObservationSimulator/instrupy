@@ -600,7 +600,12 @@ class SyntheticApertureRadarModel(Entity):
 
         alt_km = np.linalg.norm(sc_pos_km) - Constants.radiusOfEarthInKM
 
-        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos_km)))
+        # below snippet required to prevent invalid 'x' due to numerical errors
+        x = np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos_km))
+        if abs(x-1) < 1e-7:
+            x=1
+        look_angle = np.arccos(x)
+
         incidence_angle_rad = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)       
 
 
