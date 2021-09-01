@@ -1,2 +1,0 @@
-Radiometer Model Description
-********************************************     

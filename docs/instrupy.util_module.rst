@@ -1,7 +1,5 @@
-Common Input JSON Objects
-**************************
-
-This page contains description of the user-configurable JSON objects shared by the different instruments. 
+``instrupy.util`` --- Utility functions, classes
+************************************************
 
 .. _mode_json_obj:
 
@@ -405,3 +403,6 @@ Example:
         "geophysicalVar": "TMP_P0_L1_GLL0",
         "interpolMethod": "SCIPY_LINEAR"
    }
+   
+.. automodule:: instrupy.util
+   :members:

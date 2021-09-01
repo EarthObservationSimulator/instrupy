@@ -1,5 +1,5 @@
-Basic Sensor Model Description
-********************************
+``instrupy.basic_sensor_model`` --- Basic Sensor Model
+******************************************************************************
 
 Input JSON format specifications description
 =========================================================
@@ -49,4 +49,7 @@ See :ref:`satellite_to_target_viewing_geometry` for the calculation of the obser
 
 
 
-
+.. automodule:: instrupy.basic_sensor_model
+   :members:
+   :undoc-members:
+   :show-inheritance:

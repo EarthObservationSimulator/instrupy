@@ -1,5 +1,5 @@
-Passive Optical Scanner Description
-************************************
+``instrupy.passive_optical_scanner_model`` --- Passive Optical Scanner Model
+******************************************************************************
 
 References:
 
@@ -294,3 +294,9 @@ Glossary
 * :math:`SNR`: Signal-to-noise ratio.
 * :math:`DR`: Dynamic range.
 
+
+
+.. automodule:: instrupy.passive_optical_scanner_model
+   :members:
+   :undoc-members:
+   :show-inheritance:

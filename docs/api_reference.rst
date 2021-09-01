@@ -1,19 +1,16 @@
 API Reference
 *************
-This API reference provides detailed descriptions of InstruPy's classes and functions. 
-It should be helpful if you plan to extend InstruPy with custom components.
+Please navigate below for detailed descriptions of InstruPy’s classes and functions.
 
 .. toctree::
    :maxdepth: 1
    
-   instrupy
-   instrupy.base
-   instrupy.basic_sensor_model
-   instrupy.passive_optical_scanner_model
-   instrupy.synthetic_aperture_radar_model
-   instrupy.radiometer_model
-   instrupy.util
-   tests
+   instrupy.base_module
+   instrupy.basic_sensor_model_module
+   instrupy.passive_optical_scanner_model_module
+   instrupy.synthetic_aperture_radar_model_module
+   instrupy.radiometer_model_module
+   instrupy.util_module
 
 
 
