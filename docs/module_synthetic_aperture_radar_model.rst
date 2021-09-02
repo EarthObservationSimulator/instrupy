@@ -1,9 +1,8 @@
+.. _synthetic_aperture_radar_model_module:
+
 ``instrupy.synthetic_aperture_radar_model`` --- Synthetic Aperture Radar Model
 ******************************************************************************
-
-
-Synthetic Aperture Radar Model Description
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^            
+        
 
 **References:**
 

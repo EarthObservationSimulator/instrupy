@@ -1,3 +1,5 @@
+.. _passive_optical_scanner_model_module:
+
 ``instrupy.passive_optical_scanner_model`` --- Passive Optical Scanner Model
 ******************************************************************************
 

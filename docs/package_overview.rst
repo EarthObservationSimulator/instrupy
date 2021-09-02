@@ -1,7 +1,7 @@
 Package Overview
 ********************
 
-InstruPy is a python package to calculate observation data metrics for a given instrument and associated access events. 
+InstruPy is a python package to calculate (satellite) observation data metrics for a given instrument and associated access events. 
 
 .. figure:: instrupy_block_diagram.png
     :scale: 75 %
@@ -9,20 +9,29 @@ InstruPy is a python package to calculate observation data metrics for a given i
 
     The high-level function of the InstruPy package is shown in the figure. The package ingests 
     access data and satellite states (time, position, velocity) information, and instrument
-    specifications (for which the access data is generated), and outputs typical data metrics of observations
-    made during the access.
+    specifications (for which the access data was generated), and outputs typical data metrics of observation.
 
 For a detailed description see the following articles: 
 
-1. V. Ravindra, S. Nag, *"Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations",* IEEE Aerospace Conference, Big Sky, Montana, March 2020. 
-2. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
+1. V. Ravindra, R. Ketzner, S. Nag, *"Earth Observation Simulator (EO-SIM): An Open-Source Software for Observation Systems Design",* IEEE International Geoscience and Remote Sensing Symposium, Brussels Belgium, July 2021.
+2. V. Ravindra, S. Nag, *"Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations",* IEEE Aerospace Conference, Big Sky, Montana, March 2020. 
+3. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
+
+Currently there are four instrument models supported:
+
+1. Basic Sensor (:ref:`basic_sensor_model_module`)
+2. Passive Optical Sensor (:ref:`passive_optical_scanner_model_module`)
+3. Synthetic Aperture Radar (:ref:`synthetic_aperture_radar_model_module`)
+4. Radiometer (:ref:`radiometer_model_module`)
 
 Glossary of terms used in the package
 ======================================
 
+* Satellite and spacecraft are synonymous.
+  
 * Instrument, payload and sensor are synonymous.
 
-* Grid-point, ground-point are target-point synonymous.
+* Grid-point, ground-point and target-point synonymous.
 
 * Pixels vs Detectors
       
@@ -31,11 +40,10 @@ Glossary of terms used in the package
 
 * Access vs Coverage
 
-      While access refers to a target falling under a sensor FOV, coverage includes an additional condition that the satellite
-      should be able to be make an observation. 
+      * Sometimes access and coverage are used synonymously.
 
-* Satellite, spacecraft are synonymous.
-
+      * Other times access refers to a target falling under a sensor FOV while coverage includes an additional condition that the satellite
+        should be able to be make an observation. 
 
 Coding Conventions
 ===================

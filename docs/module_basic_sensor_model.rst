@@ -1,3 +1,5 @@
+.. _basic_sensor_model_module:
+
 ``instrupy.basic_sensor_model`` --- Basic Sensor Model
 ******************************************************************************
 
