@@ -9,10 +9,7 @@ from instrupy.util import Entity, Orientation, SphericalGeometry, Maneuver, View
 from netCDF4 import Dataset
 import cartopy.crs as ccrs
 import numpy as np
-import scipy.interpolate
-import metpy.interpolate
 import astropy.time
-import json
 import uuid
 from collections import namedtuple
 import logging
@@ -42,15 +39,16 @@ class BasicSensorModel(Entity):
         :ivar sceneFieldOfView: Scene field of view specification (SphericalGeometry and Orientation).
         :vartype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
-        :ivar maneuver: Maneuver specification of the instrument. TODO: Modify behavior to have FOR =FOV when no maneuver is specified (hence fixed pointing).
+        :ivar maneuver: Maneuver specification of the instrument. 
         :vartype maneuver: :class:`instrupy.util.Maneuver`  
 
-        :ivar fieldOfRegard: Field of regard of the instrument taking into account the sensor FOV and manueverability of the satellite-sensor system. 
+        :ivar fieldOfRegard: Field of regard of the instrument taking into account the sceneFOV and manueverability of the satellite-sensor system. 
                              Note that this shall be a list in order to accommodate non-intersecting view-geometries.
+                             TODO: Modify behavior to have FOR = sceneFOV when no maneuver is specified (hence fixed pointing). Currently FOR = None if manuever is not specified.
         :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
         :ivar pointingOption: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
-                               The orientation must be specified in the NADIR_POINTING frame.
+                               The orientations must be specified in the NADIR_POINTING frame.
         :vartype pointingOption: list, :class:`orbitpy.util.Orientation`
 
         :ivar dataRate: Rate of data recorded (Mega bits per sec) during nominal operations.
@@ -70,10 +68,6 @@ class BasicSensorModel(Entity):
 
         :ivar _id: Unique instrument identifier.
         :vartype _id: str or int
-
-        .. figure:: detector_config.png
-            :scale: 75 %
-            :align: center
    
     """
 
@@ -118,7 +112,7 @@ class BasicSensorModel(Entity):
 
     @staticmethod
     def from_dict(d):
-        """ Parses an basic sensor model from a normalized JSON dictionary.
+        """ Parses an basic sensor model from a normalized JSON dictionary. Refer to :ref:`basic_sensor_model_module` for description of the accepted key/value pairs.
         
         The following default values are assigned to the object instance parameters in case of 
         :class:`None` values or missing key/value pairs in the input dictionary.
@@ -137,8 +131,8 @@ class BasicSensorModel(Entity):
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
         :paramtype d: dict
 
-        :returns: BasicSensorModel object initialized with the input specifications.
-        :rtype: :class:`instrupy.BasicSensorModel`
+        :returns: ``BasicSensorModel`` object initialized with the input specifications.
+        :rtype: :class:`instrupy.basic_sensor_model.BasicSensorModel`
             
         """
         instru_fov_geom = d.get("fieldOfViewGeometry", {'shape': 'CIRCULAR', 'diameter':25})  # default instrument FOV geometry is a 25 deg diameter circular shape
@@ -174,9 +168,9 @@ class BasicSensorModel(Entity):
                 )
 
     def to_dict(self):
-        """ Translate the BasicSensorModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``BasicSensorModel`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
 
-        :returns: BasicSensorModel specifications as python dictionary.
+        :returns: ``BasicSensorModel`` specifications as python dictionary.
         :rtype: dict
 
         """
@@ -209,34 +203,7 @@ class BasicSensorModel(Entity):
         return "BasicSensorModel.from_dict({})".format(self.to_dict())
 
     def calc_data_metrics(self, sc_orbit_state, target_coords):
-        """ Calculate typical observation data metrics. This function is invoked by the function ``Instrument.calc_data_metrics(.)`` class in the ``base`` module.
-            
-            .. figure:: target_geom_3D.png
-                :scale: 75 %
-                :align: center
-            
-            .. figure:: target_geom_2D.png
-                :scale: 75 %
-                :align: center
-
-            *   :math:`\\mathbf{R = T - S}`
-            *   :math:`\\gamma = \\cos^{-1}(\\mathbf{\\dfrac{R}{|R|}} \\cdot \\mathbf{\\dfrac{-S}{|S|}})`
-            *   :math:`\\theta_i = \\sin^{-1}(\\sin\\gamma  \\hspace{1mm}  \\dfrac{R_E + h}{R_E})`
-
-            Assuming spherical Earth of radius :math:`R_E`
-
-            where,
-
-            * :math:`\\mathbf{S}`: Position-vector of the satellite in the EARTH_CENTERED_INERTIAL frame.
-            * :math:`\\mathbf{T}`: Position-vector of the target ground-point in the EARTH_CENTERED_INERTIAL frame.
-            * :math:`\\mathbf{R}`: Range vector from satellite to target ground point.
-            * :math:`\\gamma`:  Look-angle to target ground point from satellite.
-            * :math:`\\theta_i`: Incidence-angle at the target ground point.
-            * :math:`R_E`: Nominal equatorial radius of Earth.
-            * :math:`h`: Altitude of satellite.
-            
-            
-            Please refer to the :class:`instrupy.util.GeoUtilityFunctions.compute_sun_zenith` function for description of the calculation of the Sun-zenith angle.
+        """ Calculate typical observation data metrics. Refer to :ref:`basic_sensor_model_desc` for description.            
 
         :param sc_orbit_state: Spacecraft state at the time of observation.
 
@@ -245,6 +212,7 @@ class BasicSensorModel(Entity):
                             * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
                             * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
                             * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        
         :paramtype sc_orbit_state: dict
 
         
@@ -253,20 +221,22 @@ class BasicSensorModel(Entity):
                             Dictionary keys are: 
                             
                             * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+        
         :paramtype target_coords: dict
 
         :returns: Calculated observation data metrics.
                     
                     Dictionary keys are: 
                 
-                    * :code:`incidence angle [deg]` (:class:`float`) Incidence angle in degrees at target point calculated assuming spherical Earth.
-                    * :code:`look angle [deg]` (:class:`float`) Look angle in degrees at target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
+                    * :code:`incidence angle [deg]` (:class:`float`) Incidence angle in degrees at the target point calculated assuming spherical Earth.
+                    * :code:`look angle [deg]` (:class:`float`) Look angle in degrees at the target point calculated assuming spherical Earth. Positive sign => look is in positive half-space made by the orbit-plane (i.e. orbit plane normal vector) and vice-versa.
                     * :code:`observation range [km]` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
                     * :code:`solar zenith [deg]` (:class:`float`) Solar Zenith angle in degrees during observation.
                 
                     .. todo:: Include AT, CT footprint size calculations.
 
         :rtype: dict                      
+
         """
         # Observation time in Julian Day UT1
         tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]

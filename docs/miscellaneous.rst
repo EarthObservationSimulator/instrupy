@@ -53,29 +53,7 @@ Sensor Body Fixed reference frame. The axis of this coordinate system are aligne
 Satellite to Target viewing geometry
 =============================================
 
-.. figure:: target_geom_3D.png
-    :scale: 75 %
-    :align: center
-            
-.. figure:: target_geom_2D.png
-    :scale: 75 %
-    :align: center
 
-*   :math:`\mathbf{R = T - S}`
-*   :math:`\gamma = \cos^{-1}(\mathbf{\dfrac{R}{|R|}} \cdot \mathbf{\dfrac{-S}{|S|}})`
-*   :math:`\theta_i = \sin^{-1}(\sin\gamma  \hspace{1mm}  \dfrac{R_E + h}{R_E})`
-
-Assuming spherical Earth of radius :math:`R_E`
-
-where,
-
-* :math:`\mathbf{S}`: Position-vector of the satellite in the EARTH_CENTERED_INERTIAL frame.
-* :math:`\mathbf{T}`: Position-vector of the target ground-point in the EARTH_CENTERED_INERTIAL frame.
-* :math:`\mathbf{R}`: Range vector from satellite to target ground point.
-* :math:`\gamma`:  Look-angle to target ground point from satellite.
-* :math:`\theta_i`: Incidence-angle at the target ground point.
-* :math:`R_E`: Nominal equatorial radius of Earth.
-* :math:`h`: Altitude of satellite.
 
 
 .. _ifov_fov_scenefov_for_desc:
