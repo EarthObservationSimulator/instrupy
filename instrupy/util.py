@@ -3,10 +3,6 @@
 
 :synopsis: *Utility classes and functions for the :class:`instrupy` package.*
 
-References:
-
-[1] Chapter 6,7 in "Microwave Radar and Radiometric Remote Sensing," David Gardner Long , Fawwaz T. Ulaby 2014 
-
 """
 from __future__ import division 
 import json
@@ -15,13 +11,6 @@ import math
 from enum import Enum
 from numbers import Number
 import scipy.constants
-import string
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import shapely
-import cartopy.geodesic
 import math
 import json
 import copy
@@ -29,8 +18,7 @@ import scipy.interpolate
 import metpy.interpolate
 from collections import namedtuple
 
-from math import radians, cos, sin, asin, sqrt
-import lowtran #TEMPORARY: PLEASE REMOVE if commented
+import lowtran
 
 class Entity(object): 
     """An entity is an abstract class to aggregate common functionality.

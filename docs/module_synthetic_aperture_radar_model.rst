@@ -51,7 +51,7 @@ Input JSON format specifications description
    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
    dataRate, float, Megabits per sec,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
-   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument.
+   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
    pulseWidth, float, seconds, Actual pulse width (per channel/polarization).
    antennaHeight, float, meters, Antenna height (in the along-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
    antennaWidth, float, meters, Antenna width (in the cross-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).

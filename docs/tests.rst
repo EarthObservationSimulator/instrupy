@@ -14,15 +14,15 @@ Testing strategies
 2. Use of random input values and calculated output values to validate the test.
        
         i.  Sometimes special cases are run, and some input values which do not make a difference to the 
-            output are made random. Eg: In case of a equatorial orbit, the latitude of the location seen by
-            a nadir-pointed sensor will always be 0 deg, irrespective of the chosen orbital altitude, raan, ta
-            which can be used as random values.
+            output are made random. Eg: In case of testing the sign of look-angles, only the sign of the angle at which
+            the sensor is tilted (with respect to the nadir-pointing frame) is important, and the magnitude can be used as an random input. 
         ii. In cases where the random input values do influence the output, the expected output is calculated 
-            (as much as possible) from methods, code other than used by the :code:`OrbitPy` package. Sometimes
+            (as much as possible) from methods, code other than used by the :code:`InstruPy` package. Sometimes
             the chosen validation methods are approximate in which case an *approximately equal to* assertion tests
             are used.
-3. Using known inputs, and outputs from external sources (eg: literature, other orbital simulation softwares such as GMAT, STK)
-4. Run tests after making any revisions to the code. This helps to check that the revisions do not have unintended effects on the results.
+3. Using known inputs, and outputs from external sources (eg: literature).
+4. Use results from a previous run (corresponding to an older version of the software) as truth data.
+5. Run tests after making any revisions to the code. This helps to check that the revisions do not have unintended effects on the results.
 
 Test Modules
 ============

@@ -32,22 +32,20 @@ pairs are described below:
     mass, float, kilograms, Total mass of this entity.
     volume, float, :math:`m^3`, Total volume of this entity.
     power, float, Watts, Nominal operating power.
-    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument.
-    fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
-    sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument.
+    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Default is alignment to the SC_BODY_FIXED frame.
+    fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument. 
+    sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
     maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
     pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
     syntheticDataConfig, :ref:`syntheticDataConfig_json_obj`, , Synthetic data configuration.
     dataRate, float, Mega-bits-per-s, Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
-    numberDetectorRows, integer, ,Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the ``SENSOR_BODY_FIXED`` frame is aligned to the NADIR_POINTING frame; this direction corresponds to the along-track direction.
-    numberDetectorCols, integer, ,Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the ``SENSOR_BODY_FIXED`` frame is aligned to the NADIR_POINTING frame; this direction corresponds to the cross-track direction.
+    numberDetectorRows, integer, ,Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame; this direction corresponds to the along-track direction.
+    numberDetectorCols, integer, ,Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame; this direction corresponds to the cross-track direction.
     
 .. figure:: detector_config.png
             :scale: 75 %
             :align: center
-
-.. _basic_sensor_data_metrics_calc:
 
 Model results
 ------------------
@@ -56,7 +54,7 @@ Using the basic-sensor model, coverage calculations (using the OrbitPy package) 
 a grid (list of geo-coordinates) evaluate to see if the grid-points fall within the instrument sceneFOV (sceneFOV = FOV in most cases) or the FOR. The pointing-options feature further 
 allows to automate coverage calculations for numerous instrument orientations. 
 
-Once the coverage has been evaluated, the target locations and the observer (satellite) locations is known. The following data metrics at the target location 
+Once the coverage has been evaluated, the observable locations and the observer (satellite) locations is known, the following data metrics at the observable location 
 on the surface of Earth can be calculated:
 
 .. csv-table:: Observation data metrics table
@@ -100,7 +98,6 @@ where,
 * :math:`h`: Altitude of satellite.
 
 Please refer to the :class:`instrupy.util.GeoUtilityFunctions.compute_sun_zenith` function for description of the calculation of the Sun-zenith angle.
-
 
 Examples
 ^^^^^^^^^

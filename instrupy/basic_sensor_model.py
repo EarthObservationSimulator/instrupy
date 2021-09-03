@@ -47,7 +47,7 @@ class BasicSensorModel(Entity):
                              TODO: Modify behavior to have FOR = sceneFOV when no maneuver is specified (hence fixed pointing). Currently FOR = None if manuever is not specified.
         :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
        
-        :ivar pointingOption: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
+        :ivar pointingOption: List of ``Orientation`` objects which specify the orientations into which the instrument-axis can be maneuvered. 
                                The orientations must be specified in the NADIR_POINTING frame.
         :vartype pointingOption: list, :class:`orbitpy.util.Orientation`
 
@@ -112,7 +112,7 @@ class BasicSensorModel(Entity):
 
     @staticmethod
     def from_dict(d):
-        """ Parses an basic sensor model from a normalized JSON dictionary. Refer to :ref:`basic_sensor_model_module` for description of the accepted key/value pairs.
+        """ Parses a ``BasicSensorModel`` object from a normalized JSON dictionary. Refer to :ref:`basic_sensor_model_module` for description of the accepted key/value pairs.
         
         The following default values are assigned to the object instance parameters in case of 
         :class:`None` values or missing key/value pairs in the input dictionary.

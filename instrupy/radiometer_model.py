@@ -1463,7 +1463,7 @@ class RadiometerModel(Entity):
                             Note that this shall be a list in order to accommodate non-intersecting view-geometries.
     :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`  
     
-    :ivar pointing_option: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
+    :ivar pointing_option: List of ``Orientation`` objects which specify the orientations into which the instrument-axis can be maneuvered. 
                             The orientation must be specified in the NADIR_POINTING frame.
     :vartype pointing_option: list, :class:`orbitpy.util.Orientation` 
 

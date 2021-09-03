@@ -10,22 +10,18 @@
             2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020.
 
 """
-
-import json
 import numpy as np
 import copy
-import pandas, csv
-import sys
 import uuid
 from instrupy.util import Entity, EnumEntity, Orientation, SphericalGeometry, ViewGeometry, Maneuver, MathUtilityFunctions, GeoUtilityFunctions, Constants, FileUtilityFunctions
 
 class ScanTech(EnumEntity):
-    """Enumeration of recognized passive optical scanner scanning techniques.
+    """Enumeration of recognized scanning techniques.
     
-    :cvar PUSHBROOM: Indicates pushbroom scanners such as the Landsat-8 TIRS, OLI instruments, which consist of a linear array of square detectors in cross-track direction.
+    :cvar PUSHBROOM: Indicates pushbroom scanners such as the Landsat-8 TIRS, OLI instruments, which consist of a linear array of square detectors along the cross-track direction.
     :vartype PUSHBROOM: str
 
-    :cvar WHISKBROOM: Indicates whiskbroom scanners such as the MODIS radiometer, which consists of linear array of square detectors in along-track direction with movable mirror assembly.
+    :cvar WHISKBROOM: Indicates whiskbroom (multielement) scanners such as the MODIS radiometer, which consists of linear array of square detectors in along-track direction with movable mirror assembly.
     :vartype WHISKBROOM: str
 
     :cvar MATRIX_IMAGER: Indicates matrix imager (also called as the step-and-stare imager) with 2D array of square detectors.
@@ -49,7 +45,7 @@ class PassiveOpticalScannerModel(Entity):
     """A passive optical scanner class. Supports following types of passive optical scanners: 
        
        * Rectangular aperture imager with square detector elements. 
-       * Instruments with WHISKBROOM, PUSHBROOM and MATRIX_IMAGER scanning techniques.       
+       * WHISKBROOM, PUSHBROOM and MATRIX_IMAGER scanning techniques.       
       
        :ivar name: Full name of the instrument.
        :vartype name: str
@@ -72,15 +68,16 @@ class PassiveOpticalScannerModel(Entity):
        :ivar sceneFieldOfView: Scene field of view specification (SphericalGeometry and Orientation).
        :vartype fieldOfView: :class:`instrupy.util.ViewGeometry`
 
-       :ivar maneuver: Maneuver specification of the instrument. TODO: Modify behavior to have FOR =FOV when no maneuver is specified (hence fixed pointing).
+       :ivar maneuver: Maneuver specification of the instrument. 
        :vartype maneuver: :class:`instrupy.util.Maneuver`  
 
-       :ivar fieldOfRegard: Field of regard of the instrument taking into account the sensor FOV and manueverability of the satellite-sensor system. 
-                            Note that this shall be a list in order to accommodate non-intersecting view-geometries.
+       :ivar fieldOfRegard: Field of regard of the instrument taking into account the sceneFOV and manueverability of the satellite-sensor system. 
+                            Note that this shall be a list in order to accommodate non-intersecting view-geometries. 
+                            TODO: Modify behavior to have FOR = FOV when no maneuver is specified (hence fixed pointing).
        :vartype fieldOfRegard: list, :class:`instrupy.util.ViewGeometry`
        
-       :ivar pointingOption: List of ``Orientation`` objects which specify the orientation of the instrument pointing axis into which the instrument-axis can be maneuvered. 
-                              The orientation must be specified in the NADIR_POINTING frame.
+       :ivar pointingOption: List of ``Orientation`` objects which specify the orientationsinto which the instrument-axis can be maneuvered. 
+                             The orientation must be specified in the NADIR_POINTING frame.
        :vartype pointingOption: list, :class:`orbitpy.util.Orientation`    
        
        :ivar dataRate: Rate of data recorded (Mbps) during nominal operations.
@@ -120,7 +117,7 @@ class PassiveOpticalScannerModel(Entity):
        :ivar numOfReadOutE: Number of read out electrons of the detector.
        :vartype numOfReadOutE: float
 
-       :ivar targetBlackBodyTemp: Target equivalent black-body temperature in Kelvin.
+       :ivar targetBlackBodyTemp: Target body's equivalent black-body temperature in Kelvin.
        :vartype targetBlackBodyTemp: float
 
        :ivar bitsPerPixel: Bits encoded per pixel of image.
@@ -169,7 +166,7 @@ class PassiveOpticalScannerModel(Entity):
         self.mass = float(mass) if mass is not None else None
         self.volume = float(volume) if volume is not None else None
         self.power = float(power) if power is not None else power
-        self.orientation = copy.deepcopy(orientation) if orientation is not None else Orientation(0,0,0,1,2,3)
+        self.orientation = copy.deepcopy(orientation) if orientation is not None else None
         self.fieldOfView = ViewGeometry(orien=self.orientation, sph_geom=fieldOfViewGeometry) if self.orientation is not None and fieldOfViewGeometry is not None and isinstance(fieldOfViewGeometry, SphericalGeometry) else None
         self.sceneFieldOfView = ViewGeometry(orien=self.orientation, sph_geom=sceneFieldOfViewGeometry) if self.orientation is not None and sceneFieldOfViewGeometry is not None and isinstance(sceneFieldOfViewGeometry, SphericalGeometry) else None
         self.maneuver = copy.deepcopy(maneuver) if maneuver is not None and isinstance(maneuver, Maneuver) else None
@@ -202,10 +199,10 @@ class PassiveOpticalScannerModel(Entity):
 
     @staticmethod
     def from_dict(d):
-        """ Parses an instrument from a normalized JSON dictionary.
+        """ Parses a ``PassiveOpticalScannerModel`` object from a normalized JSON dictionary. Refer to :ref:`passive_optical_scanner_model_module` for description of the accepted key/value pairs.
         
-        .. warning::Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
-                    The present version of the instrupy package does **not** check for the consistency of the values.
+        .. warning:: Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
+                     The present version of the instrupy package does **not** check for the consistency of the values.
 
                     Following relations between the inputs must be satisfied:
 
@@ -246,7 +243,7 @@ class PassiveOpticalScannerModel(Entity):
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
         :paramtype d: dict
 
-        :returns: PassiveOpticalScannerModel object initialized with the input specifications.
+        :returns: ``PassiveOpticalScannerModel`` object initialized with the input specifications.
         :rtype: :class:`instrupy.PassiveOpticalScannerModel`
             
         """
@@ -317,9 +314,9 @@ class PassiveOpticalScannerModel(Entity):
             raise Exception("Please specify scanning technique as one of WHISKBROOM/ PUSHBROOM/ MATRIX_IMAGER.")
 
     def to_dict(self):
-        """ Translate the PassiveOpticalScannerModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``PassiveOpticalScannerModel`` object to a python dictionary such that it can be uniquely reconstructed back from the dictionary.
 
-        :returns: PassiveOpticalScannerModel specifications as python dictionary.
+        :returns: ``PassiveOpticalScannerModel`` object as a python dictionary.
         :rtype: dict
 
         """
@@ -370,12 +367,12 @@ class PassiveOpticalScannerModel(Entity):
         Dictionary keys are: 
         
         * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
-        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
         * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
         
         :paramtype sc_orbit_state: dict
         
-        :param target_coords: Location of the observation. Also called the Point-Of-Interest (POI).
+        :param target_coords: Location of the observation.
 
         Dictionary keys are: 
     
@@ -390,12 +387,12 @@ class PassiveOpticalScannerModel(Entity):
         * :code:`noise-equivalent delta T [K]` (:class:`float`) Noise Equivalent delta temperature in Kelvin. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
         * :code:`dynamic range` (:class:`float`) Dynamic Range. Is the quotient of the signal and read-out noise electrons the sensor sees between dark and bright scenes.
         * :code:`SNR` (:class:`float`) Signal-to-noise Ratio.
-        * :code:`ground pixel along-track resolution [m]` (:class:`float`) Spatial resolution of a hypothetical ground-pixel centered about observation point along along-track direction in meters.
-        * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Spatial resolution of a hypothetical ground-pixel centered about observation point along cross-track direction in meters.
+        * :code:`ground pixel along-track resolution [m]` (:class:`float`) Spatial resolution [meters] of a hypothetical ground-pixel centered about observation point in the along-track direction.
+        * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Spatial resolution [meters] of a hypothetical ground-pixel centered about observation point in the cross-track direction.
 
         :rtype: dict
         
-        .. todo:: revise pixel resolution calculations. Current formula is accurate only for nadir-looking or (purely) side-looking instruments.
+        .. todo:: Revise pixel-resolution and access-time calculations. Current formula is accurate only for nadir-looking or (purely) side-looking instruments.
                     
         """        
         # Observation time in Julian Day UT1
@@ -525,7 +522,7 @@ class PassiveOpticalScannerModel(Entity):
             # For whiskbroom scanning, a single detector is used to scan across many cross-track ground-pixels
             # hence the integration time is a fraction of the access time over a single ground-pixel.
             # Note that the total access time by the column of detectors ( = access_dur_s) corresponds to the total along-track FOV of the instrument.
-            N_pixel_CT = angle_width_deg/ iFOV_deg # @TODO: Not clear about this, but it is how it is in the SMAD 3rd ed text.
+            N_pixel_CT = angle_width_deg/ iFOV_deg 
             Ti_s = access_dur_s/ N_pixel_CT 
 
         elif(scan_tech == ScanTech.MATRIX_IMAGER):
@@ -536,7 +533,7 @@ class PassiveOpticalScannerModel(Entity):
         else:
             raise Exception("Unknown scanning technique specified.")
 
-        if(max_det_exp_time is not None): # is a maximum detector exposure time is specified
+        if(max_det_exp_time is not None): # if a maximum detector exposure time is specified
             if Ti_s > max_det_exp_time:
                 Ti_s = max_det_exp_time
 
@@ -554,6 +551,10 @@ class PassiveOpticalScannerModel(Entity):
              
            See SMAD 3rd edition, Table 9-15 for the forumlation.
            
+           .. note:: The simultaneous assumption of unit reflectance and blackbody to calculate the SNR is contradictory and can be troubling in spectral regions between the thermal and optical. 
+                    If the spectral region is in the IR or optical (where the radiative and reflective characteristics of Earth do not
+                    intersect), either of the radiated or the reflected energy is dominant, and the contradictory assumption is not troubling.
+
            :param op_wav_m: Operating wavelength in meters.
            :paramtype op_wav_m: float
 
@@ -575,10 +576,10 @@ class PassiveOpticalScannerModel(Entity):
            :param tObs_JDUT1: Observation time [Julian Day UT1].
            :paramtype tObs_JDUT1: float
 
-           :param obs_pos_km: Observer position [km]. Must be referenced to the center of Earth.
+           :param obs_pos_km: Observer position vector [km]. Must be referenced to the center of Earth.
            :paramtype obs_pos_km: list, float
 
-           :param tar_pos_km: Target position [km]. Must be referenced to the center of Earth.
+           :param tar_pos_km: Target position vector [km]. Must be referenced to the center of Earth.
            :paramtype tar_pos_km: list, float
 
            :param pixel_area_m2: Area of observed pixel [m2].
@@ -630,7 +631,7 @@ class PassiveOpticalScannerModel(Entity):
     def radiance_with_earth_as_bb_radiator(wav_m, bw_m, bb_T_K, obs_inc_angle, atmos_loss_model):
         """ Determine radiance from Earth as blackbody radiator in bandwidth of interest.
             Assumes the Earth as blackbody with user-input equivalent black-body temperature.
-            Also assumes Earth as Lambertian surface obeying Lambert's coside law.
+            Also assumes Earth as Lambertian surface obeying Lambert's cosine law.
 
         :param wav_m: Wavelength of interest in meters.
         :paramtype wav_m: float
@@ -645,7 +646,7 @@ class PassiveOpticalScannerModel(Entity):
         :paramtype obs_inc_angle: float
 
         :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
-        :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
+        :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or ``None``
 
         :return: radiance from Earth [photons/s/m2/sr]
         :rtype: float            
@@ -680,10 +681,10 @@ class PassiveOpticalScannerModel(Entity):
         :param tObs_JDUT1: observation time [Julian Day UT1]
         :paramtype tObs_JDUT1: float
 
-        :param obs_pos_km: observer (satellite) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
+        :param obs_pos_km: observer (satellite) position vector [km]. Must be referenced to EARTH_CENTERED_INERTIAL frame.
         :paramtype obs_pos_km: list, float
 
-        :param tar_pos_km: target (observed ground pixel) position vector [km]. Must be referenced to ECI (equatorial-plane) frame.
+        :param tar_pos_km: target (observed ground pixel) position vector [km]. Must be referenced to EARTH_CENTERED_INERTIAL frame.
         :paramtype tar_pos_km: list, float
 
         :param obs_area_m2: area of observed target (m2)
@@ -691,6 +692,9 @@ class PassiveOpticalScannerModel(Entity):
         
         :param atmos_loss_model: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.
         :paramtype atmos_loss_model: :class:`instrupy.passive_optical_scanner_model.AtmosphericLossModel` or None
+
+        :return: upwelling radiance with Earth as reflector of Solar energy [photons/s/m2/sr]
+        :rtype: float
         
         """
         obs2tar_vec_km = np.array(tar_pos_km) - np.array(obs_pos_km)
@@ -724,7 +728,7 @@ class PassiveOpticalScannerModel(Entity):
         # upwelling photon rate (surface reflectivity = 1) 
         Pin_upwell = Pin_downwell
 
-        # calculate the reflected upwelling radiance assuming Lambertian surface with unit reflectivity
+        # calculate the (reflected) upwelling radiance assuming Lambertian surface with unit reflectivity
         Lint_upWell = Pin_upwell * np.cos(obs_inc_angle)  * 1/ (4*np.pi * obs_area_m2) 
 
         return Lint_upWell # [photons/s/m2/sr]
@@ -825,10 +829,11 @@ class PassiveOpticalScannerModel(Entity):
         :paramtype lambda_m: float
 
         :param T_K: Equivalent blackbody absolute temperature of body (Kelvin).
+        :paramtype T_K: float
 
         :returns: integrated radiance from supplied wavelength to zero-wavelegnth (photons/s/m2/sr)
                     
-                    .. warning:: note that it is **not** from supplied wavelength to infinity wavelength.
+                    .. warning:: note that integration is **not** from supplied wavelength to infinity wavelength.
 
         :rtype: float
         
