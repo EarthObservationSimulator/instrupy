@@ -1,0 +1,37 @@
+
+    {
+        "@type": "Passive Optical Scanner",
+        "name": "MODIS Band10",
+        "mass": 274,
+        "volume": 1.6, 
+        "power": 162.5, 
+        "fieldOfViewGeometry": {
+            "shape": "RECTANGULAR",
+            "angleHeight": 0.812366806011266,
+            "angleWidth": 110
+        },
+        "scanTechnique": "WHISKBROOM",
+        "orientation": {
+            "referenceFrame": "SC_BODY_FIXED",
+            "convention": "REF_FRAME_ALIGNED"
+        },
+        "dataRate": 6.2,
+        "numberDetectorRows": 10,
+        "numberDetectorCols": 1,
+        "detectorWidth": 540e-6,
+        "focalLength": 380.859e-3,
+        "operatingWavelength": 490e-9,
+        "bandwidth": 10e-9,
+        "quantumEff": 0.33,
+        "targetBlackBodyTemp": 300,
+        "bitsPerPixel": 12,
+        "opticsSysEff": 0.8,
+        "numOfReadOutE": 20,
+        "apertureDia": 0.1778,
+        "Fnum": 2.1421,
+        "maxDetectorExposureTime": 323.333e-6,
+        "atmosLossModel": "LOWTRAN7",
+        "_comments": ["purpose is for observation of surface/ cloud temperature(note target temp)",
+                      "quantumEff, opticsSysEff, numofReadoutE are guessed."]
+        
+    }

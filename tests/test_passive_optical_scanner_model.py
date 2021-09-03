@@ -443,7 +443,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                     },
                                     "scanTechnique": "PUSHBROOM",
                                     "orientation": {
-                                        "referenceFrame": "SENSOR_BODY_FIXED",
+                                        "referenceFrame": "SC_BODY_FIXED",
                                         "convention": "REF_FRAME_ALIGNED"
                                     },
                                     "dataRate":  384,
@@ -552,7 +552,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
         """
         modis_band10_dict = {
                                 "@type": "Passive Optical Scanner",
-                                "name": "MODIS Band20",
+                                "name": "MODIS Band10",
                                 "mass": 274,
                                 "volume": 1.6, 
                                 "power": 162.5, 
@@ -578,7 +578,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                 "Fnum": 2.1421,
                                 "maxDetectorExposureTime": 323.333e-6,
                                 "atmosLossModel": "LOWTRAN7",
-                                "_comments": ["purpose for surface/ cloud temperature(note target temp)",
+                                "_comments": ["purpose is for observation of surface/ cloud temperature(note target temp)",
                                               "quantumEff, opticsSysEff, numofReadoutE are guessed."]
                             }
         modis_band10 = PassiveOpticalScannerModel.from_dict(modis_band10_dict)
@@ -614,7 +614,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
         """
         modis_band1_dict = {
                                 "@type": "Passive Optical Scanner",
-                                "name": "MODIS Band20",
+                                "name": "MODIS Band1",
                                 "mass": 274,
                                 "volume": 1.6, 
                                 "power": 162.5, 

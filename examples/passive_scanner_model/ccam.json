@@ -1,0 +1,25 @@
+{
+    "@type": "Passive Optical Scanner",
+    "name": "CCAM",
+    "fieldOfViewGeometry": {
+        "shape": "RECTANGULAR",
+        "angleHeight": 1.2,
+        "angleWidth": 1.2
+    },
+    "scanTechnique": "MATRIX_IMAGER",
+    "numberDetectorRows": 2048,
+    "numberDetectorCols": 2048,
+    "detectorWidth": 5.5e-6,
+    "focalLength": 520e-3,
+    "operatingWavelength": 470e-9,
+    "bandwidth": 150e-9,
+    "quantumEff": 0.40,
+    "targetBlackBodyTemp": 290,
+    "opticsSysEff": 0.6,
+    "numOfReadOutE": 13,
+    "apertureDia": 94.6e-3,
+    "Fnum": 5.5,
+    "maxDetectorExposureTime": 678e-6,
+    "atmosLossModel": "LOWTRAN7",
+    "_comments": ["Reference: E. Allthorpe-Mullis et al., Cubesat camera: A low cost imaging system for cubesat platforms, in 7th Interplanetary CubeSat Workshop, 2018."]
+}

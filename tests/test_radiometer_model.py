@@ -546,7 +546,7 @@ class TestFixedScan(unittest.TestCase):
     
     def test_compute_swath_width(self):
         o = FixedScan.from_json('{"@id": 123}')
-        fieldOfView = ViewGeometry.from_dict({"orientation":{"referenceFrame": "SENSOR_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
+        fieldOfView = ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
                                               "sphericalGeometry":{"shape": "CIRCULAR", "diameter": 30}})
         # using approximate swath formula as the truth data                                      
         self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, fieldOfView=fieldOfView), 30*np.pi/180*500, delta=25) 
@@ -580,7 +580,7 @@ class TestCrossTrackScan(unittest.TestCase):
 
     def test_compute_swath_width(self):
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 20, "interScanOverheadTime": 1e-3}') 
-        fieldOfView = ViewGeometry.from_dict({"orientation":{"referenceFrame": "SENSOR_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
+        fieldOfView = ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
                                               "sphericalGeometry":{"shape": "CIRCULAR", "diameter": 1}})
         # using approximate swath formula as the truth data                                      
         self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, fieldOfView=fieldOfView), 20*np.pi/180*500, delta=25) 

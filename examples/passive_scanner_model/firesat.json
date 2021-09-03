@@ -4,19 +4,19 @@
     "mass": 28, 
     "volume": 0.12, 
     "power": 32, 
-    "fieldOfView": {
-        "sensorGeometry": "RECTANGULAR",
-        "alongTrackFieldOfView": 0.628,
-        "crossTrackFieldOfView": 115.8
+    "fieldOfViewGeometry": {
+        "shape": "RECTANGULAR",
+        "angleHeight": 0.628,
+        "angleWidth": 115.8
     },
     "scanTechnique": "WHISKBROOM",
     "orientation": {
-        "convention": "SIDE_LOOK",
-        "sideLookAngle": 0
+        "referenceFrame": "SC_BODY_FIXED",
+        "convention": "REF_FRAME_ALIGNED"
     },
     "dataRate": 85,
-    "numberDetectorRowsAT": 256,
-    "numberDetectorColsCT": 1,
+    "numberDetectorRows": 256,
+    "numberDetectorCols": 1,
     "detectorWidth": 30e-6,
     "focalLength": 0.7,
     "operatingWavelength": 4.2e-6,
@@ -28,7 +28,7 @@
     "numOfReadOutE": 25,
     "apertureDia": 0.26,
     "Fnum": 2.7,
-    "snrThreshold": 10,
+    "atmosLossModel": "LOWTRAN7",
     "_references": {
         "name": "Space Mission Analysis and Design",
         "edition": 3,

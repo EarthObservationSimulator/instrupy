@@ -1,0 +1,31 @@
+{
+    "@type": "Passive Optical Scanner",
+    "name": "MODIS Band20",
+    "mass": 274,
+    "volume": 1.6, 
+    "power": 162.5, 
+    "fieldOfViewGeometry": {
+        "shape": "RECTANGULAR",
+        "angleHeight": 0.812366806011266,
+        "angleWidth": 110
+    },
+    "scanTechnique": "WHISKBROOM",
+    "dataRate": 6.2,
+    "numberDetectorRows": 40,
+    "numberDetectorCols": 1,
+    "detectorWidth": 135e-6,
+    "focalLength": 380.859e-3,
+    "operatingWavelength": 645e-9,
+    "bandwidth": 50e-9,
+    "quantumEff": 0.33,
+    "targetBlackBodyTemp": 300,
+    "bitsPerPixel": 12,
+    "opticsSysEff": 0.8,
+    "numOfReadOutE": 25,
+    "apertureDia": 0.1778,
+    "Fnum": 2.1421,
+    "maxDetectorExposureTime": 73.3e-6,
+    "atmosLossModel": "LOWTRAN7",
+    "_comments": ["purpose for surface/ cloud temperature(note target temp)",
+                  "quantumEff, opticsSysEff, numofReadoutE are guessed."]
+}

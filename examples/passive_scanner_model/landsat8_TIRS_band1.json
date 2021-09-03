@@ -4,19 +4,19 @@
     "mass": 236,
     "volume": 0.261, 
     "power": 380, 
-    "fieldOfView": {
-        "sensorGeometry": "RECTANGULAR",
-        "alongTrackFieldOfView": 0.0081,
-        "crossTrackFieldOfView": 15
+    "fieldOfViewGeometry": {
+        "shape": "RECTANGULAR",
+        "angleHeight": 0.0081,
+        "angleWidth": 15
     },
     "scanTechnique": "PUSHBROOM",
     "orientation": {
-        "convention": "SIDE_LOOK",
-        "sideLookAngle": 0
+        "referenceFrame": "SC_BODY_FIXED",
+        "convention": "REF_FRAME_ALIGNED"
     },
     "dataRate":  384,
-    "numberDetectorRowsAT": 1,
-    "numberDetectorColsCT": 1850,
+    "numberDetectorRows": 1,
+    "numberDetectorCols": 1850,
     "detectorWidth": 25e-6,
     "focalLength": 0.178,
     "operatingWavelength": 10.9e-6,
@@ -29,31 +29,8 @@
     "apertureDia":  0.1085366,
     "Fnum":  1.64,
     "maxDetectorExposureTime": 3.49e-3,
-    "snrThreshold":  25,
+    "atmosLossModel": "LOWTRAN7",
     "_comments": ["Above is Total payload data-rate not just off the TIRS.",
-                  "numReadOutE and snrThreshold are guessed."],
-    "_references": {
-            "ref1": {
-                "url": "https://earth.esa.int/web/eoportal/satellite-missions/l/landsat-8-ldcm"
-            },
-            "ref2": {
-                "doi": "10.3390/rs70101135",
-                "url": "https://doi.org/10.3390/rs70101135",
-                "year": 2015,
-                "month": "jan",
-                "publisher": "MDPI AG",
-                "volume": 7,
-                "number": 1,
-                "pages": "1135--1153",
-                "author": "Dennis Reuter and Cathleen Richardson and Fernando Pellerano and James Irons and Richard Allen and Martha Anderson and Murzy Jhabvala and Allen Lunsford and Matthew Montanaro and Ramsey Smith and Zelalem Tesfaye and Kurtis Thome",
-                "title": "The Thermal Infrared Sensor (TIRS) on Landsat 8: Design Overview and Pre-Launch Characterization",
-                "journal": "Remote Sensing"
-            },
-            "ref3": {
-                "title":"Landsat and Thermal Infrared Imaging",
-                "author":"Arvidson, Terry and Barsi, Julia and Jhabvala, Murzy and Reuter, Dennis",
-                "url": "http://hdl.handle.net/2060/20120015404"
-              }
-     }
+                  "numReadOutE and snrThreshold are guessed."]
      
 }
