@@ -10,6 +10,7 @@ Contents
    :maxdepth: 2
 
    user_guide
+   instrument_models
    api_reference
    development
    

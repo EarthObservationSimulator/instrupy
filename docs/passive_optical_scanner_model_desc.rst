@@ -1,0 +1,335 @@
+.. _passive_optical_scanner_model_desc:
+
+Passive Optical Scanner Model
+******************************
+The passive optical scanner model can be used to handle sensors with detector arrays operating at Visible and near-Visible (IR and UV) wavelengths. The formulation
+of the sensor model is based on [1]. While [1] concentrates on an IR sensor, the formulation has been extended to optical sensors in [2]. 
+
+FOV/ sceneFOV/ FOR can be configured in the model, from which the coverage calculations (using the OrbitPy package) can be carried out to find the locations accessed on the ground.
+
+**References**
+
+1. Chapter 9 in Space Mission Analysis and Design, 3rd edition.
+
+2. Vinay Ravindra and Sreeja Nag, "Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations," 2020 IEEE Aerospace Conference, Big Sky, MT, USA, 2020.
+
+.. note:: See :ref:`passive_optical_scanner_glossary` for names of the variables used in any discussion below.
+
+Model parameters
+------------------
+
+A ``PassiveOpticalScannerModel`` object can be obtained from a json/ dict by using the ``from_json(.)`` or ``from_dict(.)`` functions. The expected key/value
+pairs are described below:
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Data type, Units, Description
+   :widths: 10,10,5,40
+
+   @type, string, ,Must be *Passive Optical Scanner*
+   @id, string, , Unique identifier for the instrument. If ``None`` a random string is assigned.
+   name, string, , Full name of the instrument 
+   mass, float, kilograms, Total mass of this entity.
+   volume, float, :code:`m^3`, Total volume of this entity.
+   power, float, Watts, Nominal operating power.
+   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Default is alignment to the SC_BODY_FIXED frame.
+   fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
+   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
+   maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
+   pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
+   dataRate, float, Mega-bits per s, Rate of data recorded during nominal operations.
+   scanTechnique, string, ,Scanning technique. Accepted values are *PUSHBROOM* or *WHISKBROOM* or *MATRIX_IMAGER*.
+   numberDetectorRows, integer, ,Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame this direction corresponds to the along-track direction.
+   numberDetectorCols, integer, ,Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame this direction corresponds to the cross-track direction.
+   Fnum, float, ,F-number/ F# of lens.
+   focalLength, float, meters, Focal length of lens.
+   operatingWavelength, float, meters, Center operating wavelength.
+   bandwidth, float, meters, Bandwidth of operation.
+   quantumEff, float, , Quantum efficiency of the detector element (:math:`0 < QE < 1`).
+   numOfReadOutE, float, , Number of read out electrons of detector.
+   targetBlackBodyTemp, float, Kelvin, Target body's equivalent black-body temperature. Default value is 290K.
+   bitsPerPixel, integer, ,Bits encoded per pixel of image.
+   detectorWidth, float, meters,Width of detector element.
+   apertureDia, float, meters, Telescope aperture diameter.
+   maxDetectorExposureTime, float, seconds, maximum exposure time on the detector elements (optional parameter).
+   atmosLossModel, str,, "Specify the atmospheric loss model. Accepted value is *LOWTRAN7*. If not specified, the atmos loss is not considered. Default is ``None``."
+
+.. figure:: passive_scanner_aperture_figure.png
+   :scale: 75 %
+   :align: center
+
+   Diagram of rectangular aperture illustrating the input parameters :code:`numberDetectorRows`, :code:`numberDetectorCols` and :code:`detectorWidth`.
+
+Note that only rectangular FOV is supported for this sensor type.
+When the ``SENSOR_BODY_FIXED`` frame is aligned to the ``NADIR_POINTING`` frame, the instrument ``fieldOfViewGeometry.angleHeight`` corresponds to the along-track FOV 
+(:math:`\theta_{AT}`) while the ``fieldOfViewGeometry.angleWidth`` corresponds to the cross-track FOV (:math:`\theta_{CT}`).
+
+.. warning::   Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
+               The present version of the instrupy package does **not** check for the consistency of the values.
+
+               Following relations between the inputs must be satisfied:
+
+               *  Only square detectors are supported. Hence the IFOV of the detectors must be equal for the along-track 
+                  and cross-track directions. This results in following relationship: 
+
+                  :math:`\xi = \dfrac{\theta_{AT}}{N_{pix}^{AT}} = \dfrac{\theta_{CT}}{N_{pix}^{CT}} = \dfrac{d}{f}`
+
+                  where,
+                  :math:`\xi` is the instantaneous FOV or FOV per detector, 
+                  :math:`\theta_{AT}` is the along-track (angular) FOV of the instrument,
+                  :math:`\theta_{CT}` is the cross-track (angular) FOV of the instrument,
+                  :math:`N_{pix}^{AT}` is the number of ground-pixels in along-track direction,
+                  :math:`N_{pix}^{CT}` is the number of ground-pixels in cross-track direction,
+                  :math:`d` is detector element length,
+                  :math:`f` is the focal length.
+
+               *  :math:`F\# = \dfrac{f}{D_{ap}}`
+
+                  where,
+                  :math:`F\#` is the F-number and :math:`D_{ap}` is the aperture diameter.
+
+.. note:: Note there is difference between **ground-pixel** and **detectors**. Detectors refer to the actual physical discrete sensing elements on the scanner aperture. While ground-pixels refer 
+             to the imaged pixels on the ground. The number of detectors in the cross-track direction will be less than the number of ground-pixels in the cross-track direction in case of Whiskbroom scanners.
+
+Model results
+------------------
+
+Using the passive optical scanner model, coverage calculations (using the OrbitPy package) can be carried out over a region of interest. Coverage calculations which involve 
+a grid (list of grid-points)) evaluate to see if the grid-points fall within the instrument sceneFOV (sceneFOV = FOV in most cases) or the FOR. The pointing-options feature further 
+allows to automate coverage calculations for numerous instrument orientations. 
+
+Once the coverage has been evaluated, the observable locations and the observer (satellite) locations is known. The following data metrics at the observable location 
+on the surface of Earth can be calculated:
+
+.. csv-table:: Observation data metrics table
+   :widths: 8,4,4,20
+   :header: Metric/Aux data,Data Type,Units,Description 
+                                                                                                                                                                                                
+   noise-equivalent delta T [K], float, Kelvin  , Noise Equivalent delta temperature. Characterizes the instrument in its ability to resolve temperature variations for a given background temperature. 
+   dynamic range, float,, Dynamic Range. Is the quotient of the signal and read-out noise electrons the sensor sees between dark and bright scenes.                            
+   SNR, float,, Signal-to-Noise ratio assuming unit ground-reflectance for solar energy and blackbody characteristics for radiated energy.                                                                                                                                 
+   ground pixel along-track resolution [m], float, meters, Spatial resolution of a hypothetical ground-pixel centered about observation point in the along-track direction.                                                                                                                         
+   ground pixel cross-track resolution [m] , float, meters, Spatial resolution of a hypothetical ground-pixel centered about observation point in the cross-track direction. 
+
+.. note:: The simultaneous assumption of unit reflectance and blackbody to calculate the SNR is contradictory and can be troubling in spectral regions between the thermal and optical. 
+          If the spectral region is in the IR or optical (where the radiative and reflective characteristics of Earth do not
+          intersect), either of the radiated or the reflected energy is dominant, and the contradictory assumption is not troubling.  
+
+Model description
+------------------
+
+Please refer to the references [1] and [2] for a more comprehensive description. Below text lays down the formulae coded into the model.
+
+Viewing geometry
+...................
+
+The viewing geometry parameters, i.e. :math:`\mathbf{S}`, :math:`\mathbf{T}`, :math:`\mathbf{R}`, :math:`\theta_i` and :math:`\gamma` are determined using the setup 
+described in :ref:`basic sensor model description<basic_sensor_model_desc>`.
+
+Ground-pixel resolution calculations
+......................................
+
+Note that the current formulation is accurate only when ground-pixel is being imaged at the nadir or is at purely side-looking geometry.
+
+:math:`\xi = \dfrac{d}{f}`
+
+:math:`\rho_{CT} = \xi \dfrac{R}{\cos\theta_i}`
+
+:math:`\rho_{AT} = \xi R`
+
+.. todo:: Update for the general target geometry. 
+
+Integration time calculation
+......................................
+
+The integration time is the period over which the detector is exposed to photons. There is an upper-bound that it has to be less than the access time which the instrument
+shall have over a location (since the satellite is flying over the location, the access time is limited).
+Let :math:`t_{acc}` be the total access time of the instrument over a ground-point. It can be calculated analytically as:
+      
+:math:`t_{acc} = \theta_{AT} \hspace{2mm} h/ v_g`
+
+.. todo:: Update access time calculation for general target geometry. Above formulation is valid only for the nadir looking geometry or for purely sidelooking geometry.
+
+*The available time for integration depends on the instrument scan-type and is given below:*
+
+PUSHBROOM
+===========
+Only one detector row (in cross-track direction) is supported for pushbroom sensors. Hence the entire access time is available for integration.
+
+:math:`T_i =  t_{acc}`
+
+WHISKBROOM (Multielement)
+==========================
+Only one detector column (in along-track direction) supported for whiskbroom sensors. The integration time is a fraction of the access time and depend on the number of (ground) pixels
+imaged in the cross-track direction.
+
+:math:`T_i =  \dfrac{t_{acc}}{N_{pix}^{CT}}`
+
+.. todo:: Note that :math:`t_{acc}` is calculated considering the :math:`\theta_{AT}` and not the :math:`\xi`.
+
+MATRIX_IMAGER
+==============
+In case of the matrix imager each detector images separately a ground-pixel. Hence the entire access time is available for integration.
+
+:math:`T_i =  t_{acc}`
+
+**FInally,** if the calculated integration time is greater than the user-defined maximum detector exposure time, it is set to the user-defined maximum detector exposure
+time.
+
+:math:`if \hspace{2mm} T_i > T^{exp}_{max}, \hspace{2mm} T_i =  T^{exp}_{max}`
+
+Calculation of signal electrons
+......................................
+
+Calculation of signal electrons involves calculation of the radiance from the Earth as a blackbody radiator and the radiance from the Earth as a reflector of Solar energy.
+
+.. note:: The units of radiance used is [:math:`photons \hspace{1mm} s^{-1} \hspace{1mm} m^{-2} \hspace{1mm} sr^{-1}`]
+
+Radiance with Earth as blackbody radiator
+============================================
+
+Assume Earth (body under observation) is a black-body and a Lambertian surface, i.e. the radiance
+is independent of the angle. 
+
+:math:`L_{E} = \int_{\lambda_1}^{\lambda_2} L_{\lambda} \tau_{\lambda}^{atm} \cos\theta_i`
+
+where the spectral radiance is given from Plank's blackbody radiation equation,
+
+:math:`L_{\lambda} = \dfrac{2 \Upsilon c^2}{\lambda^5} \dfrac{1}{\exp{\dfrac{\Upsilon c}{\lambda k_B T} - 1}}`
+
+Radiance with Earth as reflector of Solar energy
+=======================================================
+
+Assume Sun is a blackbody with temperature 6000K. Also assumed is that the reflectance of the Earths surface is unity over all wavelengths in the operating band.
+
+:math:`L_S =  \int_{\lambda_1}^{\lambda_2} L_{\lambda} \tau_{\lambda}^{atm}`
+
+.. note:: :math:`\tau_{\lambda}^{atm}` here considers the two-way atmospheric losses, i.e. Sun to Ground and Ground to Satellite. 
+          Strictly speaking the Ground to Satellite atmospheric loss appears separately, but mathematically either way the result
+          is the same. In the present implementation framework it is easier to consider the term here since after this stage
+          of calculation, the spectral information (energy per unit wavelength/frequency) is lost.
+
+:math:`{\bf V_{Sun2T}} = {\bf T} - {\bf P_{Sun}}`
+
+:math:`\theta_i^{Solar} = \cos^{-1}(\dfrac{{\bf T} \cdot -{\bf V_{Sun2T}}}{|{\bf T}||\bf V_{Sun2T}|})`
+
+The *downwelling* term is used to refer to the energy from the Sun onto the surface, while the *upwelling* term is used to refer to the energy from the ground to the observer (sensor).
+
+:math:`L^{dw}_S = L_S  \cos\theta_i^{Solar}`
+
+:math:`A_{gp} = \rho_{CT} \rho_{AT}`
+
+:math:`R^{dw}_S|_{ph} = L^{dw}_S A_{gp} \dfrac{\pi r_{Solar}^2}{|{\bf V_{Sun2T}}|^2}`
+        
+:math:`R^{uw}_S|_{ph} = R^{dw}_S|_{ph} \cos\theta_i`  (Unity reflectivity is assumed. Atmospheric loss had been accounted for before.)
+
+:math:`L^{uw}_S = \dfrac{R^{uw}_S|_{ph}}{4 \pi A_{gp}}`
+ 
+Radiance to Signal electrons calculation
+============================================
+The total radiance at the sensor detector is used to calculate the total number of photons and hence the total number of electrons accumulated at the detector.
+
+:math:`L_T = L_{E} + L^{uw}_S`
+
+:math:`R_T|_{ph} = L_T A_{gp}`
+
+:math:`R^{sen}_T|_{ph} = \dfrac{R_T|_{ph}}{|{\bf R}|^2} (\dfrac{D_{ap}}{2})^2 \pi`
+
+:math:`R^{det}_T|_{ph} = R^{sen}_T|_{ph} \tau_{op}`
+
+:math:`N_{ph} = R^{det}_T|_{ph} T_i`
+
+:math:`N_e = N_{ph} Q_E`
+
+Calculation of signal-to-noise-ratio
+......................................
+Note that only shot-noise and read-noise is considered.
+
+:math:`N_{sh} = \sqrt{N_e}`
+
+:math:`N_t = \sqrt{N_n^2 + N_r^2}`
+
+:math:`SNR = \dfrac{N_e}{N_t}`
+
+Calculation of dynamic range
+......................................
+The dynamic range of the instrument is the quotient of signal- and read-out noise electrons the sensor sees between dark and bright scenes 
+at the given reflection coefficient (here unity) of the target scene. 
+
+:math:`DR = \dfrac{N_e}{N_r}`
+
+
+Calculation of Noise-Equivalent Delta T
+..........................................
+
+Calculate number of signal electrons for a 1K raise in the temperature of observation pixel.
+
+:math:`\Delta N = N_{e,new} - N_e`
+
+:math:`NE\Delta T = \dfrac{N_e}{\Delta N}`
+
+.. _passive_optical_scanner_glossary:
+
+Examples
+---------
+Please see the ``examples`` folder.
+
+Glossary
+---------
+
+* :math:`\mathbf{S}`: Position vector of the satellite in the CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`\mathbf{T}`: Position vector of the target ground-point in the CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`\mathbf{R}`: Range vector from satellite to the target ground point.
+* :math:`\gamma`:  Look-angle to the target ground point from satellite.
+* :math:`\theta_i`: Incidence angle at the target ground point.
+* :math:`h`: Altitude of the satellite.
+* :math:`v_g`: Ground speed of the satellite.
+* :math:`\xi`: The instantaneous field-of-view / field-of-view of detector.
+* :math:`d`: Detector width/ length (only square detectors allowed).
+* :math:`f`: Focal-length of lens.
+* :math:`\rho_{CT}`: Cross-track ground-pixel resolution.
+* :math:`\rho_{AT}`: Along-track ground-pixel resolution.
+* :math:`T_i`: Integration time of the ground-pixel.
+* :math:`T^{exp}_{max}`: Maximum exposure time of the detector.
+* :math:`t_{acc}`: Access time over the ground-point.
+* :math:`\theta_{AT}`: Along-track FOV of the instrument.
+* :math:`\theta_{CT}`: Cross-track FOV of the instrument.
+* :math:`N_{pix}^{AT}`: Number of ground-pixels in along-track direction.
+* :math:`N_{pix}^{CT}`: Number of ground-pixels in cross-track direction.
+* :math:`F\#`: F-number of the optical system.
+* :math:`D_{ap}`: Aperture diameter.
+* :math:`L_{\lambda}`: Planck's spectral blackbody radiance.
+* :math:`\tau_{\lambda}^{atm}`: Wavelength dependent atmospheric loss as computed by the atmospheric loss model.
+* :math:`L_{E}`: Radiance from Earth from the target ground-pixel to the observer.
+* :math:`\lambda_{op}`: Operating center wavelength of the instrument.
+* :math:`\lambda_1`: Lower end wavelength of operating band.
+* :math:`\lambda_2`: Upper end wavelength of operating band.
+* :math:`\Upsilon`: Plank's constant.
+* :math:`T`: The target body's equivalent blackbody temperature.
+* :math:`k_B`: Boltzmann constant.
+* :math:`\lambda`: Arbitrary wavelength (variable).
+* :math:`{\bf P_{Sun}}`: Position vector of the Sun in CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`L_S`: The radiance from the Sun.
+* :math:`{\bf V_{Sun2T}}`: Vector from the Sun to the Target in CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`\theta_i^{Solar}`: Solar incidence angle at the ground-pixel.
+* :math:`A_{gp}`: Ground-pixel area.
+* :math:`L^{dw}_S`: Downwelling radiance at the ground-pixel.
+* :math:`R^{dw}_S|_{ph}`: Downwelling photon rate at the ground-pixel.
+* :math:`R^{uw}_S|_{ph}`: Upwelling photon rate from the ground-pixel to the satellite.
+* :math:`L^{uw}_S`: Upwelling reflected Solar radiance from the ground-pixel to the satellite.
+* :math:`L_T`: Total radiance (radiate plus reflected) from the ground-pixel.
+* :math:`R_T|_{ph}`: Rate of photons radiated, reflected (total).
+* :math:`R^{sen}_T|_{ph}`: Rate of photons at sensor aperture.
+* :math:`R^{det}_T|_{ph}`: Rate of photons at detector.
+* :math:`\tau_{op}`: Optical system efficiency.
+* :math:`N_{ph}`: Number of photons at the detector.
+* :math:`N_e`: Number of electrons at the detector.
+* :math:`Q_E`: Quantum efficiency of detector.
+* :math:`N_{sh}`: Number of Shott noise electrons.
+* :math:`N_r`: Number of read out noise electrons.
+* :math:`N_{t}`: Total number of noise electrons.
+* :math:`N_{e,new}`: Number of signal electrons for 1K raise in temperature at the ground-pixel.
+* :math:`\Delta N`: Change in number of charge carriers for 1K temperature change.
+* :math:`NE\Delta T`: Noise equivalent temperature difference.
+* :math:`r_{Solar}`: Solar radius.
+* :math:`SNR`: Signal-to-noise ratio.
+* :math:`DR`: Dynamic range.

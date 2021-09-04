@@ -23,9 +23,7 @@
 
 .. todo:: Include frequency dependent atmospheric losses in :math:`\\sigma_{NESZ}` calculations.
 
-.. todo:: Update antenna specification parameters to the type :class:`instrupy.util.AntennaSpecs`
-
-.. todo:: Make seperate objects for scanning-technique similar to the one in Radiometer model?
+.. todo:: Make separate objects for scanning-technique similar to the one in Radiometer model?
 
 """
 import json
@@ -33,7 +31,7 @@ import copy
 import uuid
 import numpy as np
 import warnings
-from instrupy.util import Entity, EnumEntity, Orientation, SphericalGeometry, ViewGeometry, Maneuver, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
+from instrupy.util import Entity, EnumEntity, Orientation, SphericalGeometry, ViewGeometry, Antenna, Maneuver, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
 
 class ScanTech(EnumEntity):
     """Enumeration of recognized SAR scanning techniques.
@@ -153,14 +151,8 @@ class SyntheticApertureRadarModel(Entity):
         :ivar pulseWidth: Actual pulse width in (seconds)  (per channel/polarization).
         :vartype pulseWidth: float
 
-        :ivar antennaHeight: Antenna height (in the along-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
-        :vartype antennaHeight: float
-
-        :ivar antennaWidth: Antenna width (in the cross-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
-        :vartype antennaWidth: float
-
-        :ivar antennaApertureEfficiency: Aperture efficiency of antenna (:math:`0 < \\eta_{ap} < 1`).
-        :vartype antennaApertureEfficiency: float
+        :ivar antenna: Antenna specifications.
+        :vartype antenna: :class:`instrupy.util.Antenna`
 
         :ivar operatingFrequency: Operating radar center frequency in (Hertz).
         :vartype operatingFrequency: float
@@ -229,13 +221,12 @@ class SyntheticApertureRadarModel(Entity):
     a_wr = float(1.2)    
 
     def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None, 
-            fieldOfViewGeometry = None, sceneFieldOfViewGeometry = None, maneuver = None, pointingOption=None, 
-            dataRate=None, bitsPerPixel = None, pulseWidth = None, antennaHeight= None, 
-            antennaWidth = None, antennaApertureEfficiency = None, operatingFrequency = None, 
-            peakTransmitPower = None, chirpBandwidth = None, minimumPRF = None, maximumPRF = None, 
-            radarLoss = None, atmosLoss=None, sceneNoiseTemp = None, systemNoiseFigure = None,
-            polType = None, dualPolPulseConfig = None, dualPolPulseSep = None, swathType = None, 
-            scanTechnique = None, fixedSwathSize = None, numSubSwaths = None,  _id=None):
+            fieldOfViewGeometry=None, sceneFieldOfViewGeometry=None, maneuver=None, pointingOption=None, 
+            dataRate=None, bitsPerPixel=None, pulseWidth=None, antenna=None, operatingFrequency=None, 
+            peakTransmitPower=None, chirpBandwidth=None, minimumPRF=None, maximumPRF=None, 
+            radarLoss=None, atmosLoss=None, sceneNoiseTemp=None, systemNoiseFigure=None,
+            polType=None, dualPolPulseConfig=None, dualPolPulseSep=None, swathType=None, 
+            scanTechnique=None, fixedSwathSize=None, numSubSwaths=None,  _id=None):
         """ Initialization. All except the below two parameters have identical description as that of the corresponding class instance variables.
 
         :param fieldOfViewGeometry: Instrument field-of-view spherical geometry.
@@ -266,9 +257,7 @@ class SyntheticApertureRadarModel(Entity):
         self.dataRate = float(dataRate) if dataRate is not None else None          
         self.bitsPerPixel = int(bitsPerPixel) if bitsPerPixel is not None else None 
         self.pulseWidth = float(pulseWidth) if pulseWidth is not None else None
-        self.antennaHeight = float(antennaHeight) if antennaHeight is not None else None
-        self.antennaWidth = float(antennaWidth) if antennaWidth is not None else None
-        self.antennaApertureEfficiency = float(antennaApertureEfficiency) if antennaApertureEfficiency is not None else None
+        self.antenna = copy.deepcopy(antenna) if antenna is not None and isinstance(antenna, Antenna) else None
         self.operatingFrequency = float(operatingFrequency) if operatingFrequency is not None else None
         self.peakTransmitPower = float(peakTransmitPower) if peakTransmitPower is not None else None
         self.chirpBandwidth = float(chirpBandwidth) if chirpBandwidth is not None else None        
@@ -371,15 +360,28 @@ class SyntheticApertureRadarModel(Entity):
                 numSubSwaths = 1 # stripmap is equivalent to ScanSAR operation with one subswath
 
             # calculate instrument FOV based on antenna dimensions
-            D_az_m = d.get("antennaHeight", None)
-            D_elv_m = d.get("antennaWidth", None)
-            opWavelength =  Constants.speedOfLight/ d.get("operatingFrequency", None)
-            # calculate antenna beamwidth and hence instrument FOV [eqn41, 1].
-            along_track_fov_deg = np.rad2deg(opWavelength/ D_az_m)
-            cross_track_fov_deg = numSubSwaths*np.rad2deg(opWavelength/ D_elv_m) # number of subswaths x antenna cross-track beamwidth
-            instru_fov_geom_dict = { "shape": "RECTANGULAR", "angleHeight":along_track_fov_deg, "angleWidth": cross_track_fov_deg } 
-            
+            # parse ``Antenna``` object and get the field-of-view geometry. 
+            # The ``get_spherical_geometry`` function of the ``Antenna`` object is not used since here we use a slightly different beamwidth formula and the beamwidth for ScanSAR involves the number of sub-swaths. 
+            antenna_dict = d.get("antenna", None)
+            if antenna_dict:
+                antenna = Antenna.from_dict(antenna_dict)
+                if (antenna.shape == Antenna.Shape.RECTANGULAR and antenna.apertureExcitationProfile == Antenna.ApertureExcitationProfile.UNIFORM) :
+                    # calculate instrument FOV based on antenna dimensions
+                    D_az_m = antenna.height
+                    D_elv_m = antenna.width
+                    opWavelength =  Constants.speedOfLight/ d.get("operatingFrequency", None)
+                    # calculate antenna beamwidth and hence instrument FOV [eqn41, 1].
+                    along_track_fov_deg = np.rad2deg(opWavelength/ D_az_m)
+                    cross_track_fov_deg = numSubSwaths*np.rad2deg(opWavelength/ D_elv_m) # number of subswaths x antenna cross-track beamwidth
+                    instru_fov_geom_dict = {"shape": "RECTANGULAR", "angleHeight":along_track_fov_deg, "angleWidth": cross_track_fov_deg } 
+                else:
+                    raise Exception("Input antenna shape and/or aperture-excitation profile is not supported in the SAR model.")
+            else:
+                antenna = None
+                instru_fov_geom_dict = None
+
             scene_fov_geom_dict = d.get("sceneFieldOfViewGeometry", instru_fov_geom_dict)  # default sceneFOV geometry is the instrument FOV geometry
+
             # initialize the swath configuration
             fixedSwathSize = None
             swathConfig = d.get("swathConfig", None)
@@ -423,9 +425,7 @@ class SyntheticApertureRadarModel(Entity):
                         dataRate = d.get("dataRate", None),
                         bitsPerPixel = d.get("bitsPerPixel", None),
                         pulseWidth = d.get("pulseWidth", None),
-                        antennaHeight = d.get("antennaHeight", None),
-                        antennaWidth = d.get("antennaWidth", None),
-                        antennaApertureEfficiency = d.get("antennaApertureEfficiency", None),
+                        antenna = antenna,
                         operatingFrequency = d.get("operatingFrequency", None),
                         peakTransmitPower = d.get("peakTransmitPower", None),
                         chirpBandwidth = d.get("chirpBandwidth", None),
@@ -457,6 +457,7 @@ class SyntheticApertureRadarModel(Entity):
         orientation_dict = self.orientation.to_dict() if self.orientation is not None and isinstance(self.orientation, Orientation) else None
         maneuver_dict = self.maneuver.to_dict() if self.maneuver is not None and isinstance(self.maneuver, Maneuver) else None
         pointing_opt_dict = [Orientation.to_dict(x) for x in self.pointingOption] if self.pointingOption is not None else None
+        antenna_dict = self.antenna.to_dict() if self.antenna is not None and isinstance(self.antenna, Antenna) else None
         return dict({
                 "@type": "Synthetic Aperture Radar",
                 "name":self.name,
@@ -471,9 +472,7 @@ class SyntheticApertureRadarModel(Entity):
                 "dataRate":self.dataRate,
                 "bitsPerPixel": self.bitsPerPixel,
                 "pulseWidth": self.pulseWidth,
-                "antennaHeight": self.antennaHeight,
-                "antennaWidth": self.antennaWidth,
-                "antennaApertureEfficiency": self.antennaApertureEfficiency,
+                "antenna": antenna_dict,
                 "operatingFrequency": self.operatingFrequency,
                 "peakTransmitPower": self.peakTransmitPower,
                 "chirpBandwidth": self.chirpBandwidth,
@@ -575,9 +574,9 @@ class SyntheticApertureRadarModel(Entity):
 
         Dictionary keys are: 
     
-        * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final image is equal to the noise power level (units: decibels). **Numerically lesser is better.**
-        * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point.
-        * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point.
+        * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final image is equal to the noise power level (units: decibels). **Numerically lesser is better instrument performance.**
+        * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of a ground-pixel centered about observation point.
+        * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of a ground-pixel centered about observation point.
         * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
         * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
         * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
@@ -662,10 +661,10 @@ class SyntheticApertureRadarModel(Entity):
         tau_p = self.pulseWidth        
         B_T = self.chirpBandwidth
         P_T = self.peakTransmitPower
-        D_az = self.antennaHeight
-        D_elv = self.antennaWidth
+        D_az = self.antenna.height
+        D_elv = self.antenna.width
         fc = self.operatingFrequency
-        eta_ap = self.antennaApertureEfficiency               
+        eta_ap = self.antenna.apertureEfficiency               
         PRFmin_Hz = self.minimumPRF    
         PRFmax_Hz = self.maximumPRF   
         L_radar = 10.0**(self.radarLoss/10.0) # convert to linear units
@@ -820,7 +819,7 @@ class SyntheticApertureRadarModel(Entity):
 
         lamb = c/fc        
 
-        theta_elv = lamb/ D_elv # null-to-null (full-beamwidth) illuminating the (sub)swath
+        theta_elv = lamb/ D_elv # (full-beamwidth) illuminating the (sub)swath
         
         if(swath_type == SwathTypeSAR.FULL and num_sub_swath>1): # condition is true in case of ScanSAR operation with multiple sub-swaths
             """

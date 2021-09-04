@@ -19,10 +19,10 @@ For a detailed description see the following articles:
 
 Currently there are four instrument models supported:
 
-1. Basic Sensor (:ref:`basic_sensor_model_module`)
-2. Passive Optical Sensor (:ref:`passive_optical_scanner_model_module`)
-3. Synthetic Aperture Radar (:ref:`synthetic_aperture_radar_model_module`)
-4. Radiometer (:ref:`radiometer_model_module`)
+1. Basic Sensor (:ref:`basic_sensor_model_desc`)
+2. Passive Optical Sensor (:ref:`passive_optical_scanner_model_desc`)
+3. Synthetic Aperture Radar (:ref:`synthetic_aperture_radar_model_desc`)
+4. Radiometer (:ref:`radiometer_model_desc`)
 
 Glossary of terms used in the package
 ======================================

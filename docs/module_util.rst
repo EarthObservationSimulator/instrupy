@@ -378,6 +378,11 @@ Example:
         "geophysicalVar": "TMP_P0_L1_GLL0",
         "interpolMethod": "SCIPY_LINEAR"
    }
+
+.. _antenna_json_object:
+
+:code:`antenna` JSON object
+==========================================
+
+TBD
    
-.. automodule:: instrupy.util
-   :members:

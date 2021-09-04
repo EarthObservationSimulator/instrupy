@@ -1357,7 +1357,7 @@ class Antenna(Entity):
         """             
         shape =  d.get("shape", None)
         shape = Antenna.Shape.get(shape) if shape is not None else None
-        apertureExcitationProfile =  d.get("apertureExcitationProfile", None)
+        apertureExcitationProfile =  d.get("apertureExcitationProfile", "UNIFORM")
         apertureExcitationProfile = Antenna.ApertureExcitationProfile.get(apertureExcitationProfile) if shape is not None else None
         return Antenna(
                 shape = shape,

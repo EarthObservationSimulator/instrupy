@@ -96,9 +96,7 @@ microxsar_json_str =   '{"@type": "Synthetic Aperture Radar",' \
                         '"dataRate": 2000,' \
                         '"bitsPerPixel": 16,' \
                         '"pulseWidth": 31e-6,' \
-                        '"antennaHeight": 4.9,' \
-                        '"antennaWidth": 0.7,' \
-                        '"antennaApertureEfficiency": 0.5,' \
+                        '"antenna":{"shape": "RECTANGULAR", "height": 4.9, "width": 0.7, "apertureEfficiency": 0.5, "apertureExcitationProfile": "UNIFORM"},' \
                         '"operatingFrequency": 9.65e9,' \
                         '"peakTransmitPower": 1e3,' \
                         '"chirpBandwidth": 75e6,' \
@@ -117,9 +115,7 @@ seasat_json_str =  '{"@type": "Synthetic Aperture Radar",' \
                     '    "sideLookAngle": 20.5' \
                     '},' \
                     '"pulseWidth": 33.4e-6,' \
-                    '"antennaHeight": 10.7,' \
-                    '"antennaWidth": 2.16,' \
-                    '"antennaApertureEfficiency": 0.6,' \
+                    '"antenna":{"shape": "RECTANGULAR", "height": 10.7, "width": 2.16, "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},' \
                     '"operatingFrequency": 1.2757e9,' \
                     '"peakTransmitPower": 1000,' \
                     '"chirpBandwidth": 19e6,' \
@@ -137,9 +133,7 @@ ers1_json_str = '{"@type": "Synthetic Aperture Radar",' \
                 '      "sideLookAngle": 20' \
                 '  },' \
                 '  "pulseWidth": 37.1e-6,' \
-                '  "antennaHeight": 10,' \
-                '  "antennaWidth": 1,' \
-                '  "antennaApertureEfficiency": 0.26,' \
+                '  "antenna":{"shape": "RECTANGULAR", "height": 10, "width": 1, "apertureEfficiency": 0.26, "apertureExcitationProfile": "UNIFORM"},' \
                 '  "operatingFrequency": 5.25e9,' \
                 '  "peakTransmitPower": 4800,' \
                 '  "chirpBandwidth": 15.5e6,' \
@@ -185,12 +179,13 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertEqual(microxsar.bitsPerPixel, 16)        
         self.assertIsInstance(microxsar.pulseWidth, float)
         self.assertEqual(microxsar.pulseWidth, 31e-6)
-        self.assertIsInstance(microxsar.antennaHeight, float)
-        self.assertEqual(microxsar.antennaHeight, 4.9)
-        self.assertIsInstance(microxsar.antennaWidth, float)
-        self.assertEqual(microxsar.antennaWidth, 0.7)
-        self.assertIsInstance(microxsar.antennaApertureEfficiency, float)
-        self.assertEqual(microxsar.antennaApertureEfficiency, 0.5)
+        self.assertIsInstance(microxsar.antenna.height, float)
+        self.assertEqual(microxsar.antenna.height, 4.9)
+        self.assertIsInstance(microxsar.antenna.width, float)
+        self.assertEqual(microxsar.antenna.width, 0.7)
+        self.assertIsInstance(microxsar.antenna.apertureEfficiency, float)
+        self.assertEqual(microxsar.antenna.apertureEfficiency, 0.5)
+        self.assertEqual(microxsar.antenna.apertureExcitationProfile.value, "UNIFORM")
         self.assertIsInstance(microxsar.operatingFrequency, float)
         self.assertEqual(microxsar.operatingFrequency, 9.65e9)
         self.assertIsInstance(microxsar.peakTransmitPower, float)
@@ -239,9 +234,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"dataRate": 2000,'
                                                   '"bitsPerPixel": 16,'
                                                   '"pulseWidth": 31e-6,'
-                                                  '"antennaHeight": 4.9,'
-                                                  '"antennaWidth": 0.7,' 
-                                                  '"antennaApertureEfficiency": 0.5,' 
+                                                  '"antenna":{"shape": "RECTANGULAR", "height": 4.9, "width": 0.7, "apertureEfficiency": 0.5, "apertureExcitationProfile": "UNIFORM"},'
                                                   '"operatingFrequency": 9.65e9,' 
                                                   '"peakTransmitPower": 1e3,' 
                                                   '"chirpBandwidth": 75e6,'      
@@ -267,9 +260,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                                                   '"dataRate": 2000,'
                                                   '"bitsPerPixel": 16,'
                                                   '"pulseWidth": 31e-6,'
-                                                  '"antennaHeight": 4.9,'
-                                                  '"antennaWidth": 0.7,' 
-                                                  '"antennaApertureEfficiency": 0.5,' 
+                                                  '"antenna":{"shape": "RECTANGULAR", "height": 4.9, "width": 0.7, "apertureEfficiency": 0.5},'
                                                   '"operatingFrequency": 9.65e9,' 
                                                   '"peakTransmitPower": 1e3,' 
                                                   '"chirpBandwidth": 75e6,'      
@@ -416,9 +407,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
                     '    "sideLookAngle": 30' \
                     '},' \
                     '"pulseWidth": 6.61e-6,' \
-                    '"antennaHeight": 7.01,' \
-                    '"antennaWidth": 6.58,' \
-                    '"antennaApertureEfficiency": 0.6,' \
+                    '"antenna":{"shape": "RECTANGULAR", "height": 7.01, "width": 6.58, "apertureEfficiency": 0.6},' \
                     '"operatingFrequency": 1275.7e6,' \
                     '"peakTransmitPower": 1000,' \
                     '"chirpBandwidth": 3.23e6,' \
@@ -484,9 +473,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         
         test_sar2_json_str = '{"@type": "Synthetic Aperture Radar",' \
                     '"pulseWidth": 1e-6,' \
-                    '"antennaHeight": 13.80,' \
-                    '"antennaWidth": 6.30,' \
-                    '"antennaApertureEfficiency": 0.6,' \
+                    '"antenna":{"shape": "RECTANGULAR", "height": 13.80, "width": 6.30, "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},' \
                     '"operatingFrequency": 1275.7e6,' \
                     '"peakTransmitPower": 1000,' \
                     '"chirpBandwidth": 1.80e6,' \
@@ -558,9 +545,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         
         test_sar3_json_str = '{"@type": "Synthetic Aperture Radar",' \
                     '"pulseWidth": 1.64e-6,' \
-                    '"antennaHeight": 3.98,' \
-                    '"antennaWidth": 11.03,' \
-                    '"antennaApertureEfficiency": 0.6,' \
+                    '"antenna":{"shape": "RECTANGULAR", "height": 3.98, "width": 11.03, "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},' \
                     '"operatingFrequency": 1275.7e6,' \
                     '"peakTransmitPower": 1000,' \
                     '"chirpBandwidth": 1.290e6,' \
@@ -633,9 +618,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         """        
         test_sar4_json_str = '{"@type": "Synthetic Aperture Radar",' \
                     '"pulseWidth": 8.81e-6,' \
-                    '"antennaHeight": 19.07,' \
-                    '"antennaWidth": 2.86,' \
-                    '"antennaApertureEfficiency": 0.6,' \
+                    '"antenna":{"shape": "RECTANGULAR", "height": 19.07, "width": 2.86, "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},' \
                     '"operatingFrequency": 435e6,' \
                     '"peakTransmitPower": 1000,' \
                     '"chirpBandwidth": 0.616e6,' \
@@ -714,9 +697,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         """        
         test_sar5_json_str = '{"@type": "Synthetic Aperture Radar",' \
                     '"pulseWidth": 3.73e-6,' \
-                    '"antennaHeight": 13.57,' \
-                    '"antennaWidth": 4.15,' \
-                    '"antennaApertureEfficiency": 0.6,' \
+                    '"antenna":{"shape": "RECTANGULAR", "height": 13.57, "width": 4.15, "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},' \
                     '"operatingFrequency": 1257.7e6,' \
                     '"peakTransmitPower": 1000,' \
                     '"chirpBandwidth": 0.75e6,' \
@@ -798,9 +779,7 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
 
         test_sar_dict = {"@type": "Synthetic Aperture Radar",
                     "pulseWidth": 12e-6,
-                    "antennaHeight": 4.9,
-                    "antennaWidth": 1,
-                    "antennaApertureEfficiency": 0.6,
+                    "antenna":{"shape": "RECTANGULAR", "height": 4.9, "width": 1, "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},
                     "operatingFrequency": 9.65e9,
                     "peakTransmitPower": 1000,
                     "chirpBandwidth": 75e6,
