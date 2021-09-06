@@ -1,40 +1,39 @@
-{
-    "@type": "Synthetic Aperture Radar",
-    "name": "MiroXSAR",  
-    "mass": 130, 
-    "volume": 0.343, 
-    "power": 1100, 
+{   "@type": "Synthetic Aperture Radar",
+    "name": "MiroXSAR",
+    "mass": 130,
+    "volume": 0.343,
+    "power": 1100,
     "orientation": {
+        "referenceFrame": "SC_BODY_FIXED",
         "convention": "SIDE_LOOK",
         "sideLookAngle": 30
     },
     "dataRate": 2000,
+    "bitsPerPixel": 16,
     "pulseWidth": 31e-6,
-    "antennaAlongTrackDim": 4.9,
-    "antennaCrossTrackDim": 0.7, 
-    "antennaApertureEfficiency": 0.5, 
-    "operatingFrequency": 9.65e9, 
-    "peakTransmitPower": 1e3, 
-    "chirpBandwidth": 75e6,      
-    "minimumPRF": 3000, 
-    "maximumPRF": 8000, 
-    "radarLosses": 3.5, 
-    "sceneNoiseTemp": 290, 
-    "bitsPerPixel": 16, 
+    "antenna":{"shape": "RECTANGULAR", "height": 4.9, "width": 0.7, 
+               "apertureEfficiency": 0.5, 
+               "apertureExcitationProfile": "UNIFORM"},
+    "operatingFrequency": 9.65e9,
+    "peakTransmitPower": 1e3,
+    "chirpBandwidth": 75e6,
+    "minimumPRF": 3000,
+    "maximumPRF": 8000,
+    "radarLoss": 3.5,
+    "sceneNoiseTemp": 290,
     "systemNoiseFigure": 4.3,
-    "sigmaNESZthreshold": -10,
     "_references": { 
-                    "ref1": {
-                            "doi":  "10.1587/transcom.2016pfi0008",
-                            "url":  "https://doi.org/10.1587/transcom.2016pfi0008",
-                            "year":   2017,
-                            "publisher":  "Institute of Electronics,  Information and Communications Engineers (IEICE)",
-                            "volume":  "E100.B",
-                            "number":  9,
-                            "pages":  "1653--1660",
-                            "author":  "Hirobumi SAITO and Prilando Rizki AKBAR and Hiromi WATANABE and Vinay RAVINDRA and Jiro HIROKAWA and Kenji URA and Pyne BUDHADITYA",
-                            "title": "Compact X-Band Synthetic Aperture Radar for 100kg Class Satellite",
-                            "journal": "IEICE Transactions on Communications"
-                             } 
-                  }
+        "ref1": {
+                "doi":  "10.1587/transcom.2016pfi0008",
+                "url":  "https://doi.org/10.1587/transcom.2016pfi0008",
+                "year":   2017,
+                "publisher":  "Institute of Electronics,  Information and Communications Engineers (IEICE)",
+                "volume":  "E100.B",
+                "number":  9,
+                "pages":  "1653--1660",
+                "author":  "Hirobumi SAITO and Prilando Rizki AKBAR and Hiromi WATANABE and Vinay RAVINDRA and Jiro HIROKAWA and Kenji URA and Pyne BUDHADITYA",
+                "title": "Compact X-Band Synthetic Aperture Radar for 100kg Class Satellite",
+                "journal": "IEICE Transactions on Communications"
+                 } 
+      }
 }

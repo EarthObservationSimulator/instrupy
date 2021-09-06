@@ -1,34 +1,23 @@
 
 {
     "@type": "Synthetic Aperture Radar",
-    "name": "ERS1 C-Band",  
-    "mass": 512, 
-    "volume": 1, 
-    "power": 1800, 
+    "name": "ERS1 C-Band",
     "orientation": {
+    "referenceFrame": "SC_BODY_FIXED",
         "convention": "SIDE_LOOK",
         "sideLookAngle": 20
     },
-    "dataRate": 105,
     "pulseWidth": 37.1e-6,
-    "antennaAlongTrackDim": 10,
-    "antennaCrossTrackDim": 1, 
-    "antennaApertureEfficiency": 0.26, 
-    "operatingFrequency": 5.25e9, 
-    "peakTransmitPower": 4800, 
-    "chirpBandwidth": 15.5e6,      
-    "minimumPRF": 1680, 
-    "maximumPRF": 1700, 
-    "radarLosses": 3.5, 
+    "bitsPerPixel": 5,
     "sceneNoiseTemp": 290, 
-    "bitsPerPixel": 5, 
+    "antenna":{"shape": "RECTANGULAR", "height": 10, "width": 1, 
+               "apertureEfficiency": 0.26, "apertureExcitationProfile": "UNIFORM"},
+    "operatingFrequency": 5.25e9,
+    "peakTransmitPower": 4800,
+    "chirpBandwidth": 15.5e6,
+    "minimumPRF": 1680,
+    "maximumPRF": 1700,
+    "radarLoss": 3.5,
     "systemNoiseFigure": 3.4,
-    "sigmaNESZthreshold": -15,
-    "maneuverability":{
-        "@type": "ROLLONLY",
-        "rollMin": -15,
-        "rollMax": 15    
-    }, 
-    "_references":  ["Spaceborne SAR Study: LDRD ’92 Final Report"],
-    "_notes": ["The maneuverability field does not correspond to ERS1 and is meant for purpose of illustration of the feature."]
+    "_references":  ["Spaceborne SAR Study: LDRD ’92 Final Report"]
 }

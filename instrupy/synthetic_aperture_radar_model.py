@@ -546,7 +546,7 @@ class SyntheticApertureRadarModel(Entity):
         Dictionary keys are: 
         
         * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
-        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
         * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
         
         :paramtype sc_orbit_state: dict
@@ -574,9 +574,9 @@ class SyntheticApertureRadarModel(Entity):
         # Observation time in Julian Day UT1
         tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]
 
-        # Calculate Target position in CARTESIAN_EARTH_CENTERED_INERTIAL frame
+        # Calculate Target position in EARTH_CENTERED_INERTIAL frame
         target_pos_km = GeoUtilityFunctions.geo2eci([target_coords["lat [deg]"], target_coords["lon [deg]"], 0.0], tObs_JDUT1)
-        # Spacecraft position in CARTESIAN_EARTH_CENTERED_INERTIAL frame
+        # Spacecraft position in EARTH_CENTERED_INERTIAL frame
         sc_pos_km = np.array([sc_orbit_state["x [km]"], sc_orbit_state["y [km]"], sc_orbit_state["z [km]"]])  
         sc_vel_kmps = np.array([sc_orbit_state["vx [km/s]"], sc_orbit_state["vy [km/s]"], sc_orbit_state["vz [km/s]"]]) 
         sc_speed_kmps = np.linalg.norm(sc_vel_kmps)

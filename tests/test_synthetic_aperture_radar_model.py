@@ -383,6 +383,17 @@ class TestSyntheticApertureRadarModel(unittest.TestCase):
         self.assertAlmostEqual(obsv_metrics["swath-width [km]"], 37, delta = 1)
         self.assertAlmostEqual(obsv_metrics["PRF [Hz]"], 3751)
 
+        # test with the instru_look_angle_from_target_inc_angle flag set to True
+        # the instrument look angle is considered from the incidence angle at the target ground-point (28.99 deg).
+        # Note that the calculated swath-width is smaller. A different PRF is evaluated (higher PRF) which results in a different (improved) NESZ. 
+        obsv_metrics = microxsar.calc_data_metrics(sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle=True)
+        self.assertAlmostEqual(obsv_metrics["ground pixel along-track resolution [m]"], 2.09, delta = 0.1)
+        self.assertAlmostEqual(obsv_metrics["ground pixel cross-track resolution [m]"], 4.95, delta = 0.1)
+        self.assertAlmostEqual(obsv_metrics["NESZ [dB]"], -14.12, delta = 0.5)
+        self.assertAlmostEqual(obsv_metrics["incidence angle [deg]"], 28.9855, delta = 0.1)
+        self.assertAlmostEqual(obsv_metrics["swath-width [km]"], 34.4, delta = 1)
+        self.assertAlmostEqual(obsv_metrics["PRF [Hz]"], 4976)
+
     def test_from_json_calc_data_metrics_test_sar1(self):
         """ Test of SAR with specs as given by ``test_sar1_json_str``. Following aspects of the SAR are in focus:
             

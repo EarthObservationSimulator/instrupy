@@ -368,7 +368,7 @@ class PassiveOpticalScannerModel(Entity):
         Dictionary keys are: 
         
         * :code:`time [JDUT1]` (:class:`float`), Time in Julian Day UT1. Corresponds to the time of observation. 
-        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian spatial coordinates of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
+        * :code:`x [km]` (:class:`float`), :code:`y [km]` (:class:`float`), :code:`z [km]` (:class:`float`), Cartesian coordinates of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
         * :code:`vx [km/s]` (:class:`float`), :code:`vy [km/s]` (:class:`float`), :code:`vz [km/s]` (:class:`float`), Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
         
         :paramtype sc_orbit_state: dict

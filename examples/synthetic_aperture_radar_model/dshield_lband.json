@@ -1,0 +1,28 @@
+{   "@type": "Synthetic Aperture Radar",
+    "name": "DSHIELD L-Band SAR",
+    "orientation": {
+        "referenceFrame": "SC_BODY_FIXED",
+        "convention": "SIDE_LOOK",
+        "sideLookAngle": 45
+    },
+    "pulseWidth": 14.16e-6,
+    "antenna":{"shape": "RECTANGULAR", "height": 14.38, "width": 1.48, 
+        "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},
+    "operatingFrequency": 1280e6, 
+    "peakTransmitPower": 1000, 
+    "chirpBandwidth": 0.86e6,      
+    "minimumPRF": 1, 
+    "maximumPRF": 20000, 
+    "radarLoss": 2, 
+    "systemNoiseFigure": 2,
+    "swathConfig": {
+        "@type": "fixed",
+        "fixedSwathSize": 25
+    },
+    "polarization": {
+        "@type": "dual",
+        "pulseConfig": {
+            "@type": "SMAP"   
+    } 
+    }                                                   
+}

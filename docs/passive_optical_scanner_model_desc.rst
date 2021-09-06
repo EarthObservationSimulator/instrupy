@@ -276,8 +276,8 @@ Please see the ``examples`` folder.
 Glossary
 ---------
 
-* :math:`\mathbf{S}`: Position vector of the satellite in the CARTESIAN_EARTH_CENTERED_INERTIAL frame.
-* :math:`\mathbf{T}`: Position vector of the target ground-point in the CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`\mathbf{S}`: Position vector of the satellite in the EARTH_CENTERED_INERTIAL frame.
+* :math:`\mathbf{T}`: Position vector of the target ground-point in the EARTH_CENTERED_INERTIAL frame.
 * :math:`\mathbf{R}`: Range vector from satellite to the target ground point.
 * :math:`\gamma`:  Look-angle to the target ground point from satellite.
 * :math:`\theta_i`: Incidence angle at the target ground point.
@@ -307,9 +307,9 @@ Glossary
 * :math:`T`: The target body's equivalent blackbody temperature.
 * :math:`k_B`: Boltzmann constant.
 * :math:`\lambda`: Arbitrary wavelength (variable).
-* :math:`{\bf P_{Sun}}`: Position vector of the Sun in CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`{\bf P_{Sun}}`: Position vector of the Sun in EARTH_CENTERED_INERTIAL frame.
 * :math:`L_S`: The radiance from the Sun.
-* :math:`{\bf V_{Sun2T}}`: Vector from the Sun to the Target in CARTESIAN_EARTH_CENTERED_INERTIAL frame.
+* :math:`{\bf V_{Sun2T}}`: Vector from the Sun to the Target in EARTH_CENTERED_INERTIAL frame.
 * :math:`\theta_i^{Solar}`: Solar incidence angle at the ground-pixel.
 * :math:`A_{gp}`: Ground-pixel area.
 * :math:`L^{dw}_S`: Downwelling radiance at the ground-pixel.

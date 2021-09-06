@@ -1,0 +1,28 @@
+{   "@type": "Synthetic Aperture Radar",
+    "name": "DSHIELD P-Band SAR",
+    "orientation": {
+        "referenceFrame": "SC_BODY_FIXED",
+        "convention": "SIDE_LOOK",
+        "sideLookAngle": 45
+    },
+    "pulseWidth": 22.14e-6,
+    "antenna":{"shape": "RECTANGULAR", "height": 9.8, "width": 9.04, 
+        "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},
+    "operatingFrequency": 435e6, 
+    "peakTransmitPower": 1000, 
+    "chirpBandwidth": 6e6,      
+    "minimumPRF": 1, 
+    "maximumPRF": 20000, 
+    "radarLoss": 2, 
+    "systemNoiseFigure": 2,
+    "swathConfig": {
+        "@type": "fixed",
+        "fixedSwathSize": 25
+    },
+    "polarization": {
+        "@type": "dual",
+        "pulseConfig": {
+            "@type": "SMAP"   
+    } 
+    }                                                   
+}

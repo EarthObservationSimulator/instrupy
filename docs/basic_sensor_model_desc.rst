@@ -3,7 +3,7 @@
 Basic Sensor Model
 ********************
 
-The basic sensor model can be used to represent the most basic properties of an instrument: the field-of-view (FOV)/ scene-field-of-view (sceneFOV)/ field-of-regard (FOR)
+The basic sensor model can be used to represent basic properties of an instrument: the field-of-view (FOV)/ scene-field-of-view (sceneFOV)/ field-of-regard (FOR)
 and the orientation. Coverage (i.e. finding the locations which can be seen by the sensor) can be evaluated and viewing geometry parameters can calculated. 
 
 The model also allows to configure a detector array geometry on a Focal Plane Array (FPA) which can be used to to simulate imagery by interpolating 

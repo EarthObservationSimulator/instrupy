@@ -483,7 +483,7 @@ Glossary
 .. note:: The same variable names as in the references are followed as much as possible. However it becomes difficult when merging the formulation in
           case of multiple references. 
 
-* :math:`R_S`: Distance to the satellite from origin in an CARTESIAN_EARTH_CENTERED_INERTIAL. 
+* :math:`R_S`: Distance to the satellite from origin in an EARTH_CENTERED_INERTIAL. 
 * :math:`\theta_i`: Incidence angle at the target ground point.
 * :math:`R_E`: Nominal equatorial radius of Earth.
 * :math:`c`: Speed of light.
