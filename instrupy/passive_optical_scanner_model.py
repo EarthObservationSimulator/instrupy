@@ -199,7 +199,8 @@ class PassiveOpticalScannerModel(Entity):
 
     @staticmethod
     def from_dict(d):
-        """ Parses a ``PassiveOpticalScannerModel`` object from a normalized JSON dictionary. Refer to :ref:`passive_optical_scanner_model_module` for description of the accepted key/value pairs.
+        """ Parses a ``PassiveOpticalScannerModel`` object from a normalized JSON dictionary. 
+            Refer to :ref:`passive_optical_scanner_model_desc` for description of the accepted key/value pairs.
         
         .. warning:: Some of the inputs are interdependent. The dependency **must** be satisfied by the values input by the user.
                      The present version of the instrupy package does **not** check for the consistency of the values.

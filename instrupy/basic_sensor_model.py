@@ -112,7 +112,8 @@ class BasicSensorModel(Entity):
 
     @staticmethod
     def from_dict(d):
-        """ Parses a ``BasicSensorModel`` object from a normalized JSON dictionary. Refer to :ref:`basic_sensor_model_module` for description of the accepted key/value pairs.
+        """ Parses a ``BasicSensorModel`` object from a normalized JSON dictionary. 
+            Refer to :ref:`basic_sensor_model_desc` for description of the accepted key/value pairs.
         
         The following default values are assigned to the object instance parameters in case of 
         :class:`None` values or missing key/value pairs in the input dictionary.

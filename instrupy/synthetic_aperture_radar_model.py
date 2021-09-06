@@ -443,9 +443,9 @@ class SyntheticApertureRadarModel(Entity):
                         )
 
     def to_dict(self):
-        """ Translate the SyntheticApertureRadarModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``SyntheticApertureRadarModel`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
 
-        :returns: SyntheticApertureRadarModel specifications as python dictionary.
+        :returns: ``SyntheticApertureRadarModel`` object as python dictionary.
         :rtype: dict
 
         """
@@ -494,7 +494,7 @@ class SyntheticApertureRadarModel(Entity):
 
     @staticmethod
     def get_azimuthal_resolution(sc_speed, sc_gnd_speed, D_az):
-        """ Calculate azimuthal resolution taking into consideration difference in spacecraft and footprint velocities.
+        """ Calculate azimuthal resolution taking into consideration that the spacecraft and antenna-footprint speeds are different.
             See eqn (5.3.6.3) in [2].
 
         :param sc_speed: [distance/time] Spacecraft speed.
@@ -539,7 +539,7 @@ class SyntheticApertureRadarModel(Entity):
 
 
     def calc_data_metrics_impl2(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle=False):
-        """ Calculate observation data metrics.
+        """ Calculate observation data metrics from the input viewing geometry parameters.
 
         :param sc_orbit_state: Spacecraft state at the time of observation.
 
@@ -551,11 +551,11 @@ class SyntheticApertureRadarModel(Entity):
         
         :paramtype sc_orbit_state: dict
         
-        :param target_coords: Location of the observation. Also sometimes the Point-Of-Interest (POI).
+        :param target_coords: Location of the observation.
 
         Dictionary keys are: 
         
-        * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point accessed (latitude, longitude) in degrees.
+        * :code:`lat [deg]` (:class:`float`), :code:`lon [deg]` (:class:`float`) indicating the corresponding ground-point (latitude, longitude) in degrees.
 
         :paramtype target_coords: dict
 
@@ -567,17 +567,7 @@ class SyntheticApertureRadarModel(Entity):
         
         :paramtype instru_look_angle_from_target_inc_angle: bool
 
-        :returns: Calculated observation data metrics.
-
-        Dictionary keys are: 
-    
-        * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final image is equal to the noise power level (units: decibels). **Numerically lesser is better instrument performance.**
-        * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of a ground-pixel centered about observation point.
-        * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of a ground-pixel centered about observation point.
-        * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
-        * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
-        * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
-
+        :returns: Calculated observation data metrics. Refer to the return value of the function ``calc_data_metrics_impl1(.)``.
         :rtype: dict
                         
         """       
@@ -615,7 +605,7 @@ class SyntheticApertureRadarModel(Entity):
         return obsv_metrics
 
     def calc_data_metrics_impl1(self, alt_km, sc_speed_kmps, sc_gnd_speed_kmps, inc_angle_deg, instru_look_angle_from_target_inc_angle=False):
-        """ Calculate the observation metrics.
+        """ Calculate observation data metrics from the input viewing geometry parameters.
 
         :param alt_km: Spacecraft altitude in kilometers.
         :paramtype alt_km: float
@@ -636,11 +626,21 @@ class SyntheticApertureRadarModel(Entity):
                                                         Default is False.
         :paramtype instru_look_angle_from_target_inc_angle: bool
 
-        :returns: Calculated observation data metrics. Refer to the return value of the function ``calc_data_metrics_impl2(.)``.
+        :returns: Calculated observation data metrics. 
+        
+                Dictionary keys are: 
+            
+                * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final image is equal to the noise power level (units: decibels). **Numerically lesser is better instrument performance.**
+                * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of a ground-pixel centered about observation point.
+                * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of a ground-pixel centered about observation point.
+                * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
+                * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
+                * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
+        
         :rtype: dict
 
-        .. note:: The pulse-repetition frequency during the calculation of the observation metrics is taken as the highest PRF within allowed range of PRFs. 
-            The highest PRF is chosen since it maximizes NESZ.
+        .. note:: The pulse-repetition frequency during the calculation of the observation metrics is taken as the highest valid PRF (which satisfies the PRF constraints) within 
+                  the allowed PRF range. The highest PRF is chosen since it improves the NESZ.
 
         """
         inc_angle = np.deg2rad(inc_angle_deg)
@@ -754,7 +754,7 @@ class SyntheticApertureRadarModel(Entity):
 
         [2] is the primary reference for this formulation, although some errors have been found (and corrected for the current
         implementation). [3] contains the corrections. The referenced formulation is further modified to incorporate the PRF constraints
-        involving observations of multiple polarizations and fixed-swath (desired echo vs complete echo).
+        involving observations of multiple polarizations and fixed-swath (desired echo) (original formulation is for full-swath).
 
         Of all the available valid PRFs, the highest PRF is chosen since it improves the NESZ observation data-metric.
         The near-range and far-range calculations are based on the input instrument look-angle. 
@@ -783,7 +783,7 @@ class SyntheticApertureRadarModel(Entity):
         :param D_az: Antenna dimension along cross-range direction in [m].
         :paramtype D_az: float
 
-        :param D_elv: Antenna dimension along range direction in [m].
+        :param D_elv: Antenna dimension along-range direction in [m].
         :paramtype D_elv: float
 
         :param fc: Carrier center frequency in [Hz].

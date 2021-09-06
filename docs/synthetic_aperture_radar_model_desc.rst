@@ -7,7 +7,7 @@ and uniform aperture excitation profile.
 The implementation allows for modeling different *configurations* of the instrument (see figure below): 
 
 1. *Scan technique:* Stripmap or ScanSAR supported.
-2. *Swath configuration:* Imaging of the entire illuminated swath or imaging a smaller swath of fixed size (irrespective of the 
+2. *Swath configuration:* Imaging of the entire illuminated swath (*FULL*) or imaging a smaller swath of fixed size (*FIXED*) (irrespective of the 
    instrument look angle) is supported. 
 3. *Polarization:* Single/ Compact or Quad polarization can be specified. In case of Quad-pol, either the *AIRSAR* [4] or *SMAP* [5] pulse configuration should be chosen.
 
@@ -64,7 +64,7 @@ pairs are described below:
    mass, float, kilograms,Total mass of this entity.
    volume, float, :code:`m^3`,Total volume of this entity.
    power, float, Watts, Nominal operating power.
-   orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted.
+   orientation, :ref:`orientation_json_obj`, , Orientation of the instrument. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted. Default orientation is *SIDE_LOOK* at 25 deg in the *SC_BODY_FRAME*.
    dataRate, float, Megabits per sec,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
    sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
@@ -84,7 +84,7 @@ pairs are described below:
    polarization, :ref:`sar_pol_json_object`, ,Polarization configuration. Default is *SINGLE* polarization.
    swathConfig, :ref:`sar_swath_config_json_object`, ,Swath Configuration. Default is *FULL* swath.       
    scanTechnique, str, , Scanning technique. Accepted values are *Stripmap* or *ScanSAR*. Default is *Stripmap*.
-   numSubSwaths, int, , Number of sub-swaths (required in case of ScanSAR). Default is 1.  
+   numSubSwaths, int, , Number of sub-swaths (required parameter in case of ScanSAR). Default is 1.  
 
 .. _sar_swath_config_json_object:
 
