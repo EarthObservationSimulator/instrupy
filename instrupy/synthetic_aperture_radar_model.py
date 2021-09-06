@@ -3,6 +3,15 @@
 
 :synopsis: *Module to handle SAR instrument model.*
 
+        The synthetic aperture radar model is based on the references listed below. The current version allows only for rectangular antenna specifications
+        and uniform aperture excitation profile. 
+        The implementation allows for modeling different *configurations* of the instrument: 
+
+        1. *Scan technique:* Stripmap or ScanSAR supported.
+        2. *Swath configuration:* Imaging of the entire illuminated swath (*FULL*) or imaging a smaller swath of fixed size (*FIXED*) (irrespective of the 
+        instrument look angle) is supported. 
+        3. *Polarization:* Single/ Compact or Quad polarization can be specified. In case of Quad-pol, either the *AIRSAR* [4] or *SMAP* [5] pulse configuration should be chosen.
+
         Inline code comments contain references to the following articles:
 
         1. Performance Limits for Synthetic Aperture Radar - second edition SANDIA Report 2006. ----> Main reference.
@@ -26,7 +35,6 @@
 .. todo:: Make separate objects for scanning-technique similar to the one in Radiometer model?
 
 """
-import json
 import copy
 import uuid
 import numpy as np
@@ -45,7 +53,7 @@ class ScanTech(EnumEntity):
     
     """
     STRIPMAP = "STRIPMAP",
-    SCANSAR = "SCANSAR",
+    SCANSAR = "SCANSAR"
 
 class PolTypeSAR(EnumEntity):
     """Enumeration of recognized SAR polarization types.
@@ -73,7 +81,7 @@ class DualPolPulseConfig(EnumEntity):
 
     :cvar SMAP: This pulse configuration is the same as the one implemented by the SMAP radar (see Pg.41, Fig.26 in [5]). It consists of two slightly separated pulses of 
                 orthogonal polarizations at different frequency bands. The received signal is separated into the respective band and the orthogonal 
-                polarizations measured. This requires an additional parameter called as the :code:`pulseSeparation` to indicate the separation 
+                polarizations measured. WHen this pulse configuration is selected, it requires an additional parameter called as the :code:`pulseSeparation` to indicate the separation 
                 between the pulses of the two orthogonal polarizations. If not specified a default value of 50% of the pulse-width (:code:`pulseWidth`) is considered.
     :vartype SMAP: str
     
@@ -88,7 +96,7 @@ class SwathTypeSAR(EnumEntity):
     :vartype FULL: str
 
     :cvar FIXED: A fixed swath size (less than the swath illuminated by the main-lobe) is considered. This configuration 
-                 could be adapted to meet the Pule Repetition Frequency constraints.
+                 could be adapted to meet the pule repetition frequency constraints.
     :vartype FIXED: str
 
     """
@@ -96,7 +104,7 @@ class SwathTypeSAR(EnumEntity):
     FIXED = "FIXED"
 
 class SyntheticApertureRadarModel(Entity):
-    """A synthetic aperture radar class estimating observation data-metrics.      
+    """A synthetic aperture radar model class.      
       
         :cvar L_r: Reduction in SNR gain due to non-ideal range filtering (see [Pg.9, 1]). Default value is 1.2.
         :vartype L_r: float
@@ -148,11 +156,11 @@ class SyntheticApertureRadarModel(Entity):
         :ivar bitsPerPixel: Number of bits encoded per pixel of image.
         :vartype bitsPerPixel: int    
 
-        :ivar pulseWidth: Actual pulse width in (seconds)  (per channel/polarization).
+        :ivar pulseWidth: Actual pulse width in (seconds) (per channel/polarization).
         :vartype pulseWidth: float
 
-        :ivar antenna: Antenna specifications.
-        :vartype antenna: :class:`instrupy.util.Antenna`
+        :ivar antenna: Antenna specifications. Only rectangular shape and uniform aperture excitation profile is accepted.
+        :vartype antenna: :class:`instrupy.util.Antenna` 
 
         :ivar operatingFrequency: Operating radar center frequency in (Hertz).
         :vartype operatingFrequency: float
@@ -160,7 +168,7 @@ class SyntheticApertureRadarModel(Entity):
         :ivar peakTransmitPower: Peak transmit power in (Watts).
         :vartype peakTransmitPower: float
 
-        :ivar chirpBandwidth: Chirp bandwidth of radar operation in (Hertz)  (per channel/polarization).
+        :ivar chirpBandwidth: Chirp bandwidth of radar operation in (Hertz) (per channel/polarization).
         :vartype chirpBandwidth: float
 
         :ivar minimumPRF: The minimum allowable pulse-repetition-frequency of operation in (Hertz). 
@@ -187,7 +195,7 @@ class SyntheticApertureRadarModel(Entity):
         :ivar atmosLoss: 2-way atmospheric loss of electromagnetic energy (see [Pg.16, 1]).
         :vartype atmosLoss: float     
 
-        :ivar polType: SAR polarization type
+        :ivar polType: SAR polarization type.
         :vartype polType: :class:`instrupy.synthetic_aperture_radar_model.PolTypeSAR`
 
         :ivar dualPolPulseConfig: In case of dual-pol, this parameter indicates the pulse configuration.
@@ -202,7 +210,7 @@ class SyntheticApertureRadarModel(Entity):
         :ivar swathType: Swath configuration.
         :vartype swathType: :class:`instrupy.synthetic_aperture_radar_model.SwathTypeSAR`       
 
-        :ivar fixedSwathSize: In case of fixed swath configuration this parameter indicates the size of the fixed swath in kilometers.
+        :ivar fixedSwathSize: In case of ``SwathTypeSAR.FIXED`` swath configuration, this parameter indicates the size of the fixed swath in kilometers.
         :vartype fixedSwathSize: float or None
 
         :ivar numSubSwaths: Number of sub-swaths (scans) in case of "ScanSAR" operation.
@@ -210,9 +218,6 @@ class SyntheticApertureRadarModel(Entity):
 
         :ivar _id: Unique instrument identifier.
         :vartype _id: str or int
-
-        .. note:: The actual pulse-repetition frequency during the calculation of the observation metrics is taken as the highest PRF within allowed range of PRFs. 
-                  The highest PRF is chosen since it maximizes NESZ.
           
     """
     L_r = float(1.2)
@@ -279,7 +284,8 @@ class SyntheticApertureRadarModel(Entity):
         
     @staticmethod
     def from_dict(d):
-        """ Parses an SAR instrument from a normalized JSON dictionary.
+        """ Parses a ``SyntheticApertureRadarModel`` object from a normalized JSON dictionary.
+            Refer to :ref:`synthetic_aperture_radar_model_desc` for description of the accepted key/value pairs.
 
         The following default values are assigned to the object instance parameters in case of 
         :class:`None` values or missing key/value pairs in the input dictionary.
@@ -289,7 +295,7 @@ class SyntheticApertureRadarModel(Entity):
             :widths: 10,40
 
             scanTech, ScanTech.STRIPMAP
-            orientation, Orientation.Convention.SIDE_LOOK at 25 deg
+            orientation, Orientation.Convention.SIDE_LOOK at 25 deg, ReferenceFrame.SC_BODY_FIXED
             sceneFieldOfViewGeometry, (Instrument) fieldOfViewGeometry
             polType, PolTypeSAR.SINGLE (single transmit and single receive)
             pulseSeparation, 50% of pulse length 
@@ -302,7 +308,7 @@ class SyntheticApertureRadarModel(Entity):
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
         :paramtype d: dict
 
-        :returns: SyntheticApertureRadarModel object initialized with the input specifications.
+        :returns: ``SyntheticApertureRadarModel`` object initialized with the input specifications.
         :rtype: :class:`instrupy.SyntheticApertureRadarModel`
 
         """
@@ -360,22 +366,13 @@ class SyntheticApertureRadarModel(Entity):
                 numSubSwaths = 1 # stripmap is equivalent to ScanSAR operation with one subswath
 
             # calculate instrument FOV based on antenna dimensions
-            # parse ``Antenna``` object and get the field-of-view geometry. 
-            # The ``get_spherical_geometry`` function of the ``Antenna`` object is not used since here we use a slightly different beamwidth formula and the beamwidth for ScanSAR involves the number of sub-swaths. 
+            # parse ``Antenna``` object and get the instrument fov
             antenna_dict = d.get("antenna", None)
             if antenna_dict:
                 antenna = Antenna.from_dict(antenna_dict)
-                if (antenna.shape == Antenna.Shape.RECTANGULAR and antenna.apertureExcitationProfile == Antenna.ApertureExcitationProfile.UNIFORM) :
-                    # calculate instrument FOV based on antenna dimensions
-                    D_az_m = antenna.height
-                    D_elv_m = antenna.width
-                    opWavelength =  Constants.speedOfLight/ d.get("operatingFrequency", None)
-                    # calculate antenna beamwidth and hence instrument FOV [eqn41, 1].
-                    along_track_fov_deg = np.rad2deg(opWavelength/ D_az_m)
-                    cross_track_fov_deg = numSubSwaths*np.rad2deg(opWavelength/ D_elv_m) # number of subswaths x antenna cross-track beamwidth
-                    instru_fov_geom_dict = {"shape": "RECTANGULAR", "angleHeight":along_track_fov_deg, "angleWidth": cross_track_fov_deg } 
-                else:
-                    raise Exception("Input antenna shape and/or aperture-excitation profile is not supported in the SAR model.")
+                antenna_fov_sph_geom = antenna.get_spherical_geometry( d.get("operatingFrequency", None))
+                [angle_height, angle_width] = antenna_fov_sph_geom.get_fov_height_and_width()
+                instru_fov_geom_dict = {"shape": "RECTANGULAR", "angleHeight":angle_height, "angleWidth": numSubSwaths*angle_width} 
             else:
                 antenna = None
                 instru_fov_geom_dict = None
@@ -640,8 +637,10 @@ class SyntheticApertureRadarModel(Entity):
         :paramtype instru_look_angle_from_target_inc_angle: bool
 
         :returns: Calculated observation data metrics. Refer to the return value of the function ``calc_data_metrics_impl2(.)``.
-
         :rtype: dict
+
+        .. note:: The pulse-repetition frequency during the calculation of the observation metrics is taken as the highest PRF within allowed range of PRFs. 
+            The highest PRF is chosen since it maximizes NESZ.
 
         """
         inc_angle = np.deg2rad(inc_angle_deg)
