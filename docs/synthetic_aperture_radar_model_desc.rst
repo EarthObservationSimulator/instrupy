@@ -17,7 +17,7 @@ The implementation allows for modeling different *configurations* of the instrum
 
    Supported SAR configurations. 
 
-The FOV of the instrument is calculated from the antenna specifications (beamwidth) and the instrument orientation. A sceneFOV can be specified
+The FOV of the instrument is calculated from the antenna specifications (beamwidth), *scan-technique* and the instrument orientation. A sceneFOV can be specified
 separately. The FOR is built based on the sceneFOV and the maneuver specifications. *ROLL_ONLY* and *DOUBLE_ROLL_ONLY* maneuver specifications are supported since
 the model supports only sidelooking SAR configuration.
 The FOV/ sceneFOV/ FOR is used in the coverage calculations (using the OrbitPy package) to find the locations accessed on the ground.
