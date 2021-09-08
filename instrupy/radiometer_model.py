@@ -7,22 +7,19 @@
 
 The module consists of separate classes for each of the radiometric systems (listed in ``SystemType``), all with identical interface functions.
 Similarly there are separate classes to handle different scan techniques (listed in ``ScanTech``), all with identical interface functions.  
-By having identical interface functions, the functions can be invoked without explicitly invoking the specified radiometric system class.
+By having identical interface functions, the functions can be invoked without consideration of the underlying radiometric system class.
 
 Definition of the predetection stage:
 
 From Pg 273, Fig.7-13 in [1] , the predetection stage includes all subsystems between the antenna and the input terminals of the square-law detector.
 The specifications of the radiometric system can be made by either defining the specification of the entire predetection stage or of their individual components.
 
+.. todo:: Field-of-view for conical-scan radiometers.
 
 """
-import json
 import copy
-from os import stat
-from typing import Coroutine
 import uuid
 import numpy as np
-import warnings
 from collections import namedtuple
 from instrupy.util import Entity, EnumEntity, Orientation,ReferenceFrame, SphericalGeometry, ViewGeometry, Maneuver, Antenna, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
 
@@ -1072,6 +1069,23 @@ class FixedScan(Entity):
         else:
             return NotImplemented
     
+    def compute_instru_field_of_view(self, antenna_fov_sph_geom, instru_orientation):
+        """ Compute the instrument field-of-view from the antenna FOV spherical geometry and the instrument orientation 
+            specifications. The instrument FOV depends on the scan-type and parameters.
+        
+            :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
+            :paramtype antenna_fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+            :param instru_orientation: Orientation of the instrument.
+            :paramtype instru_orientation: :class:`instrupy.util.Orientation`
+
+            :return: Instrument field-of-view.
+            :rtype: :class:`instrupy.util.ViewGeometry`
+        
+        """
+        # for FIXED scan-type, the instrument FOV spherical geometry = antenna FOV spherical geometry
+        return ViewGeometry(orien=instru_orientation, sph_geom=antenna_fov_sph_geom)
+
     def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. THe integration time 
             is set to be around the dwell time.
@@ -1088,7 +1102,7 @@ class FixedScan(Entity):
         """
         return res_AT_m/(sat_speed_kmps*1e3)
 
-    def compute_swath_width(self, alt_km, instru_look_angle_deg, fieldOfView):
+    def compute_swath_width(self, alt_km, instru_look_angle_deg, antenna_fov_sph_geom):
         """ Obtain the swath-width.
             In case of fixed-scan mode, there is only 1 imaged ground-pixel per swath. 
             Swath-width is computed to be equal to the antenna-footprint cross-track size. 
@@ -1100,8 +1114,8 @@ class FixedScan(Entity):
         :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
         :paramtype instru_look_angle_deg: float
 
-        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
-        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
+        :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
+        :paramtype antenna_fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
 
         :return: Swath-width in kilometers.
         :rtype: float
@@ -1112,10 +1126,10 @@ class FixedScan(Entity):
         Rs = Re + h 
         gamma_m = np.deg2rad(instru_look_angle_deg)
 
-        if fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
-            iFOV_CT = np.deg2rad(fieldOfView.sph_geom.angle_width)
-        elif fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
-            iFOV_CT = np.deg2rad(fieldOfView.sph_geom.diameter)
+        if antenna_fov_sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_CT = np.deg2rad(antenna_fov_sph_geom.angle_width)
+        elif antenna_fov_sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_CT = np.deg2rad(antenna_fov_sph_geom.diameter)
         else:
             raise NotImplementedError
 
@@ -1211,6 +1225,34 @@ class CrossTrackScan(Entity):
         else:
             return NotImplemented
     
+    def compute_instru_field_of_view(self, antenna_fov_sph_geom, instru_orientation):
+        """ Compute the instrument field-of-view from the antenna FOV spherical geometry and the instrument orientation 
+            specifications. The instrument FOV depends on the scan-type and parameters.
+        
+            :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
+            :paramtype antenna_fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+            :param instru_orientation: Orientation of the instrument.
+            :paramtype instru_orientation: :class:`instrupy.util.Orientation`
+
+            :return: Instrument field-of-view.
+            :rtype: :class:`instrupy.util.ViewGeometry`
+        
+        """
+        if antenna_fov_sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_AT_deg = antenna_fov_sph_geom.angle_height
+            iFOV_CT_deg = antenna_fov_sph_geom.angle_width
+        elif antenna_fov_sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_AT_deg = antenna_fov_sph_geom.diameter
+            iFOV_CT_deg = antenna_fov_sph_geom.diameter
+        else:
+            raise NotImplementedError
+
+        # for CROSS_TRACK scan-type, the instrument FOV spherical geometry is RECTANGULAR shape
+        instru_sph_geom = SphericalGeometry.from_rectangular_specs(angle_height=iFOV_AT_deg , angle_width= self.scanWidth + iFOV_CT_deg) 
+
+        return ViewGeometry(orien=instru_orientation, sph_geom=instru_sph_geom)
+
     def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. THe integration time 
             is set to be around the dwell time.
@@ -1236,7 +1278,7 @@ class CrossTrackScan(Entity):
         else:
             return 0
 
-    def compute_swath_width(self, alt_km, instru_look_angle_deg, fieldOfView):
+    def compute_swath_width(self, alt_km, instru_look_angle_deg, antenna_fov_sph_geom):
         """ Obtain the swath-width.
             In case of cross-track-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
             The instru_look_angle corresponds to a (pure) roll. 
@@ -1248,8 +1290,8 @@ class CrossTrackScan(Entity):
         :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
         :paramtype instru_look_angle_deg: float
         
-        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation).
-        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
+        :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
+        :paramtype antenna_fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
 
         :return: Swath-width in kilometers.
         :rtype: float
@@ -1260,10 +1302,10 @@ class CrossTrackScan(Entity):
         Rs = Re + h 
         gamma_m = np.deg2rad(instru_look_angle_deg)
 
-        if fieldOfView.sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
-            iFOV_CT_deg = fieldOfView.sph_geom.angle_width
-        elif fieldOfView.sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
-            iFOV_CT_deg = fieldOfView.sph_geom.diameter
+        if antenna_fov_sph_geom.shape == SphericalGeometry.Shape.RECTANGULAR:
+            iFOV_CT_deg = antenna_fov_sph_geom.angle_width
+        elif antenna_fov_sph_geom.shape == SphericalGeometry.Shape.CIRCULAR:
+            iFOV_CT_deg = antenna_fov_sph_geom.diameter
         else:
             raise NotImplementedError
 
@@ -1368,22 +1410,40 @@ class ConicalScan(Entity):
         else:
             return NotImplemented
 
+    def compute_instru_field_of_view(self, antenna_fov_sph_geom, instru_orientation):
+        """ Compute the instrument field-of-view from the antenna FOV spherical geometry and the instrument orientation 
+            specifications. The instrument FOV depends on the scan-type and parameters.
+
+            .. todo:: Need to implement this function. A new spherical geometry type needs to be defined (arc).
+        
+            :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
+            :paramtype antenna_fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+            :param instru_orientation: Orientation of the instrument.
+            :paramtype instru_orientation: :class:`instrupy.util.Orientation`
+
+            :return: Instrument field-of-view.
+            :rtype: :class:`instrupy.util.ViewGeometry`
+        
+        """
+        raise NotImplementedError
+
     def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
         """ Get the available dwell time per ground-pixel. The integration time 
             is set to be around the dwell time.
 
-        :param res_AT_m: Along track pixel resolution in meters.
-        :paramtype res_AT_m: float
+            :param res_AT_m: Along track pixel resolution in meters.
+            :paramtype res_AT_m: float
 
-        :param sat_speed_kmps: Satellite speed in kilometers per second.
-        :paramtype sat_speed_kmps: float
+            :param sat_speed_kmps: Satellite speed in kilometers per second.
+            :paramtype sat_speed_kmps: float
 
-        :param iFOV_CT_deg: IFOV (FOV corresponding to the ground-pixel, in degrees) in the cross-track direction, 
-                            (where the ground-pixel considered is the ground-pixel on the ground-track, else the term cross-track doesn't make sense).
-        :paramtype iFOV_CT_deg: float
+            :param iFOV_CT_deg: IFOV (FOV corresponding to the ground-pixel, in degrees) in the cross-track direction, 
+                                (where the ground-pixel considered is the ground-pixel on the ground-track, else the term cross-track doesn't make sense).
+            :paramtype iFOV_CT_deg: float
 
-        :return: Ground-pixel dwell time.
-        :rtype: float
+            :return: Ground-pixel dwell time.
+            :rtype: float
 
         """
         iFOV_CT_deg = kwargs.get('iFOV_CT_deg')
@@ -1394,23 +1454,23 @@ class ConicalScan(Entity):
         else:
             return 0
 
-    def compute_swath_width(self, alt_km, instru_look_angle_deg, fieldOfView=None):
+    def compute_swath_width(self, alt_km, instru_look_angle_deg, antenna_fov_sph_geom=None):
         """ Obtain the swath-width.
             In case of conical-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
             The "swath" is considered to be the length of the strip-arc. This is different from the length of the scene
             along the cross-track direction.
 
-        :param alt_km: Altitude of observer in kilometers.
-        :paramtype alt_km: float
+            :param alt_km: Altitude of observer in kilometers.
+            :paramtype alt_km: float
 
-        :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
-        :paramtype instru_look_angle_deg: float
+            :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+            :paramtype instru_look_angle_deg: float
+    
+            :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification. Not used in this function.
+            :paramtype antenna_fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
 
-        :param fieldOfView: Field of view of instrument specification (SphericalGeometry and Orientation). Not required for the case of conical-scan.
-        :paramtype fieldOfView: :class:`instrupy.util.ViewGeometry`
-
-        :return: Swath-width in kilometers.
-        :rtype: float
+            :return: Swath-width in kilometers.
+            :rtype: float
 
         """
         if instru_look_angle_deg != 0:
@@ -1545,7 +1605,7 @@ class RadiometerModel(Entity):
             :widths: 10,40
 
             scanTech, ScanTech.Fixed
-            orientation, Orientation.Convention.REF_FRAME_ALIGNED
+            orientation, Orientation.Convention.REF_FRAME_ALIGNED and ReferenceFrame.SC_BODY_FIXED
             sceneFieldOfViewGeometry, (Instrument) fieldOfViewGeometry
             targetBrightnessTemp, 290 Kelvin
             _id, random string
@@ -1780,15 +1840,14 @@ class RadiometerModel(Entity):
                 rot3 = Orientation.get_rotation_matrix(self.orientation.euler_seq3, self.orientation.euler_angle3)
                 # assume pointing axis is aligned to the sensor body z-axis
                 # express the pointing axis in the NADIR_POINTING frame
-                rot =  np.matmul(rot3 , np.matmul(rot2 , rot1)) 
+                rot =  np.matmul(rot3 , np.matmul(rot2 , rot1))
                 pointing_axis_in_nadir_pointing_frame = np.matmul(rot, np.array([0,0,1]))
                 # find the angle between the nadir-vector (aligned to the z-axis of the NADIR_POINTING frame) and the pointing-vector.
                 instru_look_angle = np.arccos(np.dot(pointing_axis_in_nadir_pointing_frame, np.array([0,0,1]))) 
 
         print('alt_km, instru_look_angle', alt_km, instru_look_angle)
-        swath_width_km = self.scan.compute_swath_width(alt_km, np.rad2deg(instru_look_angle), self.fieldOfView)
-        
-        
+        swath_width_km = self.scan.compute_swath_width(alt_km, np.rad2deg(instru_look_angle), self.antenna.get_spherical_geometry(self.operatingFrequency))
+                
         obsv_metrics = {}
         obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2) if res_AT_m is not None else np.nan
         obsv_metrics["ground pixel cross-track resolution [m]"] = round(res_CT_m, 2) if res_CT_m is not None else np.nan

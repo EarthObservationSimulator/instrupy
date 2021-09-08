@@ -540,19 +540,29 @@ class TestFixedScan(unittest.TestCase):
         o = FixedScan.from_json('{}')
         self.assertEqual(o.to_dict(), {'@id': None, '@type': 'FIXED'})
     
+    def test_compute_instru_field_of_view(self):
+        o = FixedScan.from_json('{"@id": "abc"}')
+        instru_orientation = Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10})
+
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "CIRCULAR", "diameter": 30})
+        instru_fov_sph_geom = antenna_fov_sph_geom
+        self.assertEqual(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom))
+
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 10, "angleWidth": 20})
+        instru_fov_sph_geom = antenna_fov_sph_geom
+        self.assertEqual(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom))
+
     def test_compute_dwell_time_per_ground_pixel(self):
         o = FixedScan.from_json('{"@id": 123}') 
         self.assertAlmostEqual(o.compute_dwell_time_per_ground_pixel(res_AT_m=1000, sat_speed_kmps=7.8), 0.1282051282051282)
     
     def test_compute_swath_width(self):
         o = FixedScan.from_json('{"@id": 123}')
-        fieldOfView = ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
-                                              "sphericalGeometry":{"shape": "CIRCULAR", "diameter": 30}})
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "CIRCULAR", "diameter": 30})
         # using approximate swath formula as the truth data                                      
-        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, fieldOfView=fieldOfView), 30*np.pi/180*500, delta=25) 
-        self.assertAlmostEqual(o.compute_swath_width(alt_km=700, instru_look_angle_deg=0, fieldOfView=fieldOfView), 30*np.pi/180*700, delta=25)
-        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=15, fieldOfView=fieldOfView), 30*np.pi/180*(500/np.cos(np.deg2rad(15))), delta=25)
-
+        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, antenna_fov_sph_geom=antenna_fov_sph_geom), 30*np.pi/180*500, delta=25) 
+        self.assertAlmostEqual(o.compute_swath_width(alt_km=700, instru_look_angle_deg=0, antenna_fov_sph_geom=antenna_fov_sph_geom), 30*np.pi/180*700, delta=25)
+        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=15, antenna_fov_sph_geom=antenna_fov_sph_geom), 30*np.pi/180*(500/np.cos(np.deg2rad(15))), delta=25)
 
 class TestCrossTrackScan(unittest.TestCase):   
     def test_from_json(self):
@@ -569,6 +579,18 @@ class TestCrossTrackScan(unittest.TestCase):
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 120, "interScanOverheadTime": 1e-3}') 
         self.assertEqual(o.to_dict(), {'@id': 123, '@type': 'CROSS_TRACK', "scanWidth": 120.0, "interScanOverheadTime": 0.001})
     
+    def test_compute_instru_field_of_view(self):
+        o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 120, "interScanOverheadTime": 1e-3}') 
+        instru_orientation = Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10})
+
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "CIRCULAR", "diameter": 30})
+        instru_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 30, "angleWidth": 150})
+        self.assertEqual(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom))
+
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 15, "angleWidth": 60})
+        instru_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 15, "angleWidth": 180})
+        self.assertEqual(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom))
+
     def test_compute_dwell_time_per_ground_pixel(self):
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 120, "interScanOverheadTime": 1e-3}') 
         self.assertAlmostEqual(o.compute_dwell_time_per_ground_pixel(res_AT_m=5000, sat_speed_kmps=7.8, iFOV_CT_deg=4), 0.021334188034188035)        
@@ -580,14 +602,14 @@ class TestCrossTrackScan(unittest.TestCase):
 
     def test_compute_swath_width(self):
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 20, "interScanOverheadTime": 1e-3}') 
-        fieldOfView = ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
-                                              "sphericalGeometry":{"shape": "CIRCULAR", "diameter": 1}})
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "CIRCULAR", "diameter": 1})
+
         # using approximate swath formula as the truth data                                      
-        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, fieldOfView=fieldOfView), 20*np.pi/180*500, delta=25) 
-        self.assertAlmostEqual(o.compute_swath_width(alt_km=700, instru_look_angle_deg=0, fieldOfView=fieldOfView), 20*np.pi/180*700, delta=25) 
+        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, antenna_fov_sph_geom=antenna_fov_sph_geom), 20*np.pi/180*500, delta=25) 
+        self.assertAlmostEqual(o.compute_swath_width(alt_km=700, instru_look_angle_deg=0, antenna_fov_sph_geom=antenna_fov_sph_geom), 20*np.pi/180*700, delta=25) 
 
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 60, "interScanOverheadTime": 1e-3}') 
-        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, fieldOfView=fieldOfView), 60*np.pi/180*500, delta=75) 
+        self.assertAlmostEqual(o.compute_swath_width(alt_km=500, instru_look_angle_deg=0, antenna_fov_sph_geom=antenna_fov_sph_geom), 60*np.pi/180*500, delta=75) 
 
 class TestConicalScan(unittest.TestCase):   
     def test_from_json(self):
@@ -605,6 +627,14 @@ class TestConicalScan(unittest.TestCase):
         o = ConicalScan.from_json('{"@id": "abc", "offNadirAngle": 30, "clockAngleRange": 60, "interScanOverheadTime": 1e-3}') 
         self.assertEqual(o.to_dict(), {'@id': "abc", '@type': 'CONICAL', "offNadirAngle": 30.0, "clockAngleRange": 60.0, "interScanOverheadTime": 0.001})
     
+    def test_compute_instru_field_of_view(self):
+        o = ConicalScan.from_json('{"@id": "abc", "offNadirAngle": 30, "clockAngleRange": 60, "interScanOverheadTime": 1e-3}')        
+        instru_orientation = Orientation.from_dict({"referenceFrame": "SC_BODY_FIXED", "convention": "SIDE_LOOK","sideLookAngle":10})
+
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "CIRCULAR", "diameter": 30})
+        with self.assertRaises(NotImplementedError):
+            o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation)
+
     def test_compute_dwell_time_per_ground_pixel(self):
 
         # results are the same as that of the CrossTrackScan
