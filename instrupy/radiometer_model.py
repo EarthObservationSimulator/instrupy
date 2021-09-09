@@ -1763,7 +1763,7 @@ class RadiometerModel(Entity):
                     * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point.
                     * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point.
                     * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
-                    * :code:`beam efficiency` (:class:`float`) Distance in kilometers from satellite to ground-point during the observation.
+                    * :code:`beam efficiency` (:class:`float`) Beam efficiency.
                     * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
 
                 .. todo:: The along-track and cross-track pixel resolutions are accurate only pixels imaged at strictly sidelooking geometry (roll-only, no pitch). Needs revision.

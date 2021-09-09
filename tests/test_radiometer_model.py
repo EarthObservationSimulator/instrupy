@@ -857,7 +857,8 @@ class TestRadiometerModel(unittest.TestCase):
                                                   'integrationTime': 1.0, 'bandwidth': 100000000.0, '@id': None, '@type': 'NOISE_ADDING'}, 
                                         'scan': {'@id': None, '@type': 'FIXED'}, 'targetBrightnessTemp': 295.0, '@id': 'ray4'})
     
-    def test_calc_data_metrics(self):
+    def test_calc_data_metrics_1(self):
+        """ ``instru_look_angle_from_target_inc_angle`` flag is set to False."""
 
         epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
         SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
@@ -890,6 +891,18 @@ class TestRadiometerModel(unittest.TestCase):
         self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 140198.56, 'ground pixel cross-track resolution [m]': 166301.75, 
                                         'swath-width [m]': 168745.48, 'sensitivity [K]': 0.23, 'incidence angle [deg]': 32.54, 'beam efficiency': np.nan})
 
+                                
+    def test_calc_data_metrics_2(self):
+        """ ``instru_look_angle_from_target_inc_angle`` flag is set to True."""
+
+        epoch_JDUT1 =  2458543.06088 # 2019 Feb 28 13:27:40 is time at which the ECEF and ECI frames approximately align, hence ECEF to ECI rotation is identity. See <https://www.celnav.de/longterm.htm> online calculator of GMST.
+        SpacecraftOrbitState = {'time [JDUT1]':epoch_JDUT1, 'x [km]': 6878.137, 'y [km]': 0, 'z [km]': 0, 'vx [km/s]': 0, 'vy [km/s]': 7.6126, 'vz [km/s]': 0} # altitude 500 km
+        TargetCoords = {'lat [deg]': 0, 'lon [deg]': 0.5}
+
+        o = RadiometerModel.from_json(self.radio1_json)
+        data_metrics = o.calc_data_metrics(sc_orbit_state=SpacecraftOrbitState, target_coords=TargetCoords, instru_look_angle_from_target_inc_angle=True)
+        self.assertEqual(data_metrics, {'ground pixel along-track resolution [m]': 120708.29, 'ground pixel cross-track resolution [m]': 121567.92, 
+                                        'swath-width [m]': 122255.0, 'sensitivity [K]': 17.94, 'incidence angle [deg]': 6.82, 'beam efficiency': np.nan})
 
         
 

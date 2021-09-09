@@ -144,6 +144,8 @@ in the :code:`@type` name, value pair. If this JSON object is absent, (default) 
       txPol, str, ,Transmit polarization (eg: H)
       rxPol, str, ,Receive polarization (eg: H)
 
+   Example:
+
    .. code-block:: python
       
       "polarization":{
@@ -162,6 +164,8 @@ in the :code:`@type` name, value pair. If this JSON object is absent, (default) 
 
       txPol, str, ,Transmit polarization (eg: 45degLinPol)
       rxPol, str, ,Receive polarization (eg: H and V)
+
+   Example:
 
    .. code-block:: python
       
@@ -196,6 +200,8 @@ i. :code:`@type: "AIRSAR"`
 
    Note that the `minimumPRF` and `maximumPRF` user specifications shall apply to the entire transmit pulse train (i.e. considering both the polarizations).
 
+   Example:
+   
    .. code-block:: python
       
       "polarization":{
