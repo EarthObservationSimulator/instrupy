@@ -320,7 +320,6 @@ Desired swath refers to the swath corresponding to the desired portion of the ec
 
 :math:`\alpha_f =  \alpha_m + 0.5 \alpha_s` [2] equation 5.1.3.8
 
-
 Ground pixel resolution calculations
 --------------------------------------
 
@@ -366,16 +365,17 @@ Following default values are used, :math:`L_{atmos}=2 dB`, :math:`L_r = L_a = a_
 
 .. note:: The :math:`NESZ` calculation is the same for the case of ScanSAR and Stripmap.
 
-Field-of-View calculations
----------------------------
+Field-of-View spherical-geometry calculations
+------------------------------------------------
 
-The antenna is assumed to be planar with dimensions :math:`D_{az}` and :math:`D_{elv}`. The along-track and cross-track 
-antenna beamwidth is calculated as: 
+The antenna is assumed to be planar with dimensions :math:`D_{az}` and :math:`D_{elv}`.
+The along-track and cross-track antenna beamwidth is calculated as: 
 
-:math:`\theta_{az} = \lambda / D_{az}`,     *[1] (eqn 41)*  
+:math:`\theta_{az} = 0.88 \lambda / D_{az}`,     *Note this is slightly different from [1] (eqn 41).*  
 
-:math:`\theta_{elv} = \lambda / D_{elv}`
+:math:`\theta_{elv} = 0.88 \lambda / D_{elv}`
 
+The FOV spherical-geometry shape is always *RECTANGULAR*.
 The along-track and cross-track (full) field-of-view angles are calculated from the respective antenna beamwidths as follows:
 
 :math:`\theta_{AT} = \theta_{az}`
@@ -383,7 +383,6 @@ The along-track and cross-track (full) field-of-view angles are calculated from 
 :math:`\theta_{CT} = n_{ss} \theta_{elv}`
 
 In case of Stripmap :math:`n_{ss} = 1` and in case of ScanSAR :math:`n_{ss} > 1`.
-
 
 Checking validity of pulse repetition frequency (PRF)
 ---------------------------------------------------------
@@ -489,9 +488,9 @@ Glossary
 .. note:: The same variable names as in the references are followed as much as possible. However it becomes difficult when merging the formulation in
           case of multiple references. 
 
-* :math:`R_S`: Distance to the satellite from origin in an EARTH_CENTERED_INERTIAL. 
 * :math:`\theta_i`: Incidence angle at the target ground point.
 * :math:`R_E`: Nominal equatorial radius of Earth.
+* :math:`R_S`: Distance of satellite from center of Earth.
 * :math:`c`: Speed of light.
 * :math:`h`: Altitude of the satellite.
 * :math:`D_{az}`: Dimension of antenna in along-track direction.

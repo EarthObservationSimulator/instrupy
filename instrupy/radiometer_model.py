@@ -24,8 +24,25 @@ from collections import namedtuple
 from instrupy.util import Entity, EnumEntity, Orientation,ReferenceFrame, SphericalGeometry, ViewGeometry, Maneuver, Antenna, GeoUtilityFunctions, MathUtilityFunctions, Constants, FileUtilityFunctions
 
 PredetectionSectionParams = namedtuple("PredetectionSectionParams", ["G", "G_p", "G_m", "T_REC_q", "B"])
-SystemParams = namedtuple("SystemParams", ["G_s_bar", "G_s_delta", "T_A", "T_SYS"])
+""" Function returns a namedtuple class to store predetection-section parameters: 
+    
+    * G: predetection-section gain
+    * G_p: predetection gain +
+    * G_m: predetection gain -
+    * T_REC_q: Predetection stage (*including* the transmission line from antenna to the RF amplifier) input noise temperature. (Receiver noise temperature referred to the antenna terminals.)
+    * B: Predetection bandwidth
 
+"""
+
+SystemParams = namedtuple("SystemParams", ["G_s_bar", "G_s_delta", "T_A", "T_SYS"])
+""" Function returns a namedtuple class to store system parameters: 
+    
+    * G_s_bar: Average system gain.
+    * G_s_delta: System gain variation.
+    * T_A: Antenna (radiometric) temperature referred at the output terminal of the antenna.
+    * T_SYS: System noise temperature.
+
+"""
 class SystemType(EnumEntity):
     """Enumeration of recognized radiometer systems.
     
@@ -311,7 +328,7 @@ class TotalPowerRadiometerSystem(Entity):
                 G_RF = 10**(rfAmpGain/10)
                 G_IF = 10**(ifAmpGain/10) 
                 T_REC = rfAmpInpNoiseTemp + mixerInpNoiseTemp/ G_RF + ifAmpInputNoiseTemp/ (G_RF*G_IF)  # Eqn 7.29 in [1]
-                T_REC_q = (L-1)*tlPhyTemp + L*T_REC # receiver (including the transmission line) input noise-temperature eqn 7.28 in [1]. 'q' stands for quote.
+                T_REC_q = (L-1)*tlPhyTemp + L*T_REC # receiver (including the transmission line) input noise-temperature eqn 7.28 in [1]. 'q' stands for quote.)
             except:
                 raise RuntimeError("Missing specification of one or more component specifications in the radiometer predetection section.")
         
@@ -1148,7 +1165,7 @@ class FixedScan(Entity):
         alpha_n_illum = theta_in_illum - abs(gamma_n_illum)
         alpha_f_illum = theta_if_illum - abs(gamma_f_illum)
 
-        if gamma_n_illum < 0: # NOT completely sidelooking
+        if gamma_n_illum <= 0: # NOT completely sidelooking, footprint falls on the nadir-direction as well.
             alpha_s_illum = alpha_f_illum + alpha_n_illum
         else:
             alpha_s_illum = abs(alpha_f_illum - alpha_n_illum)
@@ -1326,7 +1343,7 @@ class CrossTrackScan(Entity):
         alpha_n_illum = theta_in_illum - abs(gamma_n_illum)
         alpha_f_illum = theta_if_illum - abs(gamma_f_illum)
 
-        if gamma_n_illum < 0: # NOT completely sidelooking
+        if gamma_n_illum <= 0: # NOT completely sidelooking, footprint falls on the nadir-direction as well.
             alpha_s_illum = alpha_f_illum + alpha_n_illum
         else:
             alpha_s_illum = abs(alpha_f_illum - alpha_n_illum)
