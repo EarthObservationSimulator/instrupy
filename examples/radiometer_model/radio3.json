@@ -1,0 +1,14 @@
+{   "@type": "Radiometer", 
+    "@id": "ray3",
+    "orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
+    "bitsPerPixel": 16,
+    "operatingFrequency": 1.25e9,
+    "antenna": {"shape": "CIRCULAR", "diameter": 3.5, "apertureExcitationProfile": "UNIFORM",
+                "radiationEfficiency": 1, "phyTemp": 300},
+    "system": { "tlLoss": 0.5, "tlPhyTemp": 290, "rfAmpGain": 30, "rfAmpInpNoiseTemp": 200,
+                "rfAmpGainVariation": 10, "mixerGain": 23, "mixerInpNoiseTemp": 1200, "mixerGainVariation": 2,
+                "ifAmpGain": 30, "ifAmpInputNoiseTemp": 100, "ifAmpGainVariation": 10, "dickeSwitchOutputNoiseTemperature": 90,
+                "integratorVoltageGain": 1, "integrationTime": 1, "bandwidth": 100e6, "@type": "BALANCED_DICKE"},
+    "scan": {"@type": "CONICAL", "offNadirAngle": 30, "clockAngleRange": 60, "interScanOverheadTime": 1e-3},
+    "targetBrightnessTemp": 295
+}

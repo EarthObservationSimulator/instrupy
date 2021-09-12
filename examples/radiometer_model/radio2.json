@@ -1,0 +1,13 @@
+{   "@type": "Radiometer", 
+    "name": "ray2", 
+    "mass": 50, 
+    "operatingFrequency": 1.25e9,
+    "antenna": {"shape": "RECTANGULAR", "height": 1, "width": 1, "apertureExcitationProfile": "UNIFORM",
+                "radiationEfficiency": 0.75, "phyTemp": 300},
+    "system": { "predetectionGain": 83, "predetectionInpNoiseTemp": 700, 
+                "predetectionGainVariation": 1995262.314968883, "integrationTime": 1, 
+                "bandwidth": 100e6, "referenceTemperature": 300, "integratorVoltageGain": 1,
+                "@type": "UNBALANCED_DICKE"},
+    "scan": {"@type": "CROSS_TRACK", "scanWidth": 120, "interScanOverheadTime": 1e-3},
+    "targetBrightnessTemp": 301
+}
