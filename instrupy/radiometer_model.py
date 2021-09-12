@@ -3,6 +3,10 @@
 
 :synopsis: *Module to handle radiometer.*
 
+        The radiometer model is based on the reference listed below. The following system types are supported: total-power, 
+        unbalanced-Dicke, balanced-Dicke and noise-adding. The following scan types are supported: fixed (no scan), cross-track 
+        and conical.
+
         References: [1] Chapter 6,7 in "Microwave Radar and Radiometric Remote Sensing," David Gardner Long , Fawwaz T. Ulaby 2014 
 
 The module consists of separate classes for each of the radiometric systems (listed in ``SystemType``), all with identical interface functions.
@@ -11,7 +15,7 @@ By having identical interface functions, the functions can be invoked without co
 
 Definition of the predetection stage:
 
-From Pg 273, Fig.7-13 in [1] , the predetection stage includes all subsystems between the antenna and the input terminals of the square-law detector.
+From Pg 273, Fig.7-13 in [1], the predetection stage includes all subsystems between the antenna and the input terminals of the square-law detector.
 The specifications of the radiometric system can be made by either defining the specification of the entire predetection stage or of their individual components.
 
 .. todo:: Field-of-view for conical-scan radiometers.
@@ -35,7 +39,7 @@ PredetectionSectionParams = namedtuple("PredetectionSectionParams", ["G", "G_p",
 """
 
 SystemParams = namedtuple("SystemParams", ["G_s_bar", "G_s_delta", "T_A", "T_SYS"])
-""" Function returns a namedtuple class to store system parameters: 
+""" Function returns a namedtuple class to store the entire-system parameters: 
     
     * G_s_bar: Average system gain.
     * G_s_delta: System gain variation.
@@ -57,7 +61,6 @@ class SystemType(EnumEntity):
 
     :cvar NOISE_ADDING: Noise adding radiometer system with reduction of effect of receiver gain-variation on radiometric-sensitivity. Does "not" use Dicke switch. 
     :vartype NOISE_ADDING: str
-
     
     """
     TOTAL_POWER = "TOTAL_POWER",
@@ -66,7 +69,7 @@ class SystemType(EnumEntity):
     NOISE_ADDING = "NOISE_ADDING"
 
 class TotalPowerRadiometerSystem(Entity):
-    """ Container to handle total power radiometer system. Refer Section 7.4, 7.5 in [1].
+    """ Class to handle total power radiometer system. Refer Section 7.4, 7.5 in [1].
 
     :ivar tlLoss: Transmission line loss in decibels.
     :vartype tlLoss: float
@@ -150,12 +153,12 @@ class TotalPowerRadiometerSystem(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an TotalPowerRadiometerSystem object from a normalized JSON dictionary.
+        """Parses an ``TotalPowerRadiometerSystem`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the total-power radiometer system specifications.
         :paramtype d: dict
 
-        :return: TotalPowerRadiometerSystem object.
+        :return: ``TotalPowerRadiometerSystem`` object.
         :rtype: :class:`instrupy.radiometer_model.TotalPowerRadiometerSystem`
 
         """             
@@ -181,9 +184,9 @@ class TotalPowerRadiometerSystem(Entity):
                 )
     
     def to_dict(self):
-        """ Translate the TotalPowerRadiometerSystem object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``TotalPowerRadiometerSystem`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: TotalPowerRadiometerSystem object as python dictionary
+        :return: ``TotalPowerRadiometerSystem`` object as python dictionary
         :rtype: dict
 
         """
@@ -228,7 +231,7 @@ class TotalPowerRadiometerSystem(Entity):
     def compute_integration_time(td, integration_time_spec=None):
         """ Compute integration time.
 
-        :param td: Dwell time in seconds per ground-pixel.
+        :param td: Available dwell time (i.e. total time available for integration) in seconds per ground-pixel.
         :paramtype td: float
         
         :param integration_time_spec: Integration time specification in seconds.
@@ -374,7 +377,7 @@ class TotalPowerRadiometerSystem(Entity):
     def compute_radiometric_resolution(self, td, antenna, T_A_q):
         """ Compute the radiometric resolution of a total power radiometer.
 
-        :param td: dwell time in seconds per ground-pixel
+        :param td: available dwell time in seconds per ground-pixel
         :paramtype td: float
 
         :param antenna: Antenna specifications.
@@ -501,12 +504,12 @@ class UnbalancedDikeRadiometerSystem(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an UnbalancedDikeRadiometerSystem object from a normalized JSON dictionary.
+        """Parses an ``UnbalancedDikeRadiometerSystem`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the unbalanced Dicke radiometer system specifications.
         :paramtype d: dict
 
-        :return: UnbalancedDikeRadiometerSystem object.
+        :return: ``UnbalancedDikeRadiometerSystem`` object.
         :rtype: :class:`instrupy.radiometer_model.UnbalancedDikeRadiometerSystem`
 
         """             
@@ -534,9 +537,9 @@ class UnbalancedDikeRadiometerSystem(Entity):
                 )
     
     def to_dict(self):
-        """ Translate the UnbalancedDikeRadiometerSystem object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``UnbalancedDikeRadiometerSystem`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: UnbalancedDikeRadiometerSystem object as python dictionary
+        :return: ``UnbalancedDikeRadiometerSystem`` object as python dictionary
         :rtype: dict
 
         """
@@ -585,7 +588,7 @@ class UnbalancedDikeRadiometerSystem(Entity):
         
         Note that the predetection stage in Dicke radiometers include the noise from the Dicke switch referenced to the switch output port.
 
-        :param td: dwell time in seconds per ground-pixel
+        :param td: available dwell time in seconds per ground-pixel
         :paramtype td: float
 
         :param antenna: Antenna specifications.
@@ -711,12 +714,12 @@ class BalancedDikeRadiometerSystem(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an BalancedDikeRadiometerSystem object from a normalized JSON dictionary.
+        """Parses an ``BalancedDikeRadiometerSystem`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the balanced Dicke radiometer system specifications.
         :paramtype d: dict
 
-        :return: BalancedDikeRadiometerSystem object.
+        :return: ``BalancedDikeRadiometerSystem`` object.
         :rtype: :class:`instrupy.radiometer_model.BalancedDikeRadiometerSystem`
 
         """             
@@ -743,9 +746,9 @@ class BalancedDikeRadiometerSystem(Entity):
                 )
     
     def to_dict(self):
-        """ Translate the BalancedDikeRadiometerSystem object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``BalancedDikeRadiometerSystem`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: BalancedDikeRadiometerSystem object as python dictionary
+        :return: ``BalancedDikeRadiometerSystem`` object as python dictionary
         :rtype: dict
 
         """
@@ -791,7 +794,7 @@ class BalancedDikeRadiometerSystem(Entity):
     def compute_radiometric_resolution(self, td, antenna, T_A_q):
         """ Compute the radiometric resolution of an unbalanced Dicke radiometer.
 
-        :param td: dwell time in seconds per ground-pixel
+        :param td: available dwell time in seconds per ground-pixel
         :paramtype td: float
 
         :param antenna: Antenna specifications.
@@ -914,12 +917,12 @@ class NoiseAddingRadiometerSystem(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an NoiseAddingRadiometerSystem object from a normalized JSON dictionary.
+        """Parses an ``NoiseAddingRadiometerSystem`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the noise-adding radiometer system specifications.
         :paramtype d: dict
 
-        :return: NoiseAddingRadiometerSystem object.
+        :return: ``NoiseAddingRadiometerSystem`` object.
         :rtype: :class:`instrupy.util.NoiseAddingRadiometerSystem`
 
         """             
@@ -946,9 +949,9 @@ class NoiseAddingRadiometerSystem(Entity):
                 )
     
     def to_dict(self):
-        """ Translate the NoiseAddingRadiometerSystem object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``NoiseAddingRadiometerSystem`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: NoiseAddingRadiometerSystem object as python dictionary
+        :return: ``NoiseAddingRadiometerSystem`` object as python dictionary
         :rtype: dict
 
         """
@@ -994,7 +997,7 @@ class NoiseAddingRadiometerSystem(Entity):
     def compute_radiometric_resolution(self, td, antenna, T_A_q):
         """ Compute the radiometric resolution of a total power radiometer.
 
-        :param td: dwell time in seconds per ground-pixel
+        :param td: available dwell time in seconds per ground-pixel
         :paramtype td: float
 
         :param antenna: Antenna specifications.
@@ -1055,21 +1058,21 @@ class FixedScan(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an FixedScan object from a normalized JSON dictionary.
+        """Parses an ``FixedScan`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the fixed-scan specifications.
         :paramtype d: dict
 
-        :return: FixedScan object.
+        :return: ``FixedScan`` object.
         :rtype: :class:`instrupy.radiometer_model.FixedScan`
 
         """             
         return FixedScan(_id = d.get("@id", None))
     
     def to_dict(self):
-        """ Translate the FixedScan object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``FixedScan`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: FixedScan object as python dictionary
+        :return: ``FixedScan`` object as python dictionary
         :rtype: dict
 
         """
@@ -1104,7 +1107,7 @@ class FixedScan(Entity):
         return ViewGeometry(orien=instru_orientation, sph_geom=antenna_fov_sph_geom)
 
     def compute_dwell_time_per_ground_pixel(self, res_AT_m, sat_speed_kmps, **kwargs):
-        """ Get the available dwell time per ground-pixel. THe integration time 
+        """ Get the available dwell time per ground-pixel. The integration time 
             is set to be around the dwell time.
 
         :param res_AT_m: Along track pixel resolution in meters.
@@ -1128,7 +1131,7 @@ class FixedScan(Entity):
         :param alt_km: Altitude of observer in kilometers.
         :paramtype alt_km: float
 
-        :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :param instru_look_angle_deg: Instrument look angle in degrees. This corresponds to the off-nadir angle at which the ground-pixel is imaged.
         :paramtype instru_look_angle_deg: float
 
         :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
@@ -1195,7 +1198,7 @@ class CrossTrackScan(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an CrossTrackScan object from a normalized JSON dictionary.
+        """Parses an ``CrossTrackScan`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the cross-track scan specifications.
 
@@ -1210,7 +1213,7 @@ class CrossTrackScan(Entity):
 
         :paramtype d: dict
 
-        :return: CrossTrackScan object.
+        :return: ``CrossTrackScan`` object.
         :rtype: :class:`instrupy.radiometer_model.CrossTrackScan`
 
         """             
@@ -1219,9 +1222,9 @@ class CrossTrackScan(Entity):
                                _id = d.get("@id", None),)
     
     def to_dict(self):
-        """ Translate the CrossTrackScan object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``CrossTrackScan`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: CrossTrackScan object as python dictionary
+        :return: ``CrossTrackScan`` object as python dictionary.
         :rtype: dict
 
         """
@@ -1298,13 +1301,13 @@ class CrossTrackScan(Entity):
     def compute_swath_width(self, alt_km, instru_look_angle_deg, antenna_fov_sph_geom):
         """ Obtain the swath-width.
             In case of cross-track-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
-            The instru_look_angle corresponds to a (pure) roll. 
+            The instru_look_angle is assumed to correspond to a (pure) roll. 
             See Fig.5.1.3.1 in Spaceborne SAR Study: LDRD 92 Final Report SANDIA Report March 1993
 
         :param alt_km: Altitude of observer in kilometers.
         :paramtype alt_km: float
 
-        :param instru_look_angle_deg: Instrument look angle in degrees. This correspond to the off-nadir angle at which the ground-pixel is imaged.
+        :param instru_look_angle_deg: Instrument look angle in degrees. 
         :paramtype instru_look_angle_deg: float
         
         :param antenna_fov_sph_geom: Antenna FOV spherical geometry specification.
@@ -1388,12 +1391,12 @@ class ConicalScan(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an ConicalScan object from a normalized JSON dictionary.
+        """Parses an ``ConicalScan`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the cross-track scan specifications.
         :paramtype d: dict
 
-        :return: ConicalScan object.
+        :return: ``ConicalScan`` object.
         :rtype: :class:`instrupy.radiometer_model.ConicalScan`
 
         """             
@@ -1403,9 +1406,9 @@ class ConicalScan(Entity):
                             _id = d.get("@id", None))
     
     def to_dict(self):
-        """ Translate the ConicalScan object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``ConicalScan`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: ConicalScan object as python dictionary
+        :return: ``ConicalScan`` object as python dictionary
         :rtype: dict
 
         """
@@ -1456,7 +1459,6 @@ class ConicalScan(Entity):
             :paramtype sat_speed_kmps: float
 
             :param iFOV_CT_deg: IFOV (FOV corresponding to the ground-pixel, in degrees) in the cross-track direction, 
-                                (where the ground-pixel considered is the ground-pixel on the ground-track, else the term cross-track doesn't make sense).
             :paramtype iFOV_CT_deg: float
 
             :return: Ground-pixel dwell time.
@@ -1473,7 +1475,7 @@ class ConicalScan(Entity):
 
     def compute_swath_width(self, alt_km, instru_look_angle_deg, antenna_fov_sph_geom=None):
         """ Obtain the swath-width.
-            In case of conical-scan mode, there are multiple imaged ground-pixels per swath along the cross-track.
+            In case of conical-scan mode, there are multiple imaged ground-pixels per swath along the scanned-strip.
             The "swath" is considered to be the length of the strip-arc. This is different from the length of the scene
             along the cross-track direction.
 
@@ -1612,7 +1614,7 @@ class RadiometerModel(Entity):
         
     @staticmethod
     def from_dict(d):
-        """ Parses an radiometer instrument from a normalized JSON dictionary.
+        """ Parses an ``RadiometerModel`` object from a normalized JSON dictionary.
 
         The following default values are assigned to the object instance parameters in case of 
         :class:`None` values or missing key/value pairs in the input dictionary.
@@ -1630,7 +1632,7 @@ class RadiometerModel(Entity):
         :param d: Normalized JSON dictionary with the corresponding model specifications. 
         :paramtype d: dict
 
-        :returns: RadiometerModel object initialized with the input specifications.
+        :returns: ``RadiometerModel object`` initialized with the input specifications.
         :rtype: :class:`instrupy.RadiometerModel`
 
         """
@@ -1705,9 +1707,9 @@ class RadiometerModel(Entity):
                         )
 
     def to_dict(self):
-        """ Translate the RadiometerModel object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``RadiometerModel`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
 
-        :returns: RadiometerModel specifications as python dictionary.
+        :returns: ``RadiometerModel`` specifications as python dictionary.
         :rtype: dict
 
         """
@@ -1768,7 +1770,6 @@ class RadiometerModel(Entity):
                                                         OR
                                                         (2) the incidence angle at the target. 
                                                         Default is False.
-                                                        This parameter is required for the swath-width calculations only.
         
         :paramtype instru_look_angle_from_target_inc_angle: bool
 
@@ -1776,16 +1777,17 @@ class RadiometerModel(Entity):
                     
                     Dictionary keys are: 
                 
-                    * :code:`radiometric res [K]` (:class:`float`) Radiometric resolution/ sensitivity.
+                    * :code:`radiometric res [K]` (:class:`float`) Radiometric resolution/ sensitivity in Kelvin.
                     * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of an ground-pixel centered about observation point.
                     * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of an ground-pixel centered about observation point.
                     * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
                     * :code:`beam efficiency` (:class:`float`) Beam efficiency.
                     * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
 
-                .. todo:: The along-track and cross-track pixel resolutions are accurate only pixels imaged at strictly sidelooking geometry (roll-only, no pitch). Needs revision.
+                .. todo:: The along-track and cross-track pixel resolutions are accurate only for pixels imaged at strictly sidelooking geometry (roll-only, no pitch). Needs revision.
 
-        :rtype: dict                      
+        :rtype: dict 
+
         """
         # Observation time in Julian Day UT1
         tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]
@@ -1849,8 +1851,9 @@ class RadiometerModel(Entity):
             instru_look_angle = look_angle
         else:           
             if (self.orientation.ref_frame==ReferenceFrame.NADIR_POINTING or self.orientation.ref_frame==ReferenceFrame.SC_BODY_FIXED):
+                # TODO: Move this snippet into a separate function,
                 # instrument look angle is calculated assuming the instrument orientation is wrt the NADIR_POINTING frame
-                # through either (1) direct specification or (2) the instrument is aligned to the spacecraft body which in turn is aligned to the 
+                # through either (1) direct specification or (2) the instrument is aligned to the spacecraft body which in turn is assumed aligned to the 
                 # NADIR_POINTING frame.
                 rot1 = Orientation.get_rotation_matrix(self.orientation.euler_seq1, self.orientation.euler_angle1)
                 rot2 = Orientation.get_rotation_matrix(self.orientation.euler_seq2, self.orientation.euler_angle2)

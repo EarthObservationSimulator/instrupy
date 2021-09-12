@@ -8,7 +8,7 @@ and conical.
 
 The FOV of the instrument is calculated from the antenna specifications (beamwidth), *scan-type* and the instrument orientation. 
 A sceneFOV can be specified separately. The FOR is built based on the sceneFOV and the maneuver specifications. 
-The FOV/ sceneFOV/ FOR is used in the coverage calculations (using the OrbitPy package) to find the locations accessed on the ground.
+The sceneFOV/ FOR is used in the coverage calculations (using the OrbitPy package) to find the locations accessed on the ground.
 
 .. todo:: Field-of-view for conical-scan radiometers.
 
@@ -27,7 +27,7 @@ pairs are described below:
     :header: Parameter, Data type, Units, Description
     :widths: 10,10,5,40
 
-    @type, string, ,Must be *Basic Sensor*
+    @type, string, ,Must be *Radiometer*
     @id, string, , Unique identifier for the instrument. If ``None`` a random string is assigned.
     name, string, ,Full name of the instrument 
     mass, float, kilograms, Total mass of this entity.
@@ -35,22 +35,22 @@ pairs are described below:
     power, float, Watts, Nominal operating power.
     orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Default is alignment to the SC_BODY_FIXED frame.
     fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument. 
-    sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
+    sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry.
     maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
     pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
     dataRate, float, Mega-bits-per-s, Rate of data recorded during nominal operations.
     bitsPerPixel, integer, ,Bits encoded per pixel of image.
-    antenna, :ref:`antenna_json_object`, , Antenna specifications. Only rectangular shape and uniform aperture excitation profile is accepted.
-    operatingFrequency, float, Hertz, Operating radar center frequency.
+    antenna, :ref:`antenna_json_object`, , Antenna specifications.
+    operatingFrequency, float, Hertz, Operating center frequency.
     system, :ref:`radiometer_sys_json_object`, , Radiometer system.
-    scan, :ref:`radiometer_scan_json_object`, , Scan specifications. Default is a *Fixed* specification (no-scan).
+    scan, :ref:`radiometer_scan_json_object`, , Scan specifications. Default is a *FIXED* specification (no-scan).
     targetBrightnessTemperature, float, Kelvin, Target brightness temperature. Default value is 290K.
 
 .. _radiometer_sys_json_object:
 
 :code:`system` JSON object
 ----------------------------------
-The radiometer system refers to the electronics configuration from the antenna to the output of the integrator.
+The radiometer-system refers to the electronics configuration from the antenna to the output of the integrator.
 Following system-types can be modelled: *TOTAL_POWER*, *UNBALANCED_DICKE*, *BALANCED_DICKE* or *NOISE_ADDING*. 
 
 The ``antenna``, ``operatingFrequency`` and the ``targetBrightnessTemperature`` specifications of the system are obtained as external inputs 
@@ -61,7 +61,7 @@ The key/value pairs of each of the system types is described below:
 
 1. :code:`"@type":"TOTAL_POWER"` 
 
-    The expected key/value pairs for a total-power radiometer system system, **excluding** that of the predetection-stage are given below.
+    The expected key/value pairs for a total-power radiometer system system **excluding** that of the predetection-stage are given below.
 
     .. csv-table:: Common parameters
         :header: Parameter, Data type, Units, Description
@@ -138,134 +138,69 @@ The key/value pairs of each of the system types is described below:
 2. :code:`"@type":"UNBALANCED_DICKE"` 
 
     The expected key/value pairs for a unbalanced-Dicke radiometer system system is similar to the *TOTAL_POWER* system. 
-    The ``referenceTemperature`` is an additional key/value pairs required as compared to the total-power radiometer system.
+
+    The expected key/value pairs for a unbalanced-Dicke radiometer system system **excluding** that of the predetection-stage consists of all the kep/value pairs
+    of the *TOTAL_POWER* system **and** the ``referenceTemperature`` key/value pair. The ``@type`` key must have "UNBALANCED_DICKE" as the value.
 
     .. csv-table:: Common parameters
         :header: Parameter, Data type, Units, Description
         :widths: 10,10,5,40
 
         @type, string, ,Must be *UNBALANCED_DICKE*
-        integrationTime, float, seconds, Integration time.
-        bandwidth, float, Hertz, Pre-detection bandwidth.
-        integratorVoltageGain, float, , Integrator voltage gain.
         referenceTemperature, float, Kelvin, Reference source noise temperature.
     
-    Below are the expected key/value pairs of the predetection stage (black-box specification). 
-
-    .. csv-table:: Predetection stage parameters (black-box specification)
-        :header: Parameter, Data type, Units, Description
-        :widths: 10,10,5,40
-
-        predetectionGain, float, decibels, Pre-detection stage gain.
-        predetectionInpNoiseTemp, float, Kelvin, Pre-detection *input noise* temperature.
-        predetectionGainVariation, float, , Pre-detection stage gain variation. Linear units.
+    The expected key/value pairs of the predetection stage (black-box specification) is the same as that of the *TOTAL_POWER* system.
     
-    Below are the expected key/value pairs of the predetection stage (component-level specification).
-    The ``dickeSwitchOutputNoiseTemperature`` is an additional key/value pairs required as compared to the total-power radiometer system.
+    The expected key/value pairs of the predetection stage (component-level specification) consists of all the key/value pairs
+    of the *TOTAL_POWER* system **and** the ``dickeSwitchOutputNoiseTemperature`` key/value pair.
 
     .. csv-table:: Predetection stage parameters (component-level specification)
         :header: Parameter, Data type, Units, Description
         :widths: 10,10,5,40
 
-        tlLoss, float, decibels, Transmission line loss.
-        tlPhyTemp, float, Kelvin, Transmission line *physical* temperature.
-        rfAmpGain, float, decibels, RF amplifier gain.
-        rfAmpInpNoiseTemp, float, Kelvin, RF amplifier *input noise* temperature.
-        rfAmpGainVariation, float, , RF amplifier gain variation. Linear units.
-        mixerGain, float, decibels, Mixer gain.
-        mixerInpNoiseAmp, float, Kelvin, Mixer *input noise* temperature.
-        mixerGainVariation, float, , Mixer gain variation. Linear units.
-        ifAmpGain, float, decibels, Intermediate frequency amplifier gain.
-        ifAmpInpNoiseTemp, float, Kelvin, Intermediate frequency amplifier *input noise* temperature.
-        ifAmpGainVariation, float, , IF amplifier gain variation. Linear units.
         dickeSwitchOutputNoiseTemperature, float, Kelvin, Dicke switch noise temperature *referenced to the output port.*
 
 3. :code:`"@type":"BALANCED_DICKE"` 
 
     The expected key/value pairs for a balanced-Dicke radiometer system system is similar to the *TOTAL_POWER* system. 
 
+    The expected key/value pairs for a unbalanced-Dicke radiometer system system **excluding** that of the predetection-stage consists of all the kep/value pairs
+    of the *TOTAL_POWER* system. The ``@type`` key must have "BALANCED_DICKE" as the value.
+
     .. csv-table:: Common parameters
         :header: Parameter, Data type, Units, Description
         :widths: 10,10,5,40
 
         @type, string, ,Must be *BALANCED_DICKE*
-        integrationTime, float, seconds, Integration time.
-        bandwidth, float, Hertz, Pre-detection bandwidth.
-        integratorVoltageGain, float, , Integrator voltage gain.
     
-    Below are the expected key/value pairs of the predetection stage (black-box specification). 
-
-    .. csv-table:: Predetection stage parameters (black-box specification)
-        :header: Parameter, Data type, Units, Description
-        :widths: 10,10,5,40
-
-        predetectionGain, float, decibels, Pre-detection stage gain.
-        predetectionInpNoiseTemp, float, Kelvin, Pre-detection *input noise* temperature.
-        predetectionGainVariation, float, , Pre-detection stage gain variation. Linear units.
+    The expected key/value pairs of the predetection stage (black-box specification) is the same as that of the *TOTAL_POWER* system. 
     
-    Below are the expected key/value pairs of the predetection stage (component-level specification).
-    The ``dickeSwitchOutputNoiseTemperature`` is an additional key/value pairs required as compared to the total-power radiometer system.
+    The expected key/value pairs of the predetection stage (component-level specification) consists of all the key/value pairs
+    of the *TOTAL_POWER* system **and** the ``dickeSwitchOutputNoiseTemperature`` key/value pair.
 
     .. csv-table:: Predetection stage parameters (component-level specification)
         :header: Parameter, Data type, Units, Description
         :widths: 10,10,5,40
 
-        tlLoss, float, decibels, Transmission line loss.
-        tlPhyTemp, float, Kelvin, Transmission line *physical* temperature.
-        rfAmpGain, float, decibels, RF amplifier gain.
-        rfAmpInpNoiseTemp, float, Kelvin, RF amplifier *input noise* temperature.
-        rfAmpGainVariation, float, , RF amplifier gain variation. Linear units.
-        mixerGain, float, decibels, Mixer gain.
-        mixerInpNoiseAmp, float, Kelvin, Mixer *input noise* temperature.
-        mixerGainVariation, float, , Mixer gain variation. Linear units.
-        ifAmpGain, float, decibels, Intermediate frequency amplifier gain.
-        ifAmpInpNoiseTemp, float, Kelvin, Intermediate frequency amplifier *input noise* temperature.
-        ifAmpGainVariation, float, , IF amplifier gain variation. Linear units.
         dickeSwitchOutputNoiseTemperature, float, Kelvin, Dicke switch noise temperature *referenced to the output port.*
 
 4. :code:`"@type":"NOISE_ADDING"` 
 
     The expected key/value pairs for a noise-adding radiometer system system is similar to the *TOTAL_POWER* system. 
    
-    The ``excessNoiseTemperature`` is an additional key/value pair required as compared to the total-power radiometer system.
+    The expected key/value pairs for a unbalanced-Dicke radiometer system system **excluding** that of the predetection-stage consists of all the kep/value pairs
+    of the *TOTAL_POWER* system **and** the ``excessNoiseTemperature`` key/value pair. The ``@type`` key must have "NOISE_ADDING" as the value.
     
     .. csv-table:: Common parameters
         :header: Parameter, Data type, Units, Description
         :widths: 10,10,5,40
 
         @type, string, ,Must be *NOISE_ADDING*
-        integrationTime, float, seconds, Integration time.
-        bandwidth, float, Hertz, Pre-detection bandwidth.
-        integratorVoltageGain, float, , Integrator voltage gain.
         excessNoiseTemperature, float, Kelvin, Excess noise temperature (added noise to the receiver input during the diode ON half-cycle) in Kelvin *referenced to the output port.*
     
-    Below are the expected key/value pairs of the predetection stage (black-box specification). 
-
-    .. csv-table:: Predetection stage parameters (black-box specification)
-        :header: Parameter, Data type, Units, Description
-        :widths: 10,10,5,40
-
-        predetectionGain, float, decibels, Pre-detection stage gain.
-        predetectionInpNoiseTemp, float, Kelvin, Pre-detection *input noise* temperature.
-        predetectionGainVariation, float, , Pre-detection stage gain variation. Linear units.
+    The expected key/value pairs of the predetection stage (black-box specification) is the same as that of the *TOTAL_POWER* system. 
     
-    Below are the expected key/value pairs of the predetection stage (component-level specification).
-
-    .. csv-table:: Predetection stage parameters (component-level specification)
-        :header: Parameter, Data type, Units, Description
-        :widths: 10,10,5,40
-
-        tlLoss, float, decibels, Transmission line loss.
-        tlPhyTemp, float, Kelvin, Transmission line *physical* temperature.
-        rfAmpGain, float, decibels, RF amplifier gain.
-        rfAmpInpNoiseTemp, float, Kelvin, RF amplifier *input noise* temperature.
-        rfAmpGainVariation, float, , RF amplifier gain variation. Linear units.
-        mixerGain, float, decibels, Mixer gain.
-        mixerInpNoiseAmp, float, Kelvin, Mixer *input noise* temperature.
-        mixerGainVariation, float, , Mixer gain variation. Linear units.
-        ifAmpGain, float, decibels, Intermediate frequency amplifier gain.
-        ifAmpInpNoiseTemp, float, Kelvin, Intermediate frequency amplifier *input noise* temperature.
-        ifAmpGainVariation, float, , IF amplifier gain variation. Linear units.
+    The expected key/value pairs of the predetection stage (component-level specification) is the same as that of the *TOTAL_POWER* system. 
 
 .. _radiometer_scan_json_object:
 
@@ -276,7 +211,7 @@ dwell-time (and hence the maximum integration-time).
 
 1. :code:`"@type":"FIXED"`
    
-   This scan-technique specifies that there is no scan. The antenna (or the feeder) is held fixed with respect to the spacecraft. No parameters are required.
+   This scan-technique specifies that there is no scan. The antenna (and the feeder) is held fixed with respect to the spacecraft. No parameters are required.
 
    Example:
 
@@ -311,11 +246,11 @@ dwell-time (and hence the maximum integration-time).
 
 3. :code:`"@type":"CONICAL"`
 
-    In this scan-technique the antenna footprint is scanned along the cone-perimeter. The ``offNadirAngle``specifies the (half) cone angle while 
+    In this scan-technique the antenna footprint is scanned along the cone-perimeter. The ``offNadirAngle`` specifies the (half) cone angle while 
     the ``clockAngleRange`` parameter specifies the azimuth extent of the scan (symmetrically about the along-track direction). 
     The ``interScanOverheadTime`` specifies the time taken to go from scan of one strip to the next. 
 
-    For illustration of off-nadir angle and clock angles see Fig.7 in T. Kawanishi et al., "The Advanced Microwave Scanning Radiometer for the Earth Observing System (AMSR-E), NASDA's contribution to the EOS for global energy and water cycle studies," in IEEE Transactions on Geoscience and Remote Sensing, vol. 41, no. 2, pp. 184-194, Feb. 2003, doi: 10.1109/TGRS.2002.808331.
+    For illustration of off-nadir angle and clock angles see Fig.7 in T. Kawanishi et al., "The Advanced Microwave Scanning Radiometer for the Earth Observing System (AMSR-E), NASDA's contribution to the EOS for global energy and water cycle studies," in IEEE Transactions on Geoscience and Remote Sensing, vol. 41, no. 2, pp. 184-194, Feb. 2003.
 
     .. csv-table:: 
         :header: Parameter, Data type, Units, Description
@@ -358,7 +293,7 @@ on the surface of Earth can be calculated:
 
 .. note:: Coverage calculations for radiometers with conical-scan is currently not supported unless a sceneFOV has been explicitly specified.
 
-.. todo:: The along-track and cross-track pixel resolutions are accurate only pixels imaged at strictly sidelooking geometry (roll-only, no pitch). Needs revision.
+.. todo:: The along-track and cross-track pixel resolutions are accurate only for pixels imaged at strictly sidelooking geometry (roll-only, no pitch). Needs revision.
 
 Model description
 ===================
@@ -405,7 +340,7 @@ else the integration time is set to the user-specified integration-time.
 
 Predetection section parameters
 .................................
-the predetection stage includes all subsystems between the antenna and the input terminals of the square-law detector.
+The predetection stage includes all subsystems between the antenna and the input terminals of the square-law detector (Pg 273, Fig.7-13 in [1]).
 The specifications of the radiometric system can be made by either defining the specification of the entire predetection stage (as a black-box)
 or of their individual components. 
 
@@ -423,9 +358,9 @@ or of their individual components.
 
 :math:`G_{PD} = G_{TL} G_{RF} G_{MIX} G_{IF}`
     
-:math:`G_{PD}^- = G_{TL} * (G_{RF} - 0.5*\Delta G_{RF}) * (G_{MIX} - 0.5 \Delta G_{MIX}) (G_{IF} - 0.5 \Delta G_{IF})` 
+:math:`G_{PD}^- = G_{TL} * (G_{RF} - 0.5 \Delta G_{RF}) (G_{MIX} - 0.5 \Delta G_{MIX}) (G_{IF} - 0.5 \Delta G_{IF})` 
 
-:math:`G_{PD}^+ = G_{TL} * (G_{RF} + 0.5*\Delta G_{RF}) * (G_{MIX} + 0.5 \Delta G_{MIX})  (G_{IF} + 0.5 \Delta G_{IF})`
+:math:`G_{PD}^+ = G_{TL} * (G_{RF} + 0.5 \Delta G_{RF}) (G_{MIX} + 0.5 \Delta G_{MIX})  (G_{IF} + 0.5 \Delta G_{IF})`
 
 (See Section 7-3.1 in [1] for example calculation of noise temperature from cascaded stages.)
 
@@ -492,7 +427,7 @@ The FOV spherical-geometry shape is determined by the antenna shape (*CIRCULAR* 
 
 :math:`\theta_{CT} = \mu_{ct}`
 
-Note that for circular antenna shape `\mu_{at} = \mu_{ct}`.
+Note that for circular antenna shape :math`\mu_{at} = \mu_{ct}`.
 
 *CROSS_TRACK* scan:
 
@@ -507,10 +442,10 @@ The FOV spherical-geometry shape is always *RECTANGULAR*.
 TBD. The instrument orientation has to be nadir-pointing.
 
 
-
 Swath-width
 -------------
 
+THe swath-width is calculated from the instrument look-angle and not the look-angle to the target ground-point.
 The swath-width depends on the scan technique. 
 
 *FIXED* and *CROSS_TRACK* scan:
@@ -565,11 +500,14 @@ Beam-efficiency
 Please refer to the antenna description.
 
 
+Examples
+=========
+Please see the ``examples`` folder.
 
 .. _radiometer_glossary:
 
 Glossary
----------
+=========
 * :math:`\mathbf{R}`: Range vector from satellite to target ground point.
 * :math:`\theta_i`: Incidence angle at the target ground point.
 * :math:`R_E`: Nominal equatorial radius of Earth.
@@ -583,8 +521,6 @@ Glossary
 * :math:`\theta_{AT}`: Along-track *instrument* FOV.
 * :math:`\theta_{CT}`: Cross-track *instrument* FOV.
 * :math:`v_g`: Ground speed of satellite footprint.
-* :math:`T_i`: Integration time of the ground-pixel.
-* :math:`T^{exp}_{max}`: Maximum exposure time of the detector.
 * :math:`t_d`: Dwell time available over the ground-pixel.
 * :math:`\tau`: Integration time.
 * :math:`\tau_{spec}`: Integration time specification from user.
@@ -627,8 +563,6 @@ Glossary
 * :math:`\Delta T`: Radiometric resolution of the radiometer.
 * :math:`T_{REF}``: Reference noise temperature for Dicke radiometer systems.
 * :math:`T_{N}''`: Excess noise temperature for *NOISE_ADDING* radiometer system.
-* :math:`R_E`: Nominal equatorial radius of Earth.
-* :math:`h`: Altitude of the satellite.
 * :math:`R_S`: Distance of satellite from center of Earth.
 * :math:`\gamma_I`: Instrument look angle. 
 * :math:`R_n`: Slant-range to near edge of swath.
@@ -647,7 +581,3 @@ Glossary
 * :math:`\alpha^{cs}`: Earth centric angle (angle b/w the nadir position to the scanned strip about center of Earth) in *CONICAL* scan swath calculations.
 * :math:`r^{cs}`: Small circle (on Earth) radius in *CONICAL* scan swath calculations.
 * :math:`A^{cs}`: Scanned arc length (*CONICAL* scan).
-
-Examples
----------
-Please see the ``examples`` folder.

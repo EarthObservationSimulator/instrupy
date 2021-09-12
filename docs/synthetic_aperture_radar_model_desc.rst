@@ -20,7 +20,7 @@ The implementation allows for modeling different *configurations* of the instrum
 The FOV of the instrument is calculated from the antenna specifications (beamwidth), *scan-technique* and the instrument orientation. A sceneFOV can be specified
 separately. The FOR is built based on the sceneFOV and the maneuver specifications. *ROLL_ONLY* and *DOUBLE_ROLL_ONLY* maneuver specifications are supported since
 the model supports only sidelooking SAR configuration.
-The FOV/ sceneFOV/ FOR is used in the coverage calculations (using the OrbitPy package) to find the locations accessed on the ground.
+The sceneFOV/ FOR is used in the coverage calculations (using the OrbitPy package) to find the locations accessed on the ground.
 
 .. note:: See :ref:`synthetic_aperture_radar_glossary` for names of the variables used in any discussion below.
 
@@ -67,7 +67,7 @@ pairs are described below:
    orientation, :ref:`orientation_json_obj`, , Orientation of the instrument. Only orientation of :code:`"convention": "SIDE_LOOK"` is accepted. Default orientation is *SIDE_LOOK* at 25 deg in the *SC_BODY_FRAME*.
    dataRate, float, Megabits per sec,Rate of data recorded during nominal operations.
    bitsPerPixel, integer, ,Bits encoded per pixel of image.
-   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
+   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry.
    pulseWidth, float, seconds, Actual pulse width (per channel/polarization).
    antenna, :ref:`antenna_json_object`, , Antenna specifications. Only rectangular shape and uniform aperture excitation profile is accepted.
    operatingFrequency, float, Hertz, Operating radar center frequency.

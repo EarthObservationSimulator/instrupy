@@ -23,7 +23,7 @@ The expected key/value pairs for the spacecraft-state input argument (of type :c
    :header: Column, Data type, Units, Description
    :widths: 30,10,10,40
 
-   *time [JDUT1]*, float, days, Time in Julian Day UT1. Corresponds to the time of observation. 
+   *time [JDUT1]*, float, JDUT1, Time in Julian Day UT1. Corresponds to the time of observation. 
    "*x [km]*, *y [km]*, *z [km]*", float, km, Cartesian coordinates of satellite in EARTH_CENTERED_INERTIAL frame at the time of observation.
    "*vx [km/s]*, *vy [km/s]*, *vz [km/s]*", float, km/s, Velocity of spacecraft in EARTH_CENTERED_INERTIAL frame at the time of observation.
 
@@ -37,10 +37,10 @@ The expected key/value pairs for the observed-location input argument (of type :
 
 ``instru_look_angle_from_target_inc_angle`` flag
 ---------------------------------------------------
-
 In addition to the above mentioned input-arguments to the ``calc_data_metrics`` function, there is an additional optional flag which can be 
 specified to instruct how to obtain the instrument look-angle. If the ``instru_look_angle_from_target_inc_angle`` flag is set to ``False`` (also default value),
-the instrument look-angle is obtained from the instrument orientation specification. If the flag is set to ``True``, the instrument look-angle is obtained from the target location incidence-angle. 
+the instrument look-angle is obtained from the instrument orientation specification. If the flag is set to ``True``, the instrument look-angle is obtained 
+from the target location incidence-angle. 
 
 Examples
 ^^^^^^^^^
@@ -88,7 +88,7 @@ Examples
           'sensitivity [K]': 17.94, 'incidence angle [deg]': 6.82, 'beam efficiency': nan}
 
    In the below snippet, the instrument look angle is considered from the incidence angle at the target ground-point (6.82 deg).
-   Note that the calculated swath-width is different.
+   Note that the calculated swath-width is different compared to the former case.
       
    .. code-block:: python
 
@@ -97,8 +97,6 @@ Examples
 
       >> {'ground pixel along-track resolution [m]': 120708.29, 'ground pixel cross-track resolution [m]': 121567.92, 'swath-width [m]': 122255.0, 
             'sensitivity [K]': 17.94, 'incidence angle [deg]': 6.82, 'beam efficiency': nan}
-
-
 
 API
 ^^^^^

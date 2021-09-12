@@ -5,7 +5,7 @@ Passive Optical Scanner Model
 The passive optical scanner model can be used to handle sensors with detector arrays operating at Visible and near-Visible (IR and UV) wavelengths. The formulation
 of the sensor model is based on [1]. While [1] concentrates on an IR sensor, the formulation has been extended to optical sensors in [2]. 
 
-FOV/ sceneFOV/ FOR can be configured in the model, from which the coverage calculations (using the OrbitPy package) can be carried out to find the locations accessed on the ground.
+sceneFOV/ FOR can be configured in the model, from which the coverage calculations (using the OrbitPy package) can be carried out to find the locations accessed on the ground.
 
 **References**
 
@@ -33,7 +33,7 @@ pairs are described below:
    power, float, Watts, Nominal operating power.
    orientation, :ref:`orientation_json_obj`, ,Orientation of the instrument. Default is alignment to the SC_BODY_FIXED frame.
    fieldOfViewGeometry, :ref:`fieldOfViewGeometry_json_obj`, , Field of view spherical geometry specification of the instrument.
-   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry specification.
+   sceneFieldOfViewGeometry, :ref:`sceneFieldOfViewGeometry_json_obj`, , The SceneFOV spherical geometry specification of the instrument. Default is the field-of-view spherical geometry.
    maneuver, :ref:`maneuver_json_object`, , Maneuver specifications (see :ref:`maneuv_desc`).
    pointingOption, :ref:`pointing_opt_json_obj`, , List of orientations to which the instrument axis can be maneuvered.
    dataRate, float, Mega-bits per s, Rate of data recorded during nominal operations.
