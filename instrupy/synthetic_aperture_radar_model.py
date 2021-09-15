@@ -295,7 +295,7 @@ class SyntheticApertureRadarModel(Entity):
             :widths: 10,40
 
             scanTech, ScanTech.STRIPMAP
-            orientation, Orientation.Convention.SIDE_LOOK at 25 deg, ReferenceFrame.SC_BODY_FIXED
+            orientation, Orientation.Convention.SIDE_LOOK at 25 deg and ReferenceFrame.SC_BODY_FIXED
             sceneFieldOfViewGeometry, (Instrument) fieldOfViewGeometry
             polType, PolTypeSAR.SINGLE (single transmit and single receive)
             pulseSeparation, 50% of pulse length 

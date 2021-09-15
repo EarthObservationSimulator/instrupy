@@ -197,9 +197,23 @@ real-world instrument entirely, but are meant to be approximate versions.
                   'NESZ [dB]': -32.87, 'incidence angle [deg]': 55.0, 'swath-width [km]': 25.0, 'PRF [Hz]': 1578}
 
             
+API
+^^^^^
 
+.. rubric:: Classes
 
-
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+   :template: classes_template.rst
+   :recursive:
+   
+   instrupy.synthetic_aperture_radar_model.ScanTech
+   instrupy.synthetic_aperture_radar_model.PolTypeSAR
+   instrupy.synthetic_aperture_radar_model.DualPolPulseConfig
+   instrupy.synthetic_aperture_radar_model.SwathTypeSAR
+   instrupy.synthetic_aperture_radar_model.ScanTech
+   instrupy.synthetic_aperture_radar_model.SyntheticApertureRadarModel
 
 
 

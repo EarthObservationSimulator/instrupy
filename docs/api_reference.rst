@@ -1,3 +1,5 @@
+.. _api_reference::
+
 API Reference
 *************
 Please navigate below for detailed descriptions of InstruPy’s classes and functions.

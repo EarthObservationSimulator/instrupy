@@ -298,9 +298,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.49497475"
-     inkscape:cx="626.08976"
-     inkscape:cy="604.31457"
+     inkscape:zoom="2.8"
+     inkscape:cx="259.44967"
+     inkscape:cy="141.88345"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -318,7 +318,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -663,7 +663,13 @@
          x="-122.85653"
          y="224.62634"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82222223px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458332"
-         id="tspan2466">(xP, yP, zP)</tspan></text>
+         id="tspan2466">(x<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan1060">P</tspan>, y<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan1062">P</tspan>, z<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan1064">P</tspan>)</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker2037)"
        d="m 53.105655,232.08259 -1.039437,9.16592"

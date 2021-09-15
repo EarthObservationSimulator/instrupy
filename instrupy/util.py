@@ -3,6 +3,10 @@
 
 :synopsis: *Utility classes and functions for the :class:`instrupy` package.*
 
+This module contains the common classes and functions used by the instrument models. 
+The ``Orientation``, ``SphericalGeometry``, ``ViewGeometry``, ``Maneuver``, ``Antenna`` and ``SyntheticDataConfiguration`` classes are
+purposed for handling common instrument parameters
+
 """
 from __future__ import division 
 import json
@@ -196,12 +200,12 @@ class SyntheticDataConfiguration(Entity):
     
     @staticmethod
     def from_dict(d):
-        """ Construct an SyntheticDataConfiguration object from a dictionary.
+        """ Construct an ``SyntheticDataConfiguration`` object from a dictionary.
 
         :param d: Dictionary containing the synthetic data config specifications.
         :paramtype d: dict
     
-        :return: Parsed python object. 
+        :return: ``SyntheticDataConfiguration`` object initialized with the input specifications.
         :rtype: :class:`instrupy.util.SyntheticDataConfiguration`
         """
         return SyntheticDataConfiguration(sourceFilePaths   = d.get("sourceFilePaths", None), 
@@ -210,9 +214,9 @@ class SyntheticDataConfiguration(Entity):
                                                       _id   = d.get("@id", None))
 
     def to_dict(self):
-        """ Translate the SyntheticDataConfiguration object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``SyntheticDataConfiguration`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: SyntheticDataConfiguration object as python dictionary
+        :return: ``SyntheticDataConfiguration`` object as python dictionary
         :rtype: dict
         """
         syndataconf_dict = {"sourceFilePaths": self.sourceFilePaths, 
@@ -283,7 +287,7 @@ class SyntheticDataInterpolator:
             lon = _pix_p['lon[deg]']
             lat = _pix_p['lat[deg]']
             interpl_data.append(f(lon, lat)[0]) # [0] is needed to convert from the single element np.array to float
-        print("Inaccuracy around longitude=0 deg")
+        print("Expect inaccuracy around longitude=0 deg")
 
         return interpl_data
     
@@ -330,8 +334,6 @@ class SyntheticDataInterpolator:
                       #                                          search_radius=None, rbf_func='linear', rbf_smooth=0)
         return interpl_data
 
-
-
 class ReferenceFrame(EnumEntity):
     """ Enumeration of recognized reference frames.
     
@@ -364,18 +366,14 @@ class ReferenceFrame(EnumEntity):
                                     
                             * :math:`\\bf Z_{np}` axis: Aligned to Nadir vector (i.e. the negative of the position vector of satellite in EARTH_FIXED frame)
 
-                            .. figure:: nadirframe.png
-                                :scale: 100 %
-                                :align: center
-
                             .. todo:: Verify the claim about position vector and velocity vector in EARTH_FIXED frame.
 
         :vartype NADIR_POINTING: str
 
-        :cvar SC_BODY_FIXED: Spacecraft Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Spacecraft Bus. 
+        :cvar SC_BODY_FIXED: Spacecraft Body Fixed reference frame. The axis of this coordinate system is fixed to the Spacecraft Bus. 
         :vartype SC_BODY_FIXED: str
 
-        :cvar SENSOR_BODY_FIXED: Sensor Body Fixed reference frame. The axis of this coordinate system are aligned with the axis of the Sensor. 
+        :cvar SENSOR_BODY_FIXED: Sensor Body Fixed reference frame. The axis of this coordinate system is fixed to the Sensor. 
         :vartype SENSOR_BODY_FIXED: str
 
     """
@@ -433,8 +431,9 @@ class Orientation(Entity):
         self.euler_seq3 = euler_seq3
         super(Orientation, self).__init__(_id, "Orientation")
     
+    '''
     def get_pointing_vector_angle_wrt_input_vector(self, vec):
-        """ Get the angle between the pointing-vector and an input vector. This funcition may be applied to calculate the off-nadir angle of the
+        """ Get the angle between the pointing-vector and an input vector. This function may be applied to calculate the off-nadir angle of the
             instrument pointing. The pointing axis is assumed to be aligned along the z-axis SENSOR_BODY_FIXED frame.
 
         :param vec: Input vector.
@@ -445,7 +444,8 @@ class Orientation(Entity):
 
         """
         pointing_axis_sensor_frame = np.array([0,0,1]) # assumed pointing axis in the SENSOR_BODY_FIXED frame
-
+    
+    
     @staticmethod
     def get_rotation_matrix(axis, angle_deg):
         """ Get the rotation matrix corresponding to an input rotation axis (x or y or z) and rotation angle.
@@ -477,7 +477,7 @@ class Orientation(Entity):
                              [-np.sin(angle),   np.cos(angle),  0],
                              [              0,              0,  1]
                             ])
-
+    '''
 
     class Convention(EnumEntity):
         """ Enumeration of recognized orientation conventions with which an object can be initialized. The rotations below can be specified with respect to 
@@ -514,7 +514,7 @@ class Orientation(Entity):
         :param _id: Unique identifier.
         :paramtype _id: str
 
-        :return: Corresponding `Orientation` object.
+        :return: Corresponding ``Orientation`` object.
         :rtype: :class:`instrupy.util.Orientation`
 
         """
@@ -522,7 +522,7 @@ class Orientation(Entity):
     
     @classmethod
     def from_XYZ_rotations(cls, ref_frame="NADIR_POINTING", x_rot=0, y_rot=0, z_rot=0, _id = None):
-        """ Return :class:`Orientation` object by the user-specified XYZ rotation angles with  
+        """ Return :class:`Orientation` object constructed from the user-specified XYZ rotation angles with  
             the sequence=123.
 
         :param ref_frame: Reference frame. Default in "NADIR_POINTING".
@@ -545,12 +545,12 @@ class Orientation(Entity):
         
     @staticmethod
     def from_dict(d):
-        """Parses orientation specifications from a dictionary.
+        """Parses a ``Orientation`` object from the input dictionary.
         
             :param d: Dictionary containing the orientation specifications.
             :paramtype d: dict
 
-            :return: Parsed python object. 
+            :return: ``Orientation`` object initialized with the input specifications.
             :rtype: :class:`instrupy.util.Orientation`
         """
         orien_conv = Orientation.Convention.get(d.get("convention", None))
@@ -571,7 +571,7 @@ class Orientation(Entity):
     def to_tuple(self): # TODO: remove this function
         """ Return data members of the instance as a tuple.
         
-            :return: Orientation object data attributes as namedtuple.
+            :return: ``Orientation`` object data attributes as namedtuple.
             :rtype: namedtuple, (str, int, int, int, float, float, float)
 
         """
@@ -579,9 +579,9 @@ class Orientation(Entity):
         return orientation(self.ref_frame, self.euler_seq1, self.euler_seq2, self.euler_seq3, self.euler_angle1, self.euler_angle2, self.euler_angle3)
 
     def to_dict(self):
-        """ Return data members of the instance as python dictionary. 
+        """ Translate the ``Orientation`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-            :return: Orientation object data attributes as python dictionary.
+            :return: ``Orientation`` object as python dictionary.
             :rtype: dict
         """
         orien_dict = {
@@ -616,16 +616,11 @@ class Orientation(Entity):
                 return NotImplemented
 
 class SphericalGeometry(Entity):
-        """ Class to handle spherical geometries (spherical polygons and circles) which are used to characterize the sensor 
-            field-of-view (FOV) / scene FOV/ field-of-regard (FOR).
-
+        """ Class to handle spherical geometries (spherical polygons and circles) which define an closed angular space of interest.
+            
             The spherical geometry is maintained internally via vector of cone and clock angles defined in the SENSOR_BODY_FIXED frame with 
             the Z-axis as the pointing axis. This can be paired with an Orientation object (which describes the orientation of the sensor (hence the SENSOR_BODY_FIXED frame)
             with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
-
-            .. figure:: cone_clock_angle.png
-                :scale: 100 %
-                :align: center
        
         :ivar shape: Shape of the spherical geometry. Accepted values are "CIRCULAR", "RECTANGULAR" or "CUSTOM".
         :vartype shape: str
@@ -638,13 +633,15 @@ class SphericalGeometry(Entity):
                                   describing a point on unit sphere, then the clock angle for the point is :math:`atan2(yP,xP)`.
         :vartype clock_angle_vec: list, float
 
-        :ivar diameter: (deg) Spherical circular diameter (around the sensor Z axis) (only for CIRCULAR shape).
+        :ivar diameter: (deg) Spherical circular (about the sensor Z axis) diameter (only for CIRCULAR shape).
         :vartype diameter: float
 
-        :ivar angle_height: (deg) Spherical rectangular geometry angular width (about sensor X axis) (only for RECTANGULAR shape). Corresponds to along-track angular width if sensor frame is aligned to NADIR_POINTING frame.
+        :ivar angle_height: (deg) Spherical rectangular geometry angular width (about sensor X axis) (only for *RECTANGULAR* shape). 
+                                    Corresponds to along-track angular width if sensor frame is aligned to *NADIR_POINTING* frame.
         :vartype angle_height: float
 
-        :ivar angle_width: (deg) Spherical rectangular geometry angular height (about sensor Y axis)  (only for RECTANGULAR shape). Corresponds to cross-track angular width if sensor frame is aligned to NADIR_POINTING frame.
+        :ivar angle_width: (deg) Spherical rectangular geometry angular height (about sensor Y axis)  (only for *RECTANGULAR* shape). 
+                                    Corresponds to cross-track angular width if sensor frame is aligned to *NADIR_POINTING* frame.
         :vartype angle_width: float
 
         :param _id: Unique identifier.
@@ -660,11 +657,11 @@ class SphericalGeometry(Entity):
             :cvar CIRCULAR: Circular shape definition, characterized by the radius of the circle around the Z-axis.
             :vartype CIRCULAR: str
 
-            :cvar RECTANGULAR: Rectangular polygon definition, characterized by angular width (about Y-axis) and angular height (about X-axis). 
+            :cvar RECTANGULAR: Rectangular spherical polygon definition, characterized by angular width (about Y-axis) and angular height (about X-axis). 
             :vartype RECTANGULAR: str
 
             :cvar CUSTOM: Custom polygon definition, where an arbitrary number of cone, clock angles
-                          denoting the vertices of the polygon can be specified. 
+                          denoting the vertices of the spherical polygon can be specified. 
             :vartype CUSTOM: str
             
             """
@@ -707,10 +704,34 @@ class SphericalGeometry(Entity):
 
             super(SphericalGeometry, self).__init__(_id, "SphericalGeometry")
 
-        def to_dict(self):
-            """ Return data members of the object as python dictionary. 
+        @staticmethod
+        def from_dict(d):
+            """Parses spherical geometry specifications from a normalized JSON dictionary.
+    
+               :param d: Dictionary with the spherical geometry specifications.
+               :paramtype d: dict
 
-                :return: SphericalGeometry object as python dictionary
+               :return: Spherical geometry object
+               :rtype: :class:`instrupy.util.SphericalGeometry`
+
+            """          
+            shape = SphericalGeometry.Shape.get(d.get("shape", None))
+
+            if(shape == "CIRCULAR"):
+                sph_geom_dict = SphericalGeometry.from_circular_specs(d.get("diameter", None), d.get("@id", None))
+            elif(shape == "RECTANGULAR"):
+                sph_geom_dict = SphericalGeometry.from_rectangular_specs(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("@id", None))
+            elif(shape == "CUSTOM"):
+                sph_geom_dict = SphericalGeometry.from_custom_specs(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("@id", None))  
+            else:
+                raise Exception("Invalid spherical geometry shape specified.")
+
+            return sph_geom_dict
+
+        def to_dict(self):
+            """ Translate the ``SphericalGeometry`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+
+                :return: ``SphericalGeometry`` object as python dictionary.
                 :rtype: dict 
             """
             if self.shape==SphericalGeometry.Shape.CIRCULAR:
@@ -736,8 +757,7 @@ class SphericalGeometry(Entity):
                        (self.cone_angle_vec==other.cone_angle_vec) and (self.clock_angle_vec==other.clock_angle_vec)
                     
             else:
-                return NotImplemented
-                    
+                return NotImplemented                    
 
         @classmethod
         def from_custom_specs(cls, cone_angle_vec=None, clock_angle_vec=None, _id=None):
@@ -753,6 +773,9 @@ class SphericalGeometry(Entity):
 
                 :param _id: Unique identifier.
                 :paramtype _id: str
+
+                :return: Corresponding ``SphericalGeometry`` object
+                :rtype: :class:`instrupy.util.SphericalGeometry`
 
                 .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shaped FOV, in which we 
                     have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
@@ -790,7 +813,7 @@ class SphericalGeometry(Entity):
             :param _id: Unique identifier
             :paramtype _id: str
 
-            :return: Corresponding `SphericalGeometry` object
+            :return: Corresponding ``SphericalGeometry`` object
             :rtype: :class:`instrupy.util.SphericalGeometry`
 
             """
@@ -806,16 +829,16 @@ class SphericalGeometry(Entity):
         def from_rectangular_specs(cls, angle_height=None, angle_width=None, _id=None):
             """ Convert the angle_height and angle_width rectangular specs to clock, cone angles and return corresponding :class:`instrupy.util.SphericalGeometry` object.
 
-            :param angle_height: (deg) Angular height (about sensor X axis). Corresponds to along-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :param angle_height: (deg) Angular height (about sensor X axis). Corresponds to along-track FOV if sensor is aligned to *NADIR_POINTING* frame.
             :paramtype angle_height: float
 
-            :param angle_width: (deg) Angular width (about sensor Y axis). Corresponds to cross-track FOV if sensor is aligned to NADIR_POINTING frame.
+            :param angle_width: (deg) Angular width (about sensor Y axis). Corresponds to cross-track FOV if sensor is aligned to *NADIR_POINTING* frame.
             :paramtype angle_width: float
             
             :param _id: Unique identifier
             :paramtype _id: str
 
-            :return: Corresponding `SphericalGeometry` object
+            :return: Corresponding ``SphericalGeometry`` object
             :rtype: :class:`instrupy.util.SphericalGeometry`                      
 
             """
@@ -842,34 +865,10 @@ class SphericalGeometry(Entity):
 
             clock_angle_vec = [clock, 180.0-clock, 180.0+clock, -clock]
 
-            return SphericalGeometry("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)
-
-        @staticmethod
-        def from_dict(d):
-            """Parses spherical geometry specifications from a normalized JSON dictionary.
-    
-               :param d: Dictionary with the spherical geometry specifications.
-               :paramtype d: dict
-
-               :return: Spherical geometry object
-               :rtype: :class:`instrupy.util.SphericalGeometry`
-
-            """          
-            shape = SphericalGeometry.Shape.get(d.get("shape", None))
-
-            if(shape == "CIRCULAR"):
-                sph_geom_dict = SphericalGeometry.from_circular_specs(d.get("diameter", None), d.get("@id", None))
-            elif(shape == "RECTANGULAR"):
-                sph_geom_dict = SphericalGeometry.from_rectangular_specs(d.get("angleHeight", None), d.get("angleWidth", None),  d.get("@id", None))
-            elif(shape == "CUSTOM"):
-                sph_geom_dict = SphericalGeometry.from_custom_specs(d.get("customConeAnglesVector", None), d.get("customClockAnglesVector", None),  d.get("@id", None))  
-            else:
-                raise Exception("Invalid spherical geometry shape specified.")
-
-            return sph_geom_dict
+            return SphericalGeometry("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)        
         
         def get_cone_clock_fov_specs(self):
-            """ Function to the get the cone and clock angle vectors from the respective SphericalGeometry object.
+            """ Function to the get the cone and clock angle vectors from the respective ``SphericalGeometry`` object.
 
                 :return: Cone, Clock angles in degrees
                 :rtype: list, float
@@ -919,8 +918,7 @@ class SphericalGeometry(Entity):
             return [angle_height, angle_width]
 
         def get_fov_height_and_width(self):
-            """ Get the angle_height and angle_width. Valid only for CIRCULAR and 
-                RECTANGULAR shapes.
+            """ Get the angle_height and angle_width. Valid only for *CIRCULAR* and *RECTANGULAR* shapes.
 
                 :return: angle_height and angle_width in degrees
                 :rtype: list, float
@@ -939,13 +937,16 @@ class ViewGeometry(Entity):
         with respect to a reference frame) to obtain the position of the spherical geometry in any desired reference frame.
         
         In the current :class:`instrupy` implementation when used to model the FOR, the Orientation is always defined with respect to the 
-        NADIR_POINTING reference frame. 
+        *NADIR_POINTING* reference frame. 
 
-    :ivar orien: Orientation of the sensor (and hence the spherical geometry which is described in the SENSOR_BODY_FIXED frame).
+    :ivar orien: Orientation of the sensor (and hence "orientation" of the spherical geometry which is described in the *SENSOR_BODY_FIXED* frame).
     :vartype orien: :class:`instrupy.util.Orientation`
     
     :ivar sph_geom: Spherical geometry object associated with the FOV/ Scene FOV/ FOR.
     :vartype sph_geom: :class:`instrupy.util.SphericalGeometry`
+
+    :param _id: Unique identifier.
+    :paramtype _id: str
 
     """
 
@@ -957,9 +958,9 @@ class ViewGeometry(Entity):
     
     @staticmethod
     def from_dict(d):
-        """ Parses an ViewGeometry object from a normalized JSON dictionary.
+        """ Parses an ``ViewGeometry`` object from a normalized JSON dictionary.
         
-        :param d: Dictionary with the GridCoverage specifications.
+        :param d: Dictionary with the viewing-geometry specifications.
 
                 Following keys are to be specified.
                 
@@ -969,7 +970,7 @@ class ViewGeometry(Entity):
 
         :paramtype d: dict
 
-        :return: ViewGeometry object.
+        :return: ``ViewGeometry`` object.
         :rtype: :class:`instrupy.util.ViewGeometry`
 
         """
@@ -987,9 +988,9 @@ class ViewGeometry(Entity):
             return NotImplemented
     
     def to_dict(self):
-        """ Translate the ViewGeometry object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``ViewGeometry`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
 
-        :return: ViewGeometry object as python dictionary
+        :return: ``ViewGeometry`` object as python dictionary
         :rtype: dict
 
         """
@@ -1002,13 +1003,13 @@ class ViewGeometry(Entity):
         return "ViewGeometry.from_dict({})".format(self.to_dict())
 
 class Maneuver(Entity):
-    """ Class handling the maneuverability of the satellite and/or sensor. 
+    """ Class handling the maneuverability of the satellite-sensor system. 
         
-    The maneuverability is specified with reference to the NADIR_POINTING frame. The maneuver specifications 
+    The maneuverability is always specified with reference to the *NADIR_POINTING* frame. The maneuver specifications 
     describe the angular-space where the pointing axis of the sensor can be positioned. 
     
     This class includes a function which can be used to obtain the Field-Of-Regard in terms of a *proxy-FOV setup*. 
-    The proxy-sensor setup is characterized by orientation (wrt the NADIR_POINTING frame) of the proxy-sensor (hence the proxy-sensor SENSOR_BODY_FIXED frame)
+    The proxy-sensor setup is characterized by orientation (wrt the *NADIR_POINTING* frame) of the proxy-sensor (hence the proxy-sensor *SENSOR_BODY_FIXED* frame)
     and a spherical geometry (polygon/circle) specification of the proxy-sensor's field-of-view. This allows to calculate all coverage opportunities
     by the satellite-sensor pair, taking into account the satellite and/or sensor maneuverability.    
 
@@ -1035,60 +1036,56 @@ class Maneuver(Entity):
     
     """
     class Type(EnumEntity):
-        """ Enumeration of recognized maneuver types. All maneuvers are with respect to the NADIR_POINTING frame.
+        """ Enumeration of recognized maneuver types. All maneuvers are with respect to the *NADIR_POINTING* frame.
 
         :cvar CIRCULAR: This maneuver option indicates that the pointing axis can be maneuvered within a circular region (corresponding to a
                         specified angular diameter) *around* the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
                         The resulting FOR is characterized by a proxy-sensor as follows:
 
-                        * The proxy-sensor orientation is aligned to the NADIR_POINTING frame.
+                        This maneuver option indicates that the pointing axis can be maneuvered within a circular region (corresponding to a
+                        specified angular diameter) *around* the z-axis (nadir-direction). The rotation about the pointing axis is unrestricted. 
+                        The resulting FOR is characterized by a proxy-sensor as follows:
 
-                        * If input sensor FOV is CIRCULAR: 
-                        
-                            proxy-sensor FOV is CIRCULAR with diameter = maneuver diameter + input FOV diameter
+                        * The proxy-sensor orientation is aligned to the *NADIR_POINTING* frame.
 
-                        * If input sensor FOV is RECTANGULAR: 
-                        
-                            proxy-sensor FOV is CIRCULAR with diameter = maneuver diameter + diagonal angle of the input rectangular FOV
+                        * If instrument FOV is *CIRCULAR*: 
+                            
+                            proxy-sensor FOV is *CIRCULAR() with diameter = maneuver diameter + instrument FOV diameter
 
-                            where diagonal angle of the RECTANGULAR FOV = 2 acos( cos(angle_width/2) * cos(angle_height/2) )
+                        * If instrument FOV is *RECTANGULAR*: 
+                            
+                            proxy-sensor FOV is *CIRCULAR* with diameter = maneuver diameter + diagonal angle of the instrument rectangular FOV
 
-                        .. figure:: circular_maneuver.png
-                            :scale: 75 %
-                            :align: center
+                            where diagonal angle = 2 acos( cos(angle_width/2) . cos(angle_height/2) )
 
         :vartype CIRCULAR: str
 
-        :cvar SINGLE_ROLL_ONLY: This maneuver option indicates that the pointing axis can be maneuvered about the roll axis (= y-axis of the NADIR_POINTING frame) 
+        :cvar SINGLE_ROLL_ONLY: This maneuver option indicates that the instrument pointing axis can be maneuvered about the roll axis (= y-axis of the *NADIR_POINTING* frame) 
                                 over a (single) range indicated by minimum and maximum roll angles. The resulting FOR characterized by a proxy-sensor is as follows:
-                                
-                                * The proxy-sensor orientation is at a roll-position (wrt to the NADIR_POINTING frame) as follows:
+
+                                * The proxy-sensor orientation is at a roll-position (wrt to the *NADIR_POINTING* frame) as follows:
                                     
                                     roll position = rollMin + 0.5 * (rollMax - rollMin)
 
-                                * If input sensor FOV is CIRCULAR: 
-                                
-                                    proxy-sensor FOV is rectangular with:
+                                * If instrument FOV is *CIRCULAR*: 
                                     
-                                    angle width = (rollMax - rollMin) + input FOV diameter
-
-                                    angle height = input sensor diameter
-
-                                * If input sensor FOV is RECTANGULAR: 
-                                
-                                    proxy-sensor FOV is rectangular with:
+                                    proxy-sensor FOV is *RECTANGULAR* with:
                                     
-                                    angle width  = (rollMax - rollMin) + input FOV angle width
+                                    angle width = (rollMax - rollMin) + instrument FOV diameter
 
-                                    angle height = input FOV angle height
+                                    angle height = instrument FOV diameter
 
-                                .. figure:: single_rollonly_maneuver.png
-                                    :scale: 75 %
-                                    :align: center
+                                * If instrument FOV is *RECTANGULAR*: 
+                                    
+                                    proxy-sensor FOV is *RECTANGULAR* with:
+                                    
+                                    angle width  = (rollMax - rollMin) + instrument FOV angle width
+
+                                    angle height = instrument FOV angle height
 
         :vartype SINGLE_ROLL_ONLY: str
 
-        :cvar DOUBLE_ROLL_ONLY: This maneuver option is similar to the SINGLE_ROLL_ONLY case, except that there are **two** 
+        :cvar DOUBLE_ROLL_ONLY: This maneuver option is similar to the *SINGLE_ROLL_ONLY* case, except that there are **two** 
                                 (potentially non-overlapping) ranges of roll-angles (minimum and maximum angles). Correspondingly 
                                 there are two proxy-sensor setups (orientation and FOV) associated with the FOR.
 
@@ -1097,11 +1094,6 @@ class Maneuver(Entity):
                                     :align: center
 
         :vartype DOUBLE_ROLL_ONLY: str
-
-        :cvar POINTING_OPTION: In this maneuver option a list of orientations of the instrument pointing-axis (to which it can be manuevered) is specified. 
-                                The pointing options must be specified in NADIR_POINTING reference frame. 
-        :vartype POINTING_OPTION: str
-
 
         """
         CIRCULAR = "CIRCULAR"
@@ -1144,12 +1136,12 @@ class Maneuver(Entity):
 
     @staticmethod
     def from_dict(d):
-        """Parses an manuever object from a normalized JSON dictionary.
+        """Parses an ``Manuever`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the manuever specifications.
         :paramtype d: dict
 
-        :return: Maneuver object.
+        :return: ``Maneuver`` object.
         :rtype: :class:`instrupy.util.Maneuver`
 
         """                
@@ -1164,9 +1156,9 @@ class Maneuver(Entity):
                 )
 
     def to_dict(self):
-        """ Translate the Maneuver object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``Maneuver`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: Maneuver object as python dictionary
+        :return: ``Maneuver`` object as python dictionary
         :rtype: dict
 
         """
@@ -1198,25 +1190,25 @@ class Maneuver(Entity):
     def calc_field_of_regard(self, fov_sph_geom):
         """ Calculate the field-of-regard (FOR) in terms of a *proxy sensor setup* for an input sensor FOV/ scene-FOV. 
             
-        The FOR is characterized by (list of) :class:`ViewGeometry` container(s) (pairs :code:`Orientation` and :code:`SphericalGeometry` objects). 
+        The FOR is characterized by (list of) :class:`ViewGeometry` container(s). 
         This forms a *proxy-sensor setup*, which can be utilized to run coverage calculations and calculate all possible access 
         opportunites by the sensor taking into account the (satellite + sensor) maneuverability.
-        Note that only CIRCULAR or RECTANGULAR shaped sensor FOV are permitted as inputs.
+        Note that only *CIRCULAR* or *RECTANGULAR* shaped sensor FOV are permitted for the instruments.
 
         In some scenarios where the FOR can have non-overlapping angular spaces (e.g. sidelooking
         SARs which can point on either "side", but cannot point at the nadir), we shall have as return a list of 
         :code:`ViewGeometry` objects, where each element of the list corresponds to a separate proxy sensor setup.
         All the proxy-sensor setups in the list together form the FOR.
 
-        Note that always, the proxy-sensor FOV >= input sensor FOV. 
+        Note that always, the proxy-sensor FOV spherical-geometry >= input sensor FOV spherical-geometry. 
 
         .. seealso:: :class:`instrupy.util.Maneuver.Type` for calculation of the FOR for the different maneuver types.
 
-        :param fov_sph_geom:  Sensor FOV spherical geometry. Must be either CIRCULAR or RECTANGULAR shape.
+        :param fov_sph_geom:  Sensor FOV spherical geometry. Must be of either *CIRCULAR* or *RECTANGULAR* shape.
         :paramtype fov_sph_geom: :class:`instrupy.util.SphericalGeometry`
 
-        :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the NADIR_POINTING frame, 
-                 and the coresponding spherical geometry specifications. If invalid or no maneuver, then ``None`` is returned.
+        :return: Field-of-Regard characterized by a proxy sensor setup consisting of orientation with respect to the *NADIR_POINTING* frame, 
+                 and the coresponding spherical-geometry specifications. If invalid input data or no maneuver, then ``None`` is returned.
         :rtype: list, ViewGeometry or None
 
         """
@@ -1937,7 +1929,7 @@ class GeoUtilityFunctions:
 
 
 class FileUtilityFunctions:
-
+    """ Functions to help in processing of files of various formats."""
     @staticmethod
     def from_json(json_doc):
         """Parses a dictionary from a JSON-formatted string, dictionary, or file."""

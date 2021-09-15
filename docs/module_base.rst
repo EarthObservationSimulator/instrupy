@@ -4,6 +4,9 @@
 ``instrupy.base`` --- Base
 ********************************
 
+Description
+============
+
 .. _mode_json_obj:
 
 :code:`mode` JSON object format
@@ -28,8 +31,7 @@ has an off-nadir orientation.
  
 .. code-block:: python
 
-               specs = '{        
-                           "@type": "Basic Sensor",
+               specs = '{  "@type": "Basic Sensor",
                            "name": "Atom",
                            "@id": "senX",  
                            "mass": 28, 
@@ -60,8 +62,20 @@ has an off-nadir orientation.
 
                x = Instrument.from_json(specs) 
 
+Example
+========
+
                
-.. automodule:: instrupy.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
+API
+======
+
+.. rubric:: Classes
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+   :template: classes_template.rst
+   :recursive:
+
+   instrupy.base.InstrumentModelFactory
+   instrupy.base.Instrument

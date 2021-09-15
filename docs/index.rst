@@ -13,8 +13,8 @@ Contents
    instrument_models
    api_reference
    development
+   miscellaneous
    
-
 Questions?
 ------------------
 Please contact Vinay (vinay.ravindra@nasa.gov)
