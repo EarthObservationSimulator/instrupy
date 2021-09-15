@@ -1,7 +1,7 @@
 .. _common_instru_params:
 
-Common Instrument Model Parameters
-*************************************
+Common Model Parameters
+*************************
 This section describes the common instrument model parameters expected to be specified by the user.
 The expected key/value pairs for initialization of the parameters from json/ dict is described along with examples. 
 
@@ -350,8 +350,69 @@ Example:
 
 :code:`antenna` JSON object
 ==========================================
+This json object contains the specifications of the antenna. Two types of antenna-aperture shapes are accepted, which should be indicated in the ``shape``
+key/value pair.
 
-TBD
+1. :code:`"shape":"Circular"`
+
+   This option indicates that the shape of the antenna-aperture is circular.
+
+   .. csv-table:: Expected parameters
+      :header: Parameter, Data type, Units, Description
+      :widths: 10,10,5,40
+
+      shape, str,, Must be "Circular"
+      diameter, float, meters, Diameter of the antenna.
+      apertureExcitationProfile, str, , Antenna aperture excitation profile. Accepted values are "UNIFORM" and "COSINE".
+      apertureEfficiency, float,, Aperture efficiency (:math:`0 < \eta_{ap} < 1`).
+      radiationEfficiency, float,, Radiation efficiency (:math:`0 < \psi < 1`).
+      phyTemp, float, Kelvin, Physical temperature of the antenna.
+
+
+   Example:
+
+   .. code-block:: python
+      
+      "antenna":{
+         "shape":"Circular",
+         "diameter": 25,
+         "apertureExcitationProfile": "COSINE",
+         "apertureEfficiency": 0.6,
+         "radiationEfficiency": 0.8,
+         "phyTemp": 290
+      }      
+
+2. :code:`"shape":"Rectangular"`
+
+   This option indicates that the shape of the antenna-aperture is rectangular.
+
+   .. csv-table:: Expected parameters
+      :header: Parameter, Data type, Units, Description
+      :widths: 10,10,5,40
+
+      shape, str,, Must be "Circular"
+      height, float, meters, Antenna height (along the along-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame).
+      width, float, meters, Antenna width (along the cross-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame).
+      apertureExcitationProfile, str, , Antenna aperture excitation profile. Accepted values are "UNIFORM" and "COSINE".
+      apertureEfficiency, float,, Aperture efficiency.
+      radiationEfficiency, float,, Radiation efficiency.
+      phyTemp, float, Kelvin, Physical temperature of the antenna.
+
+   Example:
+
+   .. code-block:: python
+      
+      "antenna":{
+         "shape":"rectangular",
+         "height": 4.9,
+         "width": 0.7,
+         "apertureExcitationProfile": "UNIFORM",
+         "apertureEfficiency": 0.6,
+         "radiationEfficiency": 0.8,
+         "phyTemp": 290
+      }
+
+.. todo:: The operating frequency is not made as a specification of the antenna. Change behavior in the future?
 
 .. _syntheticDataConfig_json_obj:
 
@@ -384,3 +445,56 @@ Example:
    }
 
 
+.. _mode_json_obj:
+
+:code:`mode` JSON object format
+================================
+The ``mode`` json object is used when initializing an instrument with several modes using the :class:`instrupy.base.Instrument` class. 
+Several modes (in a list) maybe specified within a single instrument. Each mode corresponds to a specific operating point. For example, 
+consider a *Basic Sensor* instrument which operates at two look-angles: (1) nadir-look (2) side-look at 30 deg. 
+Such an instrument is considered to be made up of two modes with one mode specifying the nadir-look and the other mode specifying the side-look.
+A mode-identifier can be specified by the user with which the corresponding mode can be referenced.
+
+.. csv-table:: Input parameter description 
+   :header: Parameter, Type, Units, Description
+   :widths: 10,10,10,40
+
+   @id, string,, Unique identifier of mode.
+
+The parameters outside the mode block are used as the common parameters for all the modes, while the parameters specified
+within a mode list entry are specific to the particular mode.
+
+Example:
+
+.. code-block:: python
+
+               specs = '{  "@type": "Basic Sensor",
+                           "name": "Atom",
+                           "@id": "senX",  
+                           "mass": 28, 
+                           "volume": 0.12, 
+                           "power": 32, 
+                           "bitsPerPixel": 8, 
+                           "fieldOfViewGeometry": {
+                                       "shape": "CIRCULAR",
+                                       "diameter": 35
+                                 },
+                           "mode":[{
+                                    "@id": "NadirObservationMode",                            
+                                    "orientation": {
+                                          "referenceFrame": "SC_BODY_FIXED",
+                                          "convention": "REF_FRAME_ALIGNED"
+                                    }      
+                                 },
+                                 {
+                                    "@id": "SideObservationMode",
+                                    "orientation": {
+                                       "referenceFrame": "SC_BODY_FIXED",
+                                       "convention": "SIDE_LOOK",
+                                       "sideLookAngle": 30
+                                    }       
+                                 }
+                           ]
+                        }'
+
+               x = Instrument.from_json(specs) 

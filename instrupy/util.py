@@ -1277,26 +1277,28 @@ class Maneuver(Entity):
 class Antenna(Entity):
     """ Class to handle antenna related parameters and functions.
 
-    :ivar shape: Antenna shape.
-    :vartype shape: :class:`instrupy.util.Antenna.AntennaApertureShape`
+        .. todo:: The operating frequency is not made as an instance parameter. Change behavior in the future?
 
-    :ivar apertureExcitationProfile: Antenna aperture profile.
-    :vartype apertureExcitationProfile: :class:`instrupy.util.Antenna.AntennaApertureExcitationProfile`
+        :ivar shape: Antenna shape.
+        :vartype shape: :class:`instrupy.util.Antenna.AntennaApertureShape`
 
-    :ivar height: [meters] Antenna height (in the along-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
-    :vartype height: float
+        :ivar apertureExcitationProfile: Antenna aperture profile.
+        :vartype apertureExcitationProfile: :class:`instrupy.util.Antenna.AntennaApertureExcitationProfile`
 
-    :ivar width: [meters] Antenna width (in the cross-track direction when SENSOR_BODY_FIXED is aligned to NADIR_POINTING frame).
-    :vartype antennaWidth: float
+        :ivar height: [meters] Antenna height (along the along-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame).
+        :vartype height: float
 
-    :ivar apertureEfficiency: Aperture efficiency of antenna (:math:`0 < \\eta_{ap} < 1`).
-    :vartype apertureEfficiency: float
+        :ivar width: [meters] Antenna width (along the cross-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame).
+        :vartype antennaWidth: float
 
-    :ivar radiationEfficiency: Radiation efficiency of antenna (:math:`0 < \\psi < 1`).
-    :vartype radiationEfficiency: float
+        :ivar apertureEfficiency: Aperture efficiency of antenna (:math:`0 < \\eta_{ap} < 1`).
+        :vartype apertureEfficiency: float
 
-    :ivar phyTemp: Antenna physical temperature in Kelvin.
-    :vartype phyTemp: float
+        :ivar radiationEfficiency: Radiation efficiency of antenna (:math:`0 < \\psi < 1`).
+        :vartype radiationEfficiency: float
+
+        :ivar phyTemp: Antenna physical temperature in Kelvin.
+        :vartype phyTemp: float
 
     """
     class Shape(EnumEntity):
@@ -1338,12 +1340,12 @@ class Antenna(Entity):
     
     @staticmethod
     def from_dict(d):
-        """Parses an Antenna object from a normalized JSON dictionary.
+        """Parses an ``Antenna`` object from a normalized JSON dictionary.
         
         :param d: Dictionary with the antenna specifications.
         :paramtype d: dict
 
-        :return: Antenna object.
+        :return: ``Antenna`` object.
         :rtype: :class:`instrupy.util.Antenna`
 
         """             
@@ -1364,9 +1366,9 @@ class Antenna(Entity):
                 )
 
     def to_dict(self):
-        """ Translate the Antenna object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
+        """ Translate the ``Antenna`` object to a Python dictionary such that it can be uniquely reconstructed back from the dictionary.
         
-        :return: Antenna object as python dictionary
+        :return: ``Antenna`` object as python dictionary
         :rtype: dict
 
         """
@@ -1399,7 +1401,7 @@ class Antenna(Entity):
         :param op_frequency: Operating frequency in Hertz.
         :paramtype op_frequency: float
 
-        :return: Spherical geometry object.
+        :return: ``SphericalGeometry`` object.
         :rtype: :class:`instrupy.util.SphericalGeometry`
 
         """

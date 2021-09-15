@@ -1,4 +1,4 @@
-.. _instrument_models_desc::
+.. _instrument_models_desc:
 
 Instrument Models
 ******************
@@ -10,4 +10,4 @@ Instrument Models
    passive_optical_scanner_model_desc
    synthetic_aperture_radar_model_desc
    radiometer_model_desc
-   common_instrument_model_parameters_desc
+   common_model_parameters_desc
