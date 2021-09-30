@@ -188,7 +188,7 @@ class BasicSensorModel(Entity):
                 "volume":self.volume,
                 "power":self.power,
                 "fieldOfViewGeometry":fieldOfViewGeometry_dict,
-                "sceneFieldOFViewGeometry": sceneFieldOfViewGeometry_dict,
+                "sceneFieldOfViewGeometry": sceneFieldOfViewGeometry_dict,
                 "orientation":orientation_dict,
                 "maneuver":maneuver_dict,
                 "pointingOption": pointing_opt_dict,

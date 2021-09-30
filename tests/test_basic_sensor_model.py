@@ -129,7 +129,7 @@ class TestBasicSensorModel(unittest.TestCase):
 
         self.assertIsNone(o.syntheticDataConfig)
 
-        # Test sceneFieldOFViewGeometry and corresponding fieldOfRegard initialization (fieldOfRegard must be built considering sceneFieldOfViewGeometry and not fieldOfViewGeometry)
+        # Test sceneFieldOfFViewGeometry and corresponding fieldOfRegard initialization (fieldOfRegard must be built considering sceneFieldOfViewGeometry and not fieldOfViewGeometry)
         o = BasicSensorModel.from_json('{"orientation": {"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, \
                                          "fieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":0.1, "angleWidth":60 }, \
                                          "sceneFieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":60}, \

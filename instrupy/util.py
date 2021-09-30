@@ -445,7 +445,7 @@ class Orientation(Entity):
         """
         pointing_axis_sensor_frame = np.array([0,0,1]) # assumed pointing axis in the SENSOR_BODY_FIXED frame
     
-    
+    '''
     @staticmethod
     def get_rotation_matrix(axis, angle_deg):
         """ Get the rotation matrix corresponding to an input rotation axis (x or y or z) and rotation angle.
@@ -477,7 +477,7 @@ class Orientation(Entity):
                              [-np.sin(angle),   np.cos(angle),  0],
                              [              0,              0,  1]
                             ])
-    '''
+    
 
     class Convention(EnumEntity):
         """ Enumeration of recognized orientation conventions with which an object can be initialized. The rotations below can be specified with respect to 
