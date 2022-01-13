@@ -1,0 +1,31 @@
+{
+    "@type": "Passive Optical Scanner",
+    "name": "SeaHawk-HawkEye 510nm band",
+    "fieldOfViewGeometry": {
+        "shape": "RECTANGULAR",
+        "angleHeight":  0.012732395447352,
+        "angleWidth": 22.6
+    },
+    "scanTechnique": "PUSHBROOM",
+    "orientation": {
+        "referenceFrame": "SC_BODY_FIXED",
+        "convention": "REF_FRAME_ALIGNED"
+    },
+    "numberDetectorRows": 1,
+    "numberDetectorCols": 1800,
+    "detectorWidth": 10e-6,
+    "focalLength": 45e-3,
+    "operatingWavelength":  510e-9,
+    "bandwidth":  20e-9,
+    "quantumEff":  0.75,
+    "targetBlackBodyTemp": 290,
+    "bitsPerPixel": 12,
+    "opticsSysEff":  0.55,
+    "numOfReadOutE":   12,
+    "apertureDia":  9e-3,
+    "Fnum":  5,
+    "maxDetectorExposureTime": 16e-3,
+    "atmosLossModel": "LOWTRAN7",
+    "_comments": "numOfReadOutE are guessed. The pixels are actually over-sampled 4 times in 16ms interval, i.e. the exposure time is not 16ms."
+     
+}

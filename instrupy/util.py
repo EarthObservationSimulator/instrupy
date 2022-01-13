@@ -647,8 +647,9 @@ class SphericalGeometry(Entity):
         :param _id: Unique identifier.
         :paramtype _id: str
 
-        .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shape, in which we 
-                  have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
+        .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]` and so on. The last point in both the vectors should be the same as the first point to ensure FOV closure.
+                  Except for the case of *CIRCULAR* shaped FOV, in which we have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
+            
 
         """
         class Shape(EnumEntity):
@@ -777,9 +778,8 @@ class SphericalGeometry(Entity):
                 :return: Corresponding ``SphericalGeometry`` object
                 :rtype: :class:`instrupy.util.SphericalGeometry`
 
-                .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]`, and so on. Except for the case of *CIRCULAR* shaped FOV, in which we 
-                    have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle. 
-            
+                .. note:: :code:`cone_angle_vec[0]` ties to :code:`clock_angle_vec[0]` and so on. The last point in both the vectors should be the same as the first point to ensure FOV closure.
+                          Except for the case of *CIRCULAR* shaped FOV, in which we have only one cone angle (:code:`cone_angle_vec[0] = 1/2 diameter`) and no corresponding clock angle.
             """
             if(cone_angle_vec):
                 if(not isinstance(cone_angle_vec, list)):
@@ -797,9 +797,13 @@ class SphericalGeometry(Entity):
             if(len(cone_angle_vec) == 1 and (clock_angle_vec is not None)):
                 raise Exception("With only one cone angle specified, there should be no clock angles specified.")
                 
-            if(not(len(cone_angle_vec) == 1 and (clock_angle_vec is None))):
+            if(not(len(cone_angle_vec) == 1 and (clock_angle_vec is None))): # i.e. check that this is a specification with list of vertices of the spherical polygon
                 if(len(cone_angle_vec) != len(clock_angle_vec)):
                     raise Exception("With more than one cone angle specified, the length of cone angle vector should be the same as length of the clock angle vector.")
+                if(len(cone_angle_vec)<=4):
+                    raise Exception("For a spherical polygon specification with list of vertices, there should be atleast 4 vertices with the last vertex same as the first vertex.")
+                if not(cone_angle_vec[0]==cone_angle_vec[-1]) or not(clock_angle_vec[0]==clock_angle_vec[-1]):
+                    raise Exception("For a spherical polygon specification with list of vertices, the last vertex should be the same as the first vertex.")
                 
             return SphericalGeometry("CUSTOM", cone_angle_vec, clock_angle_vec, _id)
 
@@ -861,9 +865,9 @@ class SphericalGeometry(Entity):
             cone = np.rad2deg(cone)
             clock = np.rad2deg(clock)
 
-            cone_angle_vec = [cone, cone, cone, cone]
+            cone_angle_vec = [cone, cone, cone, cone, cone]
 
-            clock_angle_vec = [clock, 180.0-clock, 180.0+clock, -clock]
+            clock_angle_vec = [clock, 180.0-clock, 180.0+clock, -clock, clock]
 
             return SphericalGeometry("RECTANGULAR", cone_angle_vec, clock_angle_vec, _id)        
         
@@ -895,15 +899,15 @@ class SphericalGeometry(Entity):
             """
             # Check if the instance does correspond to an rectangular shape.
 
-            # Length of cone angle vector and clock angle vector must be 4.
-            if(len(cone_angle_vec) != 4) or (len(clock_angle_vec) != 4):
+            # Length of cone angle vector and clock angle vector must be 5, with the last point same as the first point.
+            if(len(cone_angle_vec) != 5) or (len(clock_angle_vec) != 5):
                 raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.")
             # Check that all elements in the cone angle vector are the same value.
             if(len(set(cone_angle_vec))!= 1):
                 raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.")
-            # The elements of the clock angle vector satisfy the following relationship: [theta, 180-theta, 180+theta, 360-theta]
+            # The elements of the clock angle vector satisfy the following relationship: [theta, 180-theta, 180+theta, 360-theta, theta]
             # in case of rectangular shape. Check for this relationship.
-            if(not math.isclose(clock_angle_vec[3],(360-clock_angle_vec[0])) or not math.isclose(clock_angle_vec[1], (180 - clock_angle_vec[0])) or not math.isclose(clock_angle_vec[2], (180 + clock_angle_vec[0]))):
+            if(not math.isclose(clock_angle_vec[3],(360-clock_angle_vec[0])) or not math.isclose(clock_angle_vec[1], (180 - clock_angle_vec[0])) or not math.isclose(clock_angle_vec[2], (180 + clock_angle_vec[0])) or not math.isclose(clock_angle_vec[4], clock_angle_vec[0])):
                 raise Exception("This SphericalGeometry instance does not correspond to a rectangular shape.") 
             
             theta = np.deg2rad(cone_angle_vec[0])

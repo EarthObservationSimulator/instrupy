@@ -188,8 +188,8 @@ Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR` and :code:`CUSTO
 
 3. :code:`"shape": "CUSTOM"`
 
-   In this case the field-of-view geometry is specified in terms of clock, cone angles. The definition of the clock, cone angles is the 
-   same as used in OrbitPy (propcov) package, i.e.
+   In this case the field-of-view geometry is specified in terms of list of vertices of a spherical polygon. Each vertex is specified via its clock, cone angles. 
+   The definition of the clock, cone angles is the same as used in OrbitPy (propcov) package, i.e.
 
    Let (:math:`x_P`, :math:`y_P`, :math:`z_P`) be a unit vector describing a point on the unit sphere.
    
@@ -205,17 +205,18 @@ Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR` and :code:`CUSTO
       :scale: 100 %
       :align: center   
 
+   The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (except for the case of Circular-shaped geometry in which case see note below).
+   The last point of both the vectors should be the same as the first point to ensure polygon closure.
+
    .. csv-table:: Input parameter description 
       :header: Parameter, Type, Units, Description
       :widths: 10,10,10,40
 
       customConeAnglesVector, string, degrees, array of cone angle values separated by commas
-      customClockAnglesVector, string, degrees, array of clock values separated by commas
-
-   .. note:: The number of values in :code:`customConeAnglesVector` and :code:`customClockAnglesVector` should be the same (or) the number of 
-            values in :code:`customConeAnglesVector` should be just one and no values in :code:`customClockAnglesVector`. The later indicates
-            a circular-shaped spherical geometry.
-
+      customClockAnglesVector, string, degrees, array of clock values separated by commas  
+   
+   .. note:: In case of circular-shaped spherical geometry, the number of values in :code:`customConeAnglesVector` should be just one (half the circular diameter) and 
+             no values in :code:`customClockAnglesVector`.
 
 Example:
 
@@ -223,9 +224,13 @@ Example:
 
                "fieldOfViewGeometry": {
                                           "shape": "CUSTOM",
-                                          "customConeAnglesVector": [10,10,10,10],
-                                          "customClockAnglesVector": [30,120,180,280]
+                                          "customConeAnglesVector": [10,10,10,10,10],
+                                          "customClockAnglesVector": [30,120,180,280,30]
                                        }
+               "fieldOfViewGeometry": {
+                                       "shape": "CUSTOM", 
+                                       "customConeAnglesVector": 15, 
+                                       "@id": 123}
 
 .. _sceneFieldOfViewGeometry_json_obj:
 

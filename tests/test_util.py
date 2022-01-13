@@ -375,11 +375,11 @@ class TestSphericalGeometry(unittest.TestCase):
     def test_from_json_custom_specs(self):
         # Test for typical case
         o = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10,10] , "customClockAnglesVector": [30,60,180,220,30]}')
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.CUSTOM)
-        self.assertEqual(o.cone_angle_vec, [10, 10, 10, 10])
-        self.assertEqual(o.clock_angle_vec, [30, 60, 180, 220])
+        self.assertEqual(o.cone_angle_vec, [10, 10, 10, 10, 10])
+        self.assertEqual(o.clock_angle_vec, [30, 60, 180, 220, 30])
         self.assertIsNone(o.angle_height)
         self.assertIsNone(o.angle_width)
         self.assertIsNone(o.diameter)
@@ -416,7 +416,13 @@ class TestSphericalGeometry(unittest.TestCase):
                 '{"shape": "CUSTOM", "customConeAnglesVector": 10 , "customClockAnglesVector": 30}')
         with self.assertRaises(Exception):
             SphericalGeometry.from_json(
-                '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,100] , "customClockAnglesVector": [30,60,180,220]}')
+                '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,100,10] , "customClockAnglesVector": [30,60,180,220,30]}') # number of entires in the cone angle vector is different from that in the clock angle vector
+        with self.assertRaises(Exception):
+            SphericalGeometry.from_json(
+                '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,100] , "customClockAnglesVector": [30,60,180]}') # last vertex not same as the first vertex
+        with self.assertRaises(Exception):
+            SphericalGeometry.from_json(
+                '{"shape": "CUSTOM", "customConeAnglesVector": [10,20,10] , "customClockAnglesVector": [30,20,30]}') # minimum number of vertices not satisfied.
 
     def test_from_json_circular_specs(self):
         # Test for typical case
@@ -473,9 +479,9 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec, [
-                         15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
+                         15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
         self.assertAlmostEqual(o.clock_angle_vec, [
-                         18.6768081421232, 161.3231918578768, 198.6768081421232, 341.3231918578768])
+                         18.6768081421232, 161.3231918578768, 198.6768081421232, 341.3231918578768, 18.6768081421232])
         self.assertEqual(o.angle_height, 10)
         self.assertAlmostEqual(o.angle_width, 30)
         self.assertIsNone(o.diameter)
@@ -487,9 +493,9 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec, [
-                         10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208])
+                         10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208])
         self.assertAlmostEqual(o.clock_angle_vec, [
-                         45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
+                         45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751, 45.246138033024906])
         self.assertAlmostEqual(o.angle_height, 15)
         self.assertAlmostEqual(o.angle_width, 15)
         self.assertIsNone(o.diameter)
@@ -501,9 +507,9 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
         self.assertAlmostEqual(o.cone_angle_vec, [
-                         15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
+                         15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
         self.assertAlmostEqual(o.clock_angle_vec, [
-                         71.98186515628623, 108.01813484371377, 251.98186515628623, 288.01813484371377])
+                         71.98186515628623, 108.01813484371377, 251.98186515628623, 288.01813484371377, 71.98186515628623])
         self.assertAlmostEqual(o.angle_height, 30)
         self.assertAlmostEqual(o.angle_width, 10)
         self.assertIsNone(o.diameter)
@@ -519,6 +525,7 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertAlmostEqual(o.clock_angle_vec[1], 180, delta=0.2)
         self.assertAlmostEqual(o.clock_angle_vec[2], 180, delta=0.2)
         self.assertAlmostEqual(o.clock_angle_vec[3], 360, delta=0.2)
+        self.assertAlmostEqual(o.clock_angle_vec[4], 0, delta=0.2)
         self.assertEqual(o.angle_height, 0.1)
         self.assertAlmostEqual(o.angle_width, 50)
         self.assertIsNone(o.diameter)
@@ -555,7 +562,7 @@ class TestSphericalGeometry(unittest.TestCase):
         self.assertAlmostEqual(angle_width, 30)
 
         o = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [30,30,30,30] , "customClockAnglesVector": [20,160,200,-20]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [30,30,30,30,30] , "customClockAnglesVector": [20,160,200,-20,20]}')
         [angle_height, angle_width] = SphericalGeometry.get_rect_poly_specs_from_cone_clock_angles(o.cone_angle_vec, o.clock_angle_vec)
         self.assertAlmostEqual(angle_height, 19.693103879668154)
         self.assertAlmostEqual(angle_width, 56.96247656267892)
@@ -564,26 +571,26 @@ class TestSphericalGeometry(unittest.TestCase):
         with self.assertRaises(Exception):
             o.get_rect_poly_specs_from_cone_clock_angles([20], None)
         with self.assertRaises(Exception):
-            o.get_rect_poly_specs_from_cone_clock_angles([10,10,10,10], [30,60,180,220])
+            o.get_rect_poly_specs_from_cone_clock_angles([10,10,10,10,10], [30,60,180,220,30])
         # slight tweaking of cone, clock angles corresponding to valid rectangular shape (15 deg x 15 deg) 
         with self.assertRaises(Exception):
-            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208],
-                                                         [45.246138033024906, 134.75386196697508, 125.24613803302492, 314.7538619669751])
+            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208],
+                                                         [45.246138033024906, 134.75386196697508, 125.24613803302492, 314.7538619669751, 45.246138033024906])
         with self.assertRaises(Exception):
-            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208], 
-                                                         [45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
+            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208], 
+                                                         [45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751, 45.246138033024906])
         with self.assertRaises(Exception):
-            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 20.591411134810208, 10.591411134810208, 10.591411134810208], 
-                                                         [45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751])
+            o.get_rect_poly_specs_from_cone_clock_angles([10.591411134810208, 20.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208], 
+                                                         [45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751, 45.246138033024906])
 
     def test_to_dict(self):
         # custom shape
         o = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10,10] , "customClockAnglesVector": [30,60,180,220,30]}')
         d = o.to_dict()
         self.assertEqual(d["shape"], "CUSTOM")
-        self.assertEqual(d["customConeAnglesVector"], "[10.0,10.0,10.0,10.0]")
-        self.assertEqual(d["customClockAnglesVector"], "[30.0,60.0,180.0,220.0]")
+        self.assertEqual(d["customConeAnglesVector"], "[10.0,10.0,10.0,10.0,10.0]")
+        self.assertEqual(d["customClockAnglesVector"], "[30.0,60.0,180.0,220.0,30.0]")
         self.assertIsNone(d["@id"])
         # circular shape
         o = SphericalGeometry.from_json(
@@ -605,15 +612,15 @@ class TestSphericalGeometry(unittest.TestCase):
     def test___eq__(self):
         # custom shape
         o1 = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10,10] , "customClockAnglesVector": [30,60,180,220,30]}')
         o2 = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10,10] , "customClockAnglesVector": [30,60,180,220,30]}')
         self.assertTrue(o1==o2)
 
         o1 = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [20,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [20,10,10,10,20] , "customClockAnglesVector": [30,60,180,220,30]}')
         o2 = SphericalGeometry.from_json(
-            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10] , "customClockAnglesVector": [30,60,180,220]}')
+            '{"shape": "CUSTOM", "customConeAnglesVector": [10,10,10,10,10] , "customClockAnglesVector": [30,60,180,220,30]}')
         self.assertFalse(o1==o2)
 
         # circular shape
@@ -1002,6 +1009,7 @@ class TestSyntheticDataConfiguration(unittest.TestCase):
         self.assertFalse(o1==o2)
 
 class TestSyntheticDataInterpolator(unittest.TestCase):
+    
     def test_scipy_linear(self):
         
         x = np.arange(-2, 2, 0.1)
@@ -1028,7 +1036,7 @@ class TestSyntheticDataInterpolator(unittest.TestCase):
         self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[3], np.sin(0.5**2 + 1**2))
         self.assertAlmostEqual(SyntheticDataInterpolator.scipy_linear(lons.flatten(),lats.flatten(),var_data.flatten(), pixel_center_pos)[4], np.sin(1.5**2 + 0**2))
 
-
+    
     def test_metpy_linear(self):
         
         x = np.arange(-2, 2, 0.1)
