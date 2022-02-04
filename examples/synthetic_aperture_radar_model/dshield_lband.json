@@ -8,7 +8,7 @@
     "pulseWidth": 14.16e-6,
     "antenna":{"shape": "RECTANGULAR", "height": 14.38, "width": 1.48, 
         "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},
-    "operatingFrequency": 1280e6, 
+    "operatingFrequency": 1275.7e6, 
     "peakTransmitPower": 1000, 
     "chirpBandwidth": 0.86e6,      
     "minimumPRF": 1, 
