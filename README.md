@@ -8,7 +8,6 @@ For a detailed description see the following articles:
 
 2. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
 
-
 ## Install
 
 Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), `python 3.8`, `pip`, `gfortran`
@@ -24,8 +23,8 @@ The installation can be carried out in a `conda` environment using the below ste
 
 3. Create and activate a new conda environment with python. Install `pip` in the environment.
 ```
-conda create --name py38env python=3.8
-conda activate py38env
+conda create --name foo python=3.8
+conda activate foo
 conda install pip
 ```
 
@@ -41,7 +40,7 @@ installed:
 * `numpy`
 * `pandas`
 * `scipy`
-* `lowtran` (requires gfortran)
+* `lowtran` (requires `gfortran`)
 * `sphinx`
 * `sphinx_rtd_theme==0.5.2`
 * `metpy`
