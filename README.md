@@ -11,12 +11,42 @@ For a detailed description see the following articles:
 
 ## Install
 
-Requires: `python 3.8`, `pip`, `gfortran`,  `lowtran`
+Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), `python 3.8`, `pip`, `gfortran`
 
-1. Run `make` from the root repo directory.
-2. Run tests using the `make runtest` command and get the *OK* message.
+The installation can be carried out in a `conda` environment using the below steps.
+
+1. Install `gfortran`. See [Resource](https://fortran-lang.org/learn/os_setup/install_gfortran).
+
+*   Linux: `sudo apt gfortran`
+*   Mac: `brew install gcc`
+
+2. Have `conda` installed using the [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/products/individual) distributions.
+
+3. Create and activate a new conda environment with python. Install `pip` in the environment.
+```
+conda create --name py38env python=3.8
+conda activate py38env
+conda install pip
+```
+
+4. Run `make` from the root repo directory.
+
+5. Run tests using the `make runtest` command and get the *OK* message.
 
 Find the documentation in: `instrupy/docs/_build/html/user_json_desc.html`
+
+All the dependencies are automatically installed. If any errors are encountered please check that the following dependencies are 
+installed:
+
+* `numpy`
+* `pandas`
+* `scipy`
+* `lowtran` (requires gfortran)
+* `sphinx`
+* `sphinx_rtd_theme==0.5.2`
+* `metpy`
+* `netCDF4`
+* `astropy`
 
 ### Lowtran
 
@@ -78,5 +108,5 @@ This work has been funded by grants from the National Aeronautics and Space Admi
 
 ## Questions?
 
-Please contact Vinay (vinay.ravindra@nasa.gov)
+Please contact Vinay (vinay.ravindra@nasa.gov, vravindra@baeri.org)
 

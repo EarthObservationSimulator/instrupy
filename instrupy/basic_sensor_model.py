@@ -7,7 +7,6 @@
 import copy
 from instrupy.util import Entity, Orientation, SphericalGeometry, Maneuver, ViewGeometry, MathUtilityFunctions, GeoUtilityFunctions, Constants, SyntheticDataConfiguration
 from netCDF4 import Dataset
-import cartopy.crs as ccrs
 import numpy as np
 import astropy.time
 import uuid
@@ -358,6 +357,8 @@ class BasicSensorModel(Entity):
         '''
         ax = plt.axes(projection=ccrs.PlateCarree())
         ax.coastlines()
+
+        # requires import cartopy.crs as ccrs
 
         plt.contourf(lons, lats, temperature,60, transform=ccrs.PlateCarree(), cmap=get_cmap("jet"))
         plt.colorbar(ax=ax, shrink=.98)

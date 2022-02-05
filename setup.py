@@ -9,9 +9,9 @@ setup(
     version='0.2',
     description='Instrument module',
     author='BAERI',
-    author_email='vinay.ravindra@nasa.gov',
+    author_email='vravindra@baeri.org',
     packages=['instrupy'],
     scripts=[ 
     ],
-    install_requires=['numpy', 'pandas', 'scipy', 'lowtran', 'sphinx', 'sphinx_rtd_theme'] 
+    install_requires=['shapely', 'numpy', 'pandas', 'scipy', 'lowtran', 'sphinx', 'sphinx_rtd_theme==0.5.2', 'netCDF4','metpy','astropy'] 
 )
