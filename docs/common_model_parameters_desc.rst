@@ -2,7 +2,7 @@
 
 Common Model Parameters
 *************************
-This section describes the common instrument model parameters expected to be specified by the user.
+This section describes the common instrument model parameters among all instrument types.
 The expected key/value pairs for initialization of the parameters from json/ dict is described along with examples. 
 
 .. _orientation_json_obj:
@@ -173,7 +173,7 @@ Three values are allows :code:`"CIRCULAR"`, :code:`RECTANGULAR` and :code:`CUSTO
       angleHeight, number, degrees, Angular height (about sensor X-axis)
       angleWidth, number, degrees, Angular width (about sensor Y-axis)
    
-   angleHeight and angleWith correspond to the along-track and cross-track FOVs respectively in case the sensor-frame is
+   ``angleHeight`` and ``angleWith`` correspond to the along-track and cross-track FOVs respectively in case the sensor-frame is
    aligned to the NADIR_POINTING frame.
 
    Example:

@@ -20,21 +20,23 @@ The installation can be carried out in a :code:`conda` environment using the bel
                     conda install pip
 
 
-1. Run :code:`make` from the root repo directory.
+4. Run :code:`make` from the root repo directory.
 
-2. Run tests using the :code:`make runtest` command and get the *OK* message.
+    All the dependencies are automatically installed. If any errors are encountered please check that the following dependencies are 
+    installed:
 
-Find the documentation in: :code:`instrupy/docs/_build/html/user_json_desc.html`
+    * :code:`numpy`
+    * :code:`pandas`
+    * :code:`scipy`
+    * :code:`lowtran` (requires :code:`gfortran`)
+    * :code:`sphinx`
+    * :code:`sphinx_rtd_theme==0.5.2`
+    * :code:`metpy`
+    * :code:`netCDF4`
+    * :code:`astropy`
 
-All the dependencies are automatically installed. If any errors are encountered please check that the following dependencies are 
-installed:
+5. Run tests using the :code:`make runtest` command and get the *OK* message.
 
-* :code:`numpy`
-* :code:`pandas`
-* :code:`scipy`
-* :code:`lowtran` (requires :code:`gfortran`)
-* :code:`sphinx`
-* :code:`sphinx_rtd_theme==0.5.2`
-* :code:`metpy`
-* :code:`netCDF4`
-* :code:`astropy`
+6. Find the documentation in: :code:`instrupy/docs/_build/html/user_json_desc.html`
+
+

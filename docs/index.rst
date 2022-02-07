@@ -1,7 +1,15 @@
 Welcome to InstruPy's documentation!
 =====================================
 
-Welcome! This is the documentation for InstruPy, last updated 1 Sep, 2021.
+Welcome! This is the documentation for InstruPy, last updated 7 Feb, 2022.
+
+The recommended way to get started, is to first read through the User Guide (install and run the example). 
+While setting up simulations with specific instruments, refer to the documentation of the instrument type available in :ref:`Instrument Models<instrument_models_desc>`
+and :ref:`API Reference<api_reference>`. The API reference also provides examples.
+
+The :ref:`Use Cases<use_cases>` section outlines example simulation scripts available in the ``examples`` folder for different applications of the InstruPy package. 
+The :ref:`Miscellaneous<miscellaneous>` section has writeup about the miscellaneous concepts such as Reference frames, types of FOV, side-looking instruments and maneuverability.
+The :ref:`Development<development>` section contains software development notes including description of validation tests.
 
 Contents
 ---------
@@ -14,6 +22,7 @@ Contents
    api_reference
    development
    miscellaneous
+   use_cases
    
 Questions?
 ------------------

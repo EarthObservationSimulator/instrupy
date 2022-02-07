@@ -1,3 +1,5 @@
+.. _miscellaneous:
+
 Miscellaneous
 *************
 This page describes miscellaneous concepts relating to the InstruPy package.
@@ -6,8 +8,11 @@ This page describes miscellaneous concepts relating to the InstruPy package.
 
 Reference Frames
 ====================
-When specifying the orientation or position/velocity, the reference frame must be specified. The following reference-frames are 
-recognized: 
+When specifying the orientation or position/velocity, the reference frame must be specified. The below reference-frames are 
+recognized. 
+
+.. note:: If an instrument is oriented with respect to the spacecraft body-fixed reference frame, and no other information is supplied, it is assumed that
+            the spacecraft is aligned to the Nadir-pointing frame.
 
 Earth Centered Inertial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

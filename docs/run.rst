@@ -4,12 +4,12 @@ Run
 There are two steps involved in using the InstruPy package for calculation of data-metrics associated with an instrument and an access-event:
 
 1. Initialize the relevant instrument model from a python dictionary or json-string. Description of the expected model-parameters from the user 
-   can be obtained from the :ref:`here<instrument_models_desc>`. Specifications of example instruments (in the required JSON format)
+   can be obtained from the :ref:`Instrument Models<instrument_models_desc>` section. Specifications of example instruments (in the required JSON format)
    is available in the :code:`instrupy/examples/` directory.
-2. Invoke the ``calc_data_metrics`` function from the model instance by passing the access-event information (state of the observer and target).
-   The access-event information is most commonly the state of the observer and the location of the target. Another type of access-event specification
+2. Invoke the ``calc_data_metrics`` function from the model instance by passing the access-event information.
+   The access-event information is most commonly the observation-time, state (position/velocity) of the observer and the location of the target. Another type of access-event specification
    involve specifying the incidence angle at the target, which is available for the synthetic aperture radar model.
-   For more details please refer to the API description of the respective modules (:ref:`here<api_reference>`). 
+   For more details please refer to the (:ref:`API Reference <api_reference>`) section of the respective modules. 
 
 All the instrument-models have identical interface functions, i.e.:
 
@@ -83,7 +83,7 @@ A mode-identifier can be specified by the user with which the corresponding mode
 
 .. note:: The ``Instrument`` class may be used without specifying any modes. This may be desirable if one wishes to avoid using different classes
           for each instrument-model. Since the ``Instrument`` class provides the same interface functions as the instrument-model classes, the
-          usage is identical. Refer to :ref:`base module docs<base_module>`.
+          usage is identical. Refer to :ref:`base module<base_module>` API reference.
 
 **Example**
 

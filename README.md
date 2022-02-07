@@ -47,7 +47,7 @@ conda install pip
 
 5. Run tests using the `make runtest` command and get the *OK* message.
 
-Find the documentation in: `instrupy/docs/_build/html/index.html`
+6. Find the documentation in: `instrupy/docs/_build/html/index.html`
 
 ### Lowtran
 
