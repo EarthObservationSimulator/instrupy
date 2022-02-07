@@ -1,12 +1,14 @@
 # InstruPy
 
-InstruPy is a python package to calculate observation data metrics for a given instrument and associated access events. 
+InstruPy is a python package to calculate observation data metrics for a given instrument and associated viewing geometry. 
 
-For a detailed description see the following articles: 
+For a detailed description see the following articles (available in the `literature` folder): 
 
 1. V. Ravindra, S. Nag, *"Instrument Data Metrics Evaluator for Tradespace Analysis of Earth Observing Constellations",* IEEE Aerospace Conference, Big Sky, Montana, March 2020. 
 
-2. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
+2. V. Ravindra, R. Ketzner and S. Nag, *"Earth Observation Simulator (EO-Sim): An Open-Source Software for Observation Systems Design,"* 2021 IEEE International Geoscience and Remote Sensing Symposium IGARSS, 2021.
+
+3. S. Nag, V. Ravindra, J.J. LeMoigne *"Instrument Modeling Concepts for Tradespace Analysis of Satellite Constellations",* IEEE Sensors Conference, Delhi, India, October 2018.
 
 ## Install
 
@@ -14,7 +16,7 @@ Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), `python 3
 
 The installation can be carried out in a `conda` environment using the below steps.
 
-1. Install `gfortran`. See [Resource](https://fortran-lang.org/learn/os_setup/install_gfortran).
+1. Install `gfortran`. See [here](https://fortran-lang.org/learn/os_setup/install_gfortran).
 
 *   Linux: `sudo apt gfortran`
 *   Mac: `brew install gcc`
@@ -30,22 +32,22 @@ conda install pip
 
 4. Run `make` from the root repo directory.
 
+    All the dependencies are automatically installed. If any errors are encountered please check that the following dependencies are 
+    installed correctly.
+
+    * `numpy`
+    * `pandas`
+    * `scipy`
+    * `lowtran` (requires `gfortran`)
+    * `sphinx`
+    * `sphinx_rtd_theme==0.5.2`
+    * `metpy`
+    * `netCDF4`
+    * `astropy`
+
 5. Run tests using the `make runtest` command and get the *OK* message.
 
-Find the documentation in: `instrupy/docs/_build/html/user_json_desc.html`
-
-All the dependencies are automatically installed. If any errors are encountered please check that the following dependencies are 
-installed:
-
-* `numpy`
-* `pandas`
-* `scipy`
-* `lowtran` (requires `gfortran`)
-* `sphinx`
-* `sphinx_rtd_theme==0.5.2`
-* `metpy`
-* `netCDF4`
-* `astropy`
+Find the documentation in: `instrupy/docs/_build/html/index.html`
 
 ### Lowtran
 
@@ -78,16 +80,23 @@ C:.
 ├───tests (test scripts)
 ├───third_party
 │   └───lowtran-2.4.1
+├───literature (resources)
 ├───TBD (old files)
 ```
 
 ## Examples
 
-Specifications of example instruments (in the required JSON format) is present in the `instrupy/examples/example_instrument_specs/` directory.
+InstruPy contains models of 'basic', passive-optical, synthetic-aperture-radar and radiometer instruments. Each type of instrument is associated
+with different set of instrument parameters whose description can be found in the HTML documentation. 
+Example specifications and related literature of instruments (in the required JSON format) is present in the `instrupy/examples/` directory.
+
+The directory also contains the following python scripts which can be executed after the InstruPy package has been installed.
+
+* SAR_example.py: Illustrates the synthetic-aperture-radar models with different possible set of configurations and the usage of the InstruPy functions to      evaluate the data-metrics.
 
 ## License and Copyright
 
-Copyright 2020 Bay Area Environmental Research Institute
+Copyright 2022 Bay Area Environmental Research Institute
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -107,5 +116,5 @@ This work has been funded by grants from the National Aeronautics and Space Admi
 
 ## Questions?
 
-Please contact Vinay (vinay.ravindra@nasa.gov, vravindra@baeri.org)
+Please contact Vinay (vravindra@baeri.org or vinay.ravindra@nasa.gov)
 
