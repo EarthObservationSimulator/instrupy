@@ -8,8 +8,6 @@
     such as the design-space, objective-space, etc are saved (as svg files) and displayed. If you want faster runtime (with potential 
     reduction in optimality), reduce the number of generations and population size in the NSGA-II configuration.
 
-    .. error:: Some runtime warnings are issued during the execution of this script (mostly from pymoo). This needs to be debugged.
-
     Baseline instrument: Synthetic Aperture Radar with following fixed parameters:
                             * Operational altitude is 350km
                             * Dual-polarization (SMAP pulse configuration with default pulse-separation)
@@ -135,20 +133,22 @@ class MyProblem(Problem):
         f4 = 1e9
             
         if(obsv_metrics_1["NESZ [dB]"] and obsv_metrics_2["NESZ [dB]"] and obsv_metrics_3["NESZ [dB]"] ):
+
+            if not np.isnan(obsv_metrics_1["NESZ [dB]"]) and not np.isnan(obsv_metrics_2["NESZ [dB]"]) and not np.isnan(obsv_metrics_3["NESZ [dB]"]):
             
-            # Use below condition in case of fixed-swath configuration. If this condition is not true it means that the illuminated swath size < the fixed swath size
-            # if(obsv_metrics_1["swath-width [km]"] == 25 and obsv_metrics_2["swath-width [km]"] == 25 and obsv_metrics_3["swath-width [km]"] == 25):
-                
-            # valid observation point
-            g1 = -1
+                # Include below condition in case of fixed-swath configuration. If this condition is not true it means that the illuminated swath size < the fixed swath size
+                # if(obsv_metrics_1["swath-width [km]"] == 25 and obsv_metrics_2["swath-width [km]"] == 25 and obsv_metrics_3["swath-width [km]"] == 25):
+                    
+                # valid observation point
+                g1 = -1
 
-            f1 = daz_m * delv_m
-            f2 = -1 * obsv_metrics_3["swath-width [km]"]
-            f3 = obsv_metrics_3["NESZ [dB]"]
+                f1 = daz_m * delv_m
+                f2 = -1 * obsv_metrics_3["swath-width [km]"]
+                f3 = obsv_metrics_3["NESZ [dB]"]
 
-            N_looks = 1e6 / (obsv_metrics_3["ground pixel along-track resolution [m]"] * obsv_metrics_3["ground pixel cross-track resolution [m]"])
-            f4 = 10*np.log10(1/np.sqrt(N_looks))
-            #print(f1,f2,f3,f4)
+                N_looks = 1e6 / (obsv_metrics_3["ground pixel along-track resolution [m]"] * obsv_metrics_3["ground pixel cross-track resolution [m]"])
+                f4 = 10*np.log10(1/np.sqrt(N_looks))
+                #print(f1,f2,f3,f4)
             
 
 

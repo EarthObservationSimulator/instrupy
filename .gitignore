@@ -6,6 +6,7 @@ docs/_build/*
 docs/_templates/*
 !docs/_templates/.gitkeep
 docs/generated/*
+examples/moo_results/*
 
 # objects, executables, core dumps
 *.o
@@ -23,3 +24,4 @@ core
 
 # Setuptools distribution folder.
 /dist/
+
