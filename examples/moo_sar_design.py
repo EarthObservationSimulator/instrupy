@@ -1,8 +1,14 @@
-""" This notebook performs SAR instrument design based on a multi-objective optimization algorithm (NSGA-II), enabled by the 
-    `pymoo 0.4.2` package. A baseline instrument is defined, and some of the instrument parameters are kept as optmization variables.
-    Multiple objectives are defined in terms of the datametrics produced by the InstruPy package. 
+""" This script performs SAR instrument design based on a multi-objective optimization algorithm (NSGA-II), enabled by the 
+    `pymoo 0.4.2` package. A baseline instrument is defined, and some of the instrument parameters are kept as optimization variables.
+    Multiple objectives are defined in terms of the data-metrics produced by the InstruPy package.
     The result is a multi-dimensional Pareto-curve illustrating the trade-offs between different instrument designs. Any point on the
     Pareto curve is optimal and a suitable point can be selected by the user for implementation.
+
+    The Pareto Curve (instrument variables and corresponding data-metrics) in a csv file in the folder ``moo_results``. Various plots
+    such as the design-space, objective-space, etc are saved (as svg files) and displayed. If you want faster runtime (with potential 
+    reduction in optimality), reduce the number of generations and population size in the NSGA-II configuration.
+
+    .. error:: Some runtime warnings are issued during the execution of this script (mostly from pymoo). This needs to be debugged.
 
     Baseline instrument: Synthetic Aperture Radar with following fixed parameters:
                             * Operational altitude is 350km
@@ -59,7 +65,7 @@ os.makedirs(out_dir)
 class MyProblem(Problem):
     """     # Variables: (1) Daz [m], (2) Delv [m], (3), Chirp BW [MHz] (4) Pulse width [us]
             # Objectives: (1) Antenna area (2) -1* Swath Width (3) NESZ [dB] (4) # Speckle reduction [dB] for 1km2 pixel
-            # Constrtains: Valid operating point
+            # Constraints: Valid operating point
     """
     def __init__(self):
         super().__init__(n_var=4,
@@ -121,8 +127,7 @@ class MyProblem(Problem):
                                                         inc_angle_deg = inc[2], 
                                                         instru_look_angle_from_target_inc_angle = True)
 
-
-        # initialize to invalid observation point
+        # initialize to an invalid observation point
         g1 = 1
         f1 = 1e9
         f2 = 1e9
@@ -131,8 +136,8 @@ class MyProblem(Problem):
             
         if(obsv_metrics_1["NESZ [dB]"] and obsv_metrics_2["NESZ [dB]"] and obsv_metrics_3["NESZ [dB]"] ):
             
-            # Use below condition in case of fixed-swath simulations
-            #if(obsv_metrics_1["swath-width [km]"] == 25 and obsv_metrics_2["swath-width [km]"] == 25 and obsv_metrics_3["swath-width [km]"] == 25):
+            # Use below condition in case of fixed-swath configuration. If this condition is not true it means that the illuminated swath size < the fixed swath size
+            # if(obsv_metrics_1["swath-width [km]"] == 25 and obsv_metrics_2["swath-width [km]"] == 25 and obsv_metrics_3["swath-width [km]"] == 25):
                 
             # valid observation point
             g1 = -1
@@ -154,7 +159,7 @@ class MyProblem(Problem):
 problem = MyProblem()
 
 algorithm = NSGA2(
-    pop_size=100,
+    pop_size=1000,
     sampling=get_sampling("real_random"),
     crossover=get_crossover("real_sbx", prob=0.9, eta=20),
     mutation=get_mutation("real_pm", eta=20),
@@ -171,9 +176,15 @@ res = minimize(problem,
                save_history=True,
                verbose=False)
 
-pickle.dump(res, open(out_dir+ "data.p", "wb" ) )
+#pickle.dump(res, open(out_dir+ "data.p", "wb" ) ) # uncomment to save as pickle file
 
-# Design Space
+# Save Pareto curve as csv file
+import pandas as pd 
+df = pd.DataFrame({"Daz [m]" : res.X[:,0], "Delv [m]" : res.X[:,1], "Chirp BW [MHz]" : res.X[:,2], "Pulse width [us]" : res.X[:,3], "Antenna area [m2]" : res.F[:,0], "Swath width [km]" : -1*res.F[:,1], "NESZ [dB]" : res.F[:,2], "Speckle reduction [dB]" : res.F[:,3]})
+df.to_csv(out_dir+"pareto_front.csv")
+
+# Plot Design Space
+# x1: Daz [m], x2: Delv [m], x3: Chirp BW [MHz], x4: Pulse width [us]
 plot = Scatter(title = "Design Space", axis_labels="x", tight_layout=True)
 plot.add(res.X, s=30, facecolors='none', edgecolors='c')
 plot.do()
@@ -181,39 +192,27 @@ plt.savefig(out_dir+"design_space.svg")
 #plot.apply(lambda ax: ax.set_xlim(0.5, 0.5, 0.1, 1))
 #plot.apply(lambda ax: ax.set_ylim(20, 20, 80, 1000))
 plot.show()
-# f1: Daz [m], f2: Delv [m], f3: Chirp BW [MHz], f4: Pulse width [us]
 
-# Objective Space
+# Plot Objective Space
+# f1: Antenna area [m2], f2: -Swath width [km], f3: Sigma NESZ [dB], f4: Speckle reduction [dB]
 plot = Scatter(title = "Objective Space", tight_layout=True)
 plot.add(res.F)
 plot.do()
 plt.savefig(out_dir+"obj_space.svg")
 plot.show()
 
-# f1: Antenna area [m2], f2: -Swath width [km], f3: Sigma NESZ [dB], f4: Speckle reduction [dB]
-
-
-import pandas as pd 
-df = pd.DataFrame({"Daz [m]" : res.X[:,0], "Delv [m]" : res.X[:,1], "Chirp BW [MHz]" : res.X[:,2], "Pulse width [us]" : res.X[:,3], "Antenna area [m2]" : res.F[:,0], "Swath width [km]" : -1*res.F[:,1], "NESZ [dB]" : res.F[:,2], "Speckle reduction [dB]" : res.F[:,3]})
-df.to_csv(out_dir+"pareto_front.csv")
-
-
 # In[ ]:
-
-
-"""
+'''
 plt.plot(n_evals, hv, '-o')
 plt.title("Convergence")
 plt.xlabel("Function Evaluations")
 plt.ylabel("Hypervolume")
 plt.savefig("hypervolume.svg")
 plt.show()
-"""
+'''
 
 
 # In[ ]:
-
-
 from pymoo.visualization.pcp import PCP
 plot = PCP().add(res.F)
 plot.add(res.F[0], linewidth=5, color="green")
@@ -226,14 +225,14 @@ plt.savefig(out_dir+"pcp.svg")
 
 
 # In[ ]:
-
-
-#f1: Antenna area [m2], f2: -Swath width [km], f3: NESZ [dB], f4: Speckle reduction [dB]
 from pymoo.factory import get_performance_indicator
 A = res.F[10]
 hv = get_performance_indicator("hv", ref_point=np.array([15*15, 0, 0, 0]))
 print("hv", hv.calc(A))
 
+
+'''
+# Debug statements.
 
 # In[ ]:
 
@@ -289,6 +288,6 @@ np.size(res.F)
 
 # In[ ]:
 
-
+'''
 
 
