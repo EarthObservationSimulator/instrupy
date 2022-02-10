@@ -28,7 +28,7 @@ The installation can be carried out in a :code:`conda` environment using the bel
     * :code:`numpy`
     * :code:`pandas`
     * :code:`scipy`
-    * :code:`lowtran` (requires :code:`gfortran`)
+    * :code:`lowtran==2.4.1` (requires :code:`gfortran`)
     * :code:`sphinx`
     * :code:`sphinx_rtd_theme==0.5.2`
     * :code:`metpy`

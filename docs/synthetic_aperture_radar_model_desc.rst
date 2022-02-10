@@ -260,6 +260,19 @@ on the surface of Earth can be calculated:
    ground Pixel cross-track resolution [m], float, meters, Cross-track pixel resolution of a ground-pixel centered about observation point.     
    PRF [Hz], float, Hertz, Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
 
+Speckle reduction [dB] 
+-----------------------
+We can differentiate between a *processed pixel* and a *raw pixel*, where the processed pixel is of larger dimensions compared to the raw pixel.
+The processed pixel is formed by averaging several adjacent raw pixels, and the number of raw pixels averaged to form the processed pixel is called as the 
+number of looks. The averaging helps in speckle reduction and can be calculated as follows:
+
+Number of Looks (N) = processed pixel area / raw pixel area (along-track resolution * cross-track resolution)
+
+The speckle reduction in decibels is given by :math:`10 \log_{10}(1/N)` (See 5.8, Pg 187, David Gardner Long , Fawwaz T. Ulaby - Microwave Radar and Radiometric Remote Sensing)
+
+The speckle reduction comes at the cost of coarser pixel resolution.
+
+
 Model description
 ==================
 
@@ -386,7 +399,6 @@ In case of Stripmap :math:`n_{ss} = 1` and in case of ScanSAR :math:`n_{ss} > 1`
 
 Checking validity of pulse repetition frequency (PRF)
 ---------------------------------------------------------
-
 The user supplies a range of PRF of the SAR instrument. Depending on the viewing geometry a usable/ valid PRF has to be selected for target observation. 
 [2] is the primary reference for this formulation, although some errors have been found (and corrected in the current
 implementation). [3] contains the corrections. The referenced formulation is further modified to incorporate the PRF constraints
@@ -476,6 +488,22 @@ separation between the pulses of the orthogonal polarization.
 
 The :math:`NESZ` calculation is to be done with the pulse-width = :code:`pulseWidth`
 
+
+Average *instrument* transmit power of SAR
+---------------------------------------------
+Note that the above calculated :math:`P_{avg} = \tau_p \hspace{1mm} f_P \hspace{1mm} P_T` is the average transmit power *per polarization*.
+(In case of dual-pol with AIRSAR pulse-config :math:`f_P = PRF_{ch}`)
+
+In case of single/ compact-pol the average transmit power of the instrument shall be the same as :math:`P_{avg}`.
+
+In case of dual-pol with AIRSAR pulse-configuration the average transmit power of the instrument shall be 
+:math:`\tau_p \hspace{1mm} (2 \hspace{1mm} f_P) \hspace{1mm} P_T = 2*P_{avg}`.
+Note that :math:`2 \hspace{1mm} f_P = PRF_{master}`.
+
+In case of dual-pol with SMAP pulse-config, the instrument average transmit power shall be :math:`(2 \hspace{1mm} \tau_p) \hspace{1mm} \hspace{1mm} f_P \hspace{1mm} P_T = 2 P_{avg}`. 
+Note that :math:`2 \hspace{1mm} \tau_p` is used since the SMAP pulse-configuration uses two pulses of equal widths (corresponding to the two orthogonal transmit polarizations) slightly separated from each other
+within the same pulse-period.
+
 Examples
 =========
 Please see the ``examples`` folder.
@@ -521,7 +549,7 @@ Glossary
 * :math:`f_P`: Pulse-repetition-frequency.
 * :math:`d`: Duty-cycle.
 * :math:`P_T`: Peak transmit power.
-* :math:`P_{avg}`: Average transmit power.
+* :math:`P_{avg}`: Average transmit power per polarization.
 * :math:`A_A`: Area of antenna.
 * :math:`\eta_{ap}`: Aperture efficiency of antenna.
 * :math:`G_A`: Gain of antenna.

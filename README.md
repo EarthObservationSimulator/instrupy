@@ -38,7 +38,7 @@ conda install pip
     * `numpy`
     * `pandas`
     * `scipy`
-    * `lowtran` (requires `gfortran`)
+    * `lowtran==2.4.1` (requires `gfortran`)
     * `sphinx`
     * `sphinx_rtd_theme==0.5.2`
     * `metpy`
