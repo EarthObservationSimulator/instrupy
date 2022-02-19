@@ -1,0 +1,25 @@
+{   "@type": "Passive Optical Scanner", 
+    "name": "SkysatCamera_blue", 
+    "fieldOfViewGeometry": { "shape": "RECTANGULAR", "angleHeight": 0.1116, "angleWidth":0.2645 },
+    "sceneFieldOfViewGeometry": {"shape": "RECTANGULAR", "angleHeight":1.116, "angleWidth":0.7935},
+    "scanTechnique": "MATRIX_IMAGER", 
+    "numberDetectorRows": 1080, 
+    "numberDetectorCols": 2560, 
+    "detectorWidth": 6.6e-6,
+    "focalLength": 3.6,  
+    "operatingWavelength": 490e-9,  
+    "bandwidth": 50e-9, 
+    "quantumEff": 0.35, 
+    "targetBlackBodyTemp": 290,
+    "opticsSysEff": 0.6, 
+    "numOfReadOutE": 5, 
+    "apertureDia": 350e-3, 
+    "Fnum": 10.3, 
+    "maxDetectorExposureTime": 20e-3, 
+    "atmosLossModel": "LOWTRAN7",
+    "comments": "Scene size ~ 10*angleHeight (10 is arbitrary) X 3*angleWidth (3 cameras)",
+    "references": ["Zhai, Chengxing, et al. Asteroid Detection Demonstration from SkySat-3 B612 Data using Synthetic Tracking. arXiv preprint arXiv:1805.01102 (2018).",
+                   "PLANET IMAGERY PRODUCT SPECIFICATIONS, February 2021".
+                   "Absolute calibration and validation of Skysat constellation, Absolute calibration and validation of Skysat constellation, Adrian Gonzalez - CalVal team - Planet VH Roda November 2019 (Presentation)"]
+  }
+}

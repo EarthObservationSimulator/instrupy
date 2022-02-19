@@ -4,7 +4,7 @@ Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), :code:`py
 
 The installation can be carried out in a :code:`conda` environment using the below steps.
 
-1. Install :code:`gfortran`. See `Resource <https://fortran-lang.org/learn/os_setup/install_gfortran>`_.
+1. Install :code:`gfortran`. See `here <https://fortran-lang.org/learn/os_setup/install_gfortran>`_.
 
 *   Linux: :code:`sudo apt gfortran`
 *   Mac: :code:`brew install gcc`

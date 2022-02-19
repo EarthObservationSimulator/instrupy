@@ -26,6 +26,7 @@
     "Fnum":  5,
     "maxDetectorExposureTime": 16e-3,
     "atmosLossModel": "LOWTRAN7",
-    "_comments": "numOfReadOutE are guessed. The pixels are actually over-sampled 4 times in 16ms interval, i.e. the exposure time is not 16ms."
+    "_comments": [{"numOfReadOutE are guessed. The pixels are actually over-sampled 4 times in 16ms interval, i.e. the exposure time is not 16ms."},
+    			 {"reference: https://uncw.edu/socon/hawkeye.html"}]
      
 }
