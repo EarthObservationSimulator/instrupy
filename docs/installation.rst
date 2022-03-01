@@ -39,4 +39,21 @@ The installation can be carried out in a :code:`conda` environment using the bel
 
 6. Find the documentation in: :code:`instrupy/docs/_build/html/user_json_desc.html`
 
+Windows
+--------
 
+If using a Windows system, one may consider:
+
+1. Using Windows Subsytem for Linux (WSL)
+
+    `https://ubuntu.com/wsl <https://ubuntu.com/wsl>`_
+    
+    `https://docs.microsoft.com/en-us/windows/wsl/about <https://docs.microsoft.com/en-us/windows/wsl/about>`_
+
+2. Setting up a virtual-machine with Ubuntu (or similar) OS. 
+
+    `VMware Workstation player <https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html>`_  is available free for non-commercial, personal or home use. VMWare tools may need to be installed separately after the player installation.
+    
+    Another option is `Oracle Virtual Box <https://www.virtualbox.org/>`_.
+
+The present version of OrbitPy has been tested on Ubuntu 18.04.3.
