@@ -27,7 +27,8 @@ docs_clean:
 	-X=`pwd`; \
 	echo '<<<' $$DOC '>>>'; cd $$X; cd $(DOC); make clean;
 
-install:
+install: #numpy MUST be installed before lowtran
+	pip install numpy
 	pip install -e .
 
 runtest:
