@@ -3,6 +3,7 @@
 import unittest
 import numpy as np
 import random
+from deepdiff import DeepDiff
 
 from instrupy.basic_sensor_model import BasicSensorModel
 from instrupy.util import Orientation, ViewGeometry, SphericalGeometry, ReferenceFrame, SyntheticDataConfiguration, Maneuver
@@ -141,8 +142,10 @@ class TestBasicSensorModel(unittest.TestCase):
                                                                 "sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":0.1, "angleWidth":60}}))
         self.assertEqual(o.sceneFieldOfView, ViewGeometry.from_dict({"orientation": {"referenceFrame":"SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"}, 
                                                                 "sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":60}}))
-        self.assertEqual(o.fieldOfRegard, [ViewGeometry.from_dict({"orientation": {"referenceFrame":"NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":15}, 
-                                                                  "sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":90}})])
+        
+        ddiff = DeepDiff(o.fieldOfRegard, [ViewGeometry.from_dict({"orientation": {"referenceFrame":"NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":15}, 
+                                                                  "sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":90}})], ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
         
         # Test: Incomplete field-of-view geometry specification, test that Exception is raised
         with self.assertRaises(Exception):

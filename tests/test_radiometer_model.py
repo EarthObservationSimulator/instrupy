@@ -11,6 +11,8 @@ import json
 import numpy as np
 import sys, os
 
+from deepdiff import DeepDiff
+
 from instrupy.radiometer_model import PredetectionSectionParams, SystemParams
 from instrupy.radiometer_model import RadiometerModel, SystemType, TotalPowerRadiometerSystem, UnbalancedDikeRadiometerSystem, \
                                       BalancedDikeRadiometerSystem, NoiseAddingRadiometerSystem, \
@@ -587,9 +589,12 @@ class TestCrossTrackScan(unittest.TestCase):
         instru_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 30, "angleWidth": 150})
         self.assertEqual(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom))
 
-        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 15, "angleWidth": 60})
-        instru_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 15, "angleWidth": 180})
-        self.assertEqual(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom))
+        antenna_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 16, "angleWidth": 50})
+        instru_fov_sph_geom = SphericalGeometry.from_dict({"shape": "RECTANGULAR", "angleHeight": 16, "angleWidth": 170})
+        ddiff = DeepDiff(o.compute_instru_field_of_view(antenna_fov_sph_geom=antenna_fov_sph_geom, instru_orientation=instru_orientation), 
+                         ViewGeometry(orien=instru_orientation, sph_geom=instru_fov_sph_geom), 
+                         ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {})
 
     def test_compute_dwell_time_per_ground_pixel(self):
         o = CrossTrackScan.from_json('{"@id": 123, "scanWidth": 120, "interScanOverheadTime": 1e-3}') 
@@ -809,7 +814,8 @@ class TestRadiometerModel(unittest.TestCase):
 
         o = RadiometerModel.from_json(self.radio2_json)
         _id = o._id # id is generated randomly
-        self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': 'ray2', 'mass': 50.0, 'volume': None, 'power': None, 
+
+        ddiff = DeepDiff(o.to_dict(), {'@type': 'Radiometer', 'name': 'ray2', 'mass': 50.0, 'volume': None, 'power': None, 
                                        'orientation': {'referenceFrame': 'SC_BODY_FIXED', 'convention': 'EULER', 'eulerAngle1': 0.0, 'eulerAngle2': 0.0, 'eulerAngle3': 0.0, 'eulerSeq1': 1, 'eulerSeq2': 2, 'eulerSeq3': 3, '@id': None}, 
                                        'fieldOfViewGeometry': {'shape': 'RECTANGULAR', 'angleHeight': 12.092497171570107, 'angleWidth': 12.092497171570086, '@id': None}, 
                                        'sceneFieldOfViewGeometry': {'shape': 'RECTANGULAR', 'angleHeight': 12.092497171570107, 'angleWidth': 12.092497171570086, '@id': None}, 
@@ -823,7 +829,8 @@ class TestRadiometerModel(unittest.TestCase):
                                                   'integratorVoltageGain': 1.0, 'predetectionGain': 83.0, 'predetectionInpNoiseTemp': 700.0, 'predetectionGainVariation': 1995262.314968883, 
                                                   'integrationTime': 1.0, 'bandwidth': 100000000.0, '@id': None, '@type': 'UNBALANCED_DICKE'}, 
                                        'scan': {'scanWidth': 120.0, 'interScanOverheadTime': 0.001, '@id': None, '@type': 'CROSS_TRACK'}, 
-                                       'targetBrightnessTemp': 301.0, '@id': _id})
+                                       'targetBrightnessTemp': 301.0, '@id': _id}, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {})
 
         o = RadiometerModel.from_json(self.radio3_json)
         self.assertEqual(o.to_dict(), {'@type': 'Radiometer', 'name': None, 'mass': None, 'volume': None, 'power': None, 

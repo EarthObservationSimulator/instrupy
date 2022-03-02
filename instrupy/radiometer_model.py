@@ -1804,15 +1804,15 @@ class RadiometerModel(Entity):
         #  Calculate the range vector between spacecraft and POI (Target)
         range_vector_km = target_pos - sc_pos
         range_km = np.linalg.norm(range_vector_km)
-        print('range_km', range_km)
+        #print('range_km', range_km)
 
         # Calculate look angle to the target location
         look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos)))
-        print('look_angle', np.rad2deg(look_angle))
+        #print('look_angle', np.rad2deg(look_angle))
         
         # Look angle to corresponding incidence angle conversion for spherical Earth (incidence angle at the target location)
         incidence_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
-        print('incidence_angle', np.rad2deg(incidence_angle))
+        #print('incidence_angle', np.rad2deg(incidence_angle))
 
         ############## Calculate the pixel resolution. ##############
         # The size of the antenna footprint at the target-location corresponds to the pixel dimensions. It is assumed that
@@ -1827,18 +1827,18 @@ class RadiometerModel(Entity):
         else:
             raise NotImplementedError
 
-        print('iFOV_AT_deg', iFOV_AT_deg)
-        print('iFOV_CT_deg', iFOV_CT_deg)
+        #print('iFOV_AT_deg', iFOV_AT_deg)
+        #print('iFOV_CT_deg', iFOV_CT_deg)
         res_AT_m = np.deg2rad(iFOV_AT_deg)*range_km*1.0e3
         res_CT_m = np.deg2rad(iFOV_CT_deg)*range_km*1.0e3/np.cos(incidence_angle)
         
         ############## calculate the radiometric resolution ##############
         # calculate the dwell time per ground-pixel
         sat_speed_mps = GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos, sc_vel)
-        print("res_AT_m, sat_speed_mps", res_AT_m, sat_speed_mps)
+        #print("res_AT_m, sat_speed_mps", res_AT_m, sat_speed_mps)
         td = self.scan.compute_dwell_time_per_ground_pixel(res_AT_m=res_AT_m, sat_speed_kmps=sat_speed_mps*1e-3, iFOV_CT_deg=iFOV_CT_deg)
 
-        print('td', td)
+        #print('td', td)
         rad_res = self.system.compute_radiometric_resolution(td, self.antenna, self.targetBrightnessTemp)
 
         ############## calculate beam-efficiency ##############
@@ -1865,7 +1865,7 @@ class RadiometerModel(Entity):
                 # find the angle between the nadir-vector (aligned to the z-axis of the NADIR_POINTING frame) and the pointing-vector.
                 instru_look_angle = np.arccos(np.dot(pointing_axis_in_nadir_pointing_frame, np.array([0,0,1]))) 
 
-        print('alt_km, instru_look_angle', alt_km, instru_look_angle)
+        #print('alt_km, instru_look_angle', alt_km, instru_look_angle)
         swath_width_km = self.scan.compute_swath_width(alt_km, np.rad2deg(instru_look_angle), self.antenna.get_spherical_geometry(self.operatingFrequency))
                 
         obsv_metrics = {}

@@ -27,6 +27,7 @@ import unittest
 import json
 import numpy as np
 import sys, os
+import math
 
 from instrupy.passive_optical_scanner_model import ScanTech, PassiveOpticalScannerModel, AtmosphericLossModel
 from instrupy.util import Orientation, SphericalGeometry, ViewGeometry, Maneuver
@@ -525,7 +526,11 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                                             'vx [km/s]': 0.1664588472531363, 'vy [km/s]': 1.055747095699285, 'vz [km/s]': 7.426472416008381 }
         target_coords = {'lat [deg]': 0.01942147899019397 , 'lon [deg]': 117.1899962481559} # nadir position of satellite
         obsv_metrics = landsat_oli_blue.calc_data_metrics(sc_orbit_state, target_coords)
-        self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 29.96, 'ground pixel cross-track resolution [m]': 30.0, 'SNR': 0.0, 'dynamic range': 0.0, 'noise-equivalent delta T [K]': 1318917697165785.8})
+        self.assertEqual(obsv_metrics['ground pixel along-track resolution [m]'], 29.96)
+        self.assertEqual(obsv_metrics['ground pixel cross-track resolution [m]'], 30.0)
+        self.assertEqual(obsv_metrics['SNR'], 0.0)
+        self.assertEqual(obsv_metrics['dynamic range'], 0.0)
+        assert math.isclose(obsv_metrics['noise-equivalent delta T [K]'], 1318917697165785.8, rel_tol=1e-9)
 
         # 10 Apr 2021 15:07:22.788   (Day time)                                    
         sc_orbit_state = {'time [JDUT1]':2459315.130127315,  'x [km]': 6512.435033854175,    'y [km]': -511.354859668807,    'z [km]': 2713.225164499847, 
@@ -587,7 +592,11 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                                             'vx [km/s]': -1.417318347731835, 'vy [km/s]': 0.1319708892386859, 'vz [km/s]': -7.367383505358474 }
         target_coords = {'lat [deg]': 7.127116160568699 , 'lon [deg]': 158.1924750010043} # nadir position of satellite
         obsv_metrics = modis_band10.calc_data_metrics(sc_orbit_state, target_coords)
-        self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 996.11, 'ground pixel cross-track resolution [m]': 997.19, 'SNR': 0.0, 'dynamic range': 0.0, 'noise-equivalent delta T [K]': 224514118246476.62})
+        self.assertEqual(obsv_metrics['ground pixel along-track resolution [m]'], 996.11)
+        self.assertEqual(obsv_metrics['ground pixel cross-track resolution [m]'], 997.19)
+        self.assertEqual(obsv_metrics['SNR'], 0.0)
+        self.assertEqual(obsv_metrics['dynamic range'], 0.0)
+        assert math.isclose(obsv_metrics['noise-equivalent delta T [K]'], 224514118246476.62, rel_tol=1e-9)
 
         # 10 Apr 2021 15:55:53.269   (Day time)                                                                                                                   
         sc_orbit_state = {'time [JDUT1]':2459315.1638078704,  'x [km]': 4904.051098680667,    'y [km]': 4868.949787679997,    'z [km]': -1516.567875770611, 
@@ -595,6 +604,7 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
         target_coords = {'lat [deg]': -12.36694967995247 , 'lon [deg]': -33.02510031498068} # nadir position of satellite
         obsv_metrics = modis_band10.calc_data_metrics(sc_orbit_state, target_coords)
         self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 988.98, 'ground pixel cross-track resolution [m]': 989.93, 'SNR': 3254.27, 'dynamic range': 423635.37, 'noise-equivalent delta T [K]': np.inf})
+        
         
         # disable LOWTRAN7 atmospheric loss model and evaluate results
         modis_band10_dict["atmosLossModel"] = None
@@ -649,7 +659,11 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                                             'vx [km/s]': -1.417318347731835, 'vy [km/s]': 0.1319708892386859, 'vz [km/s]': -7.367383505358474 }
         target_coords = {'lat [deg]': 7.127116160568699 , 'lon [deg]': 158.1924750010043} # nadir position of satellite
         obsv_metrics = modis_band1.calc_data_metrics(sc_orbit_state, target_coords)
-        self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 249.03, 'ground pixel cross-track resolution [m]': 249.3, 'SNR': 0.0, 'dynamic range': 0.0, 'noise-equivalent delta T [K]': 10124816467.16259})
+        self.assertEqual(obsv_metrics['ground pixel along-track resolution [m]'], 249.03)
+        self.assertEqual(obsv_metrics['ground pixel cross-track resolution [m]'], 249.3)
+        self.assertEqual(obsv_metrics['SNR'], 0.0)
+        self.assertEqual(obsv_metrics['dynamic range'], 0.0)
+        assert math.isclose(obsv_metrics['noise-equivalent delta T [K]'], 10124816467.16259, rel_tol=1e-9)
 
         # 10 Apr 2021 15:55:53.269   (Day time)                                                                                                                   
         sc_orbit_state = {'time [JDUT1]':2459315.1638078704,  'x [km]': 4904.051098680667,    'y [km]': 4868.949787679997,    'z [km]': -1516.567875770611, 
@@ -704,13 +718,19 @@ class TestPassiveOpticalScannerModel(unittest.TestCase):
                                                             'vx [km/s]': -1.417318347731835, 'vy [km/s]': 0.1319708892386859, 'vz [km/s]': -7.367383505358474 }
         target_coords = {'lat [deg]': 7.127116160568699 , 'lon [deg]': 158.1924750010043} # nadir position of satellite
         obsv_metrics = ccam_blue_band.calc_data_metrics(sc_orbit_state, target_coords)
-        self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 7.43, 'ground pixel cross-track resolution [m]': 7.44, 'SNR': 0.0, 'dynamic range': 0.0, 'noise-equivalent delta T [K]': 2302356852773662.0})
+        self.assertEqual(obsv_metrics['ground pixel along-track resolution [m]'], 7.43)
+        self.assertEqual(obsv_metrics['ground pixel cross-track resolution [m]'], 7.44)
+        self.assertEqual(obsv_metrics['SNR'], 0.0)
+        self.assertEqual(obsv_metrics['dynamic range'], 0.0)
+        assert math.isclose(obsv_metrics['noise-equivalent delta T [K]'], 2302356852773662.0, rel_tol=1e-9)
+
         # 10 Apr 2021 15:55:53.269   (Day time)                                                                                                                   
         sc_orbit_state = {'time [JDUT1]':2459315.1638078704,  'x [km]': 4904.051098680667,    'y [km]': 4868.949787679997,    'z [km]': -1516.567875770611, 
                                                             'vx [km/s]': 1.903191094106026, 'vy [km/s]': 0.3436316797910688, 'vz [km/s]': 7.255195566766275 }
         target_coords = {'lat [deg]': -12.36694967995247 , 'lon [deg]': -33.02510031498068} # nadir position of satellite
         obsv_metrics = ccam_blue_band.calc_data_metrics(sc_orbit_state, target_coords)
         self.assertEqual(obsv_metrics, {'ground pixel along-track resolution [m]': 7.38, 'ground pixel cross-track resolution [m]': 7.38, 'SNR': 63.3, 'dynamic range': 320.71, 'noise-equivalent delta T [K]': np.inf})
+
         # disable LOWTRAN7 atmospheric loss model and evaluate results
         ccam_blue_band_dict["atmosLossModel"] = None
         ccam_blue_band = PassiveOpticalScannerModel.from_dict(ccam_blue_band_dict)

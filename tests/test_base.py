@@ -3,6 +3,7 @@
 import unittest
 import numpy as np
 import random
+from deepdiff import DeepDiff
 
 from instrupy import InstrumentModelFactory, Instrument
 from instrupy.basic_sensor_model import BasicSensorModel
@@ -187,11 +188,16 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
                                                                         "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}}))
         self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))
-        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
+
+        ddiff = DeepDiff(mode0.fieldOfRegard, 
+                         [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
                                                                       "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}}),
-                                               ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
+                          ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
                                                                       "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}})
-                                              ])
+                         ], 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+
         self.assertEqual(mode0.pointingOption, [Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":10}),
                                                 Orientation.from_dict({"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle":15})]) 
         # mode1
@@ -209,11 +215,15 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
                                                                         "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}}))
         self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))
-        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
+        ddiff = DeepDiff(mode0.fieldOfRegard, 
+                         [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
                                                                       "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}}),
-                                               ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
+                          ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
                                                                       "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}})
-                                              ])
+                         ], 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+
         self.assertEqual(mode1.pointingOption, mode0.pointingOption)        
         # mode2
         mode2 = TestInstrument.bs3.mode[2]
@@ -231,11 +241,15 @@ class TestInstrument(unittest.TestCase):
         self.assertEqual(mode0.sceneFieldOfView, ViewGeometry.from_dict({"orientation":{"referenceFrame": "SC_BODY_FIXED", "convention": "REF_FRAME_ALIGNED"},
                                                                         "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":10}}))
         self.assertEqual(mode0.maneuver, Maneuver.from_json('{"maneuverType": "double_roll_only", "A_rollMin": 10, "A_rollMax":15, "B_rollMin":-15, "B_rollMax":-10}'))
-        self.assertEqual(mode0.fieldOfRegard, [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
+        ddiff = DeepDiff(mode0.fieldOfRegard, 
+                         [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":12.5},
                                                                       "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}}),
-                                               ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
+                          ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_Look", "sideLookAngle":-12.5},
                                                                       "sphericalGeometry":{"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15}})
-                                              ])
+                         ], 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+
         self.assertEqual(mode2.pointingOption, mode0.pointingOption)   
     
     def test_get_type(self):
@@ -270,17 +284,35 @@ class TestInstrument(unittest.TestCase):
         # no input mode-id
         self.assertEqual(TestInstrument.bs2.get_field_of_regard(), [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "rectangular", "angleHeight": 5, "angleWidth":10}})])
         # input correct mode-id
-        self.assertEqual(TestInstrument.bs2.get_field_of_regard(mode_id=101), [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "rectangular", "angleHeight": 5, "angleWidth":10}})])
+        ddiff = DeepDiff(TestInstrument.bs2.get_field_of_regard(mode_id=101), [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "rectangular", "angleHeight": 5, "angleWidth":10}})], ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {})
+
         # input incorrect mode-id, should default to first mode
         self.assertEqual(TestInstrument.bs2.get_field_of_regard(mode_id="abc"), [ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "rectangular", "angleHeight": 5, "angleWidth":10}})])
 
         # bs3, all modes have the same field of regard
         # no input mode-id
-        self.assertEqual(TestInstrument.bs3.get_field_of_regard()[0], ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}))
-        self.assertEqual(TestInstrument.bs3.get_field_of_regard()[1], ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": -12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}))
+        ddiff = DeepDiff(TestInstrument.bs3.get_field_of_regard()[0], 
+                         ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}), 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+        
+        ddiff = DeepDiff(TestInstrument.bs3.get_field_of_regard()[1], 
+                         ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": -12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}), 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+
         # input correct mode-id
-        self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id=0)[0], ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}))
-        self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id=0)[1], ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": -12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}))
+        ddiff = DeepDiff(TestInstrument.bs3.get_field_of_regard(mode_id=0)[0], 
+                         ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": 12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}), 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+
+        ddiff = DeepDiff(TestInstrument.bs3.get_field_of_regard(mode_id=0)[1], 
+                         ViewGeometry.from_dict({"orientation":{"referenceFrame": "NADIR_POINTING", "convention": "SIDE_LOOK", "sideLookAngle": -12.5},"sphericalGeometry": {"shape": "RECTANGULAR", "angleHeight":5, "angleWidth":15 }}), 
+                         significant_digits=7, ignore_numeric_type_changes=True)
+        self.assertEqual(ddiff, {}, msg=ddiff)
+
         # input incorrect mode-id, should default to first mode
         self.assertEqual(TestInstrument.bs3.get_field_of_regard(mode_id='abc'), TestInstrument.bs3.get_field_of_regard(mode_id=0))
         # next mode

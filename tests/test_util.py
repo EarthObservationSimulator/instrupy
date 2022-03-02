@@ -4,7 +4,7 @@
 import json
 import unittest
 
-import numpy
+import numpy as np
 from instrupy.util import *
 
 class TestEntity(unittest.TestCase):
@@ -478,11 +478,11 @@ class TestSphericalGeometry(unittest.TestCase):
             '{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30}')
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
-        self.assertAlmostEqual(o.cone_angle_vec, [
+        np.testing.assert_almost_equal(o.cone_angle_vec, [
                          15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
-        self.assertAlmostEqual(o.clock_angle_vec, [
+        np.testing.assert_almost_equal(o.clock_angle_vec, [
                          18.6768081421232, 161.3231918578768, 198.6768081421232, 341.3231918578768, 18.6768081421232])
-        self.assertEqual(o.angle_height, 10)
+        self.assertAlmostEqual(o.angle_height, 10)
         self.assertAlmostEqual(o.angle_width, 30)
         self.assertIsNone(o.diameter)
         self.assertIsNone(o._id)
@@ -492,9 +492,9 @@ class TestSphericalGeometry(unittest.TestCase):
             '{"shape": "RECTANGULAR", "angleHeight": 15 , "angleWidth": 15, "@id": 123}')
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
-        self.assertAlmostEqual(o.cone_angle_vec, [
+        np.testing.assert_almost_equal(o.cone_angle_vec, [
                          10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208, 10.591411134810208])
-        self.assertAlmostEqual(o.clock_angle_vec, [
+        np.testing.assert_almost_equal(o.clock_angle_vec, [
                          45.246138033024906, 134.75386196697508, 225.24613803302492, 314.7538619669751, 45.246138033024906])
         self.assertAlmostEqual(o.angle_height, 15)
         self.assertAlmostEqual(o.angle_width, 15)
@@ -506,9 +506,9 @@ class TestSphericalGeometry(unittest.TestCase):
             '{"shape": "RECTANGULAR", "angleHeight": 30 , "angleWidth": 10}')
         self.assertIsInstance(o, SphericalGeometry)
         self.assertEqual(o.shape, SphericalGeometry.Shape.RECTANGULAR)
-        self.assertAlmostEqual(o.cone_angle_vec, [
+        np.testing.assert_almost_equal(o.cone_angle_vec, [
                          15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941, 15.79322415135941])
-        self.assertAlmostEqual(o.clock_angle_vec, [
+        np.testing.assert_almost_equal(o.clock_angle_vec, [
                          71.98186515628623, 108.01813484371377, 251.98186515628623, 288.01813484371377, 71.98186515628623])
         self.assertAlmostEqual(o.angle_height, 30)
         self.assertAlmostEqual(o.angle_width, 10)
@@ -605,7 +605,7 @@ class TestSphericalGeometry(unittest.TestCase):
             '{"shape": "RECTANGULAR", "angleHeight": 10 , "angleWidth": 30, "@id": "123"}')
         d = o.to_dict()
         self.assertEqual(d["shape"], "RECTANGULAR")
-        self.assertEqual(d["angleHeight"], 10.0)
+        self.assertAlmostEqual(d["angleHeight"], 10.0)
         self.assertAlmostEqual(d["angleWidth"], 30.0)
         self.assertEqual(d["@id"], "123")
     
@@ -1076,7 +1076,7 @@ class TestConstants(unittest.TestCase):
 
     def test_angularSpeedOfEarthInRadPerSec(self):
         self.assertAlmostEqual(
-            Constants.angularSpeedOfEarthInRadPerSec, 2*numpy.pi / 86400.0, places=5)
+            Constants.angularSpeedOfEarthInRadPerSec, 2*np.pi / 86400.0, places=5)
 
     def test_Planck(self):
         self.assertEqual(Constants.Planck, 6.62607015e-34)
@@ -1089,13 +1089,13 @@ class TestMathUtilityFunctions(unittest.TestCase):
     def test_normalize(self):
 
         # Test if returned vector has unit magnitude
-        self.assertAlmostEqual(numpy.linalg.norm(
+        self.assertAlmostEqual(np.linalg.norm(
             MathUtilityFunctions.normalize([2, 4, 6])), 1)
-        self.assertAlmostEqual(numpy.linalg.norm(
+        self.assertAlmostEqual(np.linalg.norm(
             MathUtilityFunctions.normalize([-2, 4, 65])), 1)
-        self.assertAlmostEqual(numpy.linalg.norm(
+        self.assertAlmostEqual(np.linalg.norm(
             MathUtilityFunctions.normalize([2, 0, 0])), 1)
-        self.assertAlmostEqual(numpy.linalg.norm(
+        self.assertAlmostEqual(np.linalg.norm(
             MathUtilityFunctions.normalize([2, -4, -42343])), 1)
 
         with self.assertRaises(Exception):
@@ -1105,15 +1105,15 @@ class TestMathUtilityFunctions(unittest.TestCase):
 
         # Test trivial cases
         self.assertAlmostEqual(MathUtilityFunctions.angle_between_vectors(
-            [100, 0, 0], [0, 1, 0]), numpy.pi/2)
+            [100, 0, 0], [0, 1, 0]), np.pi/2)
         self.assertAlmostEqual(MathUtilityFunctions.angle_between_vectors(
-            [100, 0, 0], [-5000, 0, 0]), numpy.pi)
+            [100, 0, 0], [-5000, 0, 0]), np.pi)
         self.assertAlmostEqual(MathUtilityFunctions.angle_between_vectors(
-            [45, 45, 45], [-45, -45, -45]), numpy.pi)
+            [45, 45, 45], [-45, -45, -45]), np.pi)
         self.assertAlmostEqual(MathUtilityFunctions.angle_between_vectors(
             [45, 45, 45], [45, 45, 45]), 0)
         self.assertAlmostEqual(MathUtilityFunctions.angle_between_vectors(
-            [.5, .5, 0], [1, 0, 0]), numpy.pi/4)
+            [.5, .5, 0], [1, 0, 0]), np.pi/4)
 
 class TestGeoUtilityFunctions(unittest.TestCase):
 
@@ -1124,9 +1124,9 @@ class TestGeoUtilityFunctions(unittest.TestCase):
             where the input vectors (r,v) are in ECI frame) since the (r,v) vectors are taken in EF frame. 
 
         """
-        _gmat_omega = numpy.cross(
-            _gmat_r_ef, _gmat_v_ef) / (numpy.linalg.norm(_gmat_r_ef)**2)
-        _gmat_fp_speed = numpy.linalg.norm(_gmat_omega)*6378100
+        _gmat_omega = np.cross(
+            _gmat_r_ef, _gmat_v_ef) / (np.linalg.norm(_gmat_r_ef)**2)
+        _gmat_fp_speed = np.linalg.norm(_gmat_omega)*6378100
         return _gmat_fp_speed
 
     def test_compute_satellite_footprint_speed(self):
@@ -1296,13 +1296,13 @@ class TestGeoUtilityFunctions(unittest.TestCase):
         time_JDUT1 = 2452343.000000  # 2002/03/09 12:00:00.000
         pos_km = GeoUtilityFunctions.geo2eci([0.0,  0.0, 0.0], time_JDUT1)
         self.assertAlmostEqual(GeoUtilityFunctions.compute_sun_zenith(
-            time_JDUT1, pos_km)[0], numpy.deg2rad(90-84.82), places=2)
+            time_JDUT1, pos_km)[0], np.deg2rad(90-84.82), places=2)
 
         time_JDUT1 = 2458619.133333  # A.D. 2019 May 15 15:12:00.0
         pos_km = GeoUtilityFunctions.geo2eci(
             [61.217,  -149.9, 0.0], time_JDUT1)
         self.assertAlmostEqual(GeoUtilityFunctions.compute_sun_zenith(
-            time_JDUT1, pos_km)[0], numpy.deg2rad(90-11.44), places=2)    
+            time_JDUT1, pos_km)[0], np.deg2rad(90-11.44), places=2)    
 
     def test_JD2GMST(self):
         """ Truth data is from David A. Vallado,"Fundamentals of Astrodynamics and Applications", 4th ed, page after index titled julian Data Values.
@@ -1426,7 +1426,7 @@ class TestGeoUtilityFunctions(unittest.TestCase):
         self.assertEqual(
             derived_coords["derived_range_vec_km"], [-700, 0, 100])
         self.assertAlmostEqual(derived_coords["derived_alt_km"], 700, delta=1)
-        self.assertAlmostEqual(derived_coords["derived_incidence_angle_rad"], (numpy.arcsin(numpy.arctan2(
+        self.assertAlmostEqual(derived_coords["derived_incidence_angle_rad"], (np.arcsin(np.arctan2(
             100, 700) * (6378+700)/6378.137)), places=2)  # note that look angle of truth data is approximate
 
         # Test for cases where the input satellite position, time is different from derived satellite position, time
@@ -1458,8 +1458,8 @@ class TestGeoUtilityFunctions(unittest.TestCase):
         self.assertEqual(
             derived_coords["derived_range_vec_km"], [-700, 0, 100])
         self.assertAlmostEqual(derived_coords["derived_alt_km"], 700, delta=1)
-        self.assertAlmostEqual(derived_coords["derived_incidence_angle_rad"], (numpy.arcsin(
-            numpy.arctan2(100, 700) * (6378+700)/6378.137)), places=2)
+        self.assertAlmostEqual(derived_coords["derived_incidence_angle_rad"], (np.arcsin(
+            np.arctan2(100, 700) * (6378+700)/6378.137)), places=2)
 
 
 class TestFileUtilityFunctions(unittest.TestCase):
