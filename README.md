@@ -12,14 +12,24 @@ For a detailed description see the following articles (available in the `literat
 
 ## Install
 
-Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), `python 3.8`, `pip`, `gfortran`
+Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), `python 3.8`, `pip`, `gfortran`, `make`
 
 The installation can be carried out in a `conda` environment using the below steps.
 
-1. Install `gfortran`. See [here](https://fortran-lang.org/learn/os_setup/install_gfortran).
+1. Install `gfortran`. and `make` See [here](https://fortran-lang.org/learn/os_setup/install_gfortran).
 
-*   Linux: `sudo apt gfortran`
-*   Mac: `brew install gcc`
+*   Linux: 
+
+    ```
+    sudo apt update
+    sudo apt install build-essential
+    ```
+
+    `sudo apt install build-essential` installs additional useful utilities like `gcc`, `g++` and `make`
+
+    If `gfortran` is not installed with `build-essential`, please run `sudo apt install gfortran`
+
+*   Mac: `brew install gcc` and `brew install make`
 
 2. Have `conda` installed using the [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/products/individual) distributions.
 
@@ -49,25 +59,30 @@ conda install pip
 
 6. Find the documentation in: `instrupy/docs/_build/html/index.html`
 
+The present version of OrbitPy has been tested on Ubuntu 18.04.3.
+
 ---
 
 If using a Windows system, one may consider:
 
-1. Using Windows Subsytem for Linux (WSL)
+1. Setting up a virtual-machine with Ubuntu (or similar) OS. 
+
+    See tutorial here: [https://ubuntu.com/tutorials/how-to-run-ubuntu-desktop-on-a-virtual-machine-using-virtualbox#1-overview](https://ubuntu.com/tutorials/how-to-run-ubuntu-desktop-on-a-virtual-machine-using-virtualbox#1-overview)
+
+    Virtual Machines:
+
+        *   VMware Workstation player is available free for non-commercial, personal or home use. VMWare tools may need to be installed separately  after the player installation. 
+        [https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html](https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html)
+    
+        *   Another option is Oracle Virtual Box.
+            [https://www.virtualbox.org/](https://www.virtualbox.org/)
+
+2. Using Windows Subsytem for Linux (WSL)
 
     [https://ubuntu.com/wsl](https://ubuntu.com/wsl)
     
     [https://docs.microsoft.com/en-us/windows/wsl/about](https://docs.microsoft.com/en-us/windows/wsl/about)
 
-2. Setting up a virtual-machine with Ubuntu (or similar) OS. 
-
-    VMware Workstation player is available free for non-commercial, personal or home use. VMWare tools may need to be installed separately after the player installation.
-    [https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html](https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html)
-    
-    Another option is Oracle Virtual Box.
-    [https://www.virtualbox.org/](https://www.virtualbox.org/)
-
-The present version of OrbitPy has been tested on Ubuntu 18.04.3.
 
 ### Lowtran
 

@@ -13,5 +13,5 @@ setup(
     packages=['instrupy'],
     scripts=[ 
     ],
-    install_requires=['shapely', 'numpy', 'pandas', 'scipy', 'lowtran==2.4.1', 'sphinx', 'sphinx_rtd_theme==0.5.2', 'netCDF4','metpy','astropy'] 
+    install_requires=['shapely', 'numpy', 'pandas', 'scipy', 'lowtran==2.4.1', 'sphinx', 'sphinx_rtd_theme==0.5.2', 'netCDF4','metpy','astropy','deepdiff'] 
 )
