@@ -15,6 +15,8 @@ from .basic_sensor_model import BasicSensorModel
 from .passive_optical_scanner_model import PassiveOpticalScannerModel
 from .synthetic_aperture_radar_model import SyntheticApertureRadarModel
 from .radiometer_model import RadiometerModel
+from .reflectometer_model import ReflectometerModel
+
 class InstrumentModelFactory:
     """ Factory class which allows to register and invoke the appropriate instrument-model class. 
     
@@ -41,6 +43,7 @@ class InstrumentModelFactory:
         self.register_instrument_model('Passive Optical Scanner', PassiveOpticalScannerModel)
         self.register_instrument_model('Synthetic Aperture Radar', SyntheticApertureRadarModel)
         self.register_instrument_model('Radiometer', RadiometerModel)
+        self.register_instrument_model('Reflectometer', ReflectometerModel)
 
     def register_instrument_model(self, _type, creator):
         """ Function to register instruments.

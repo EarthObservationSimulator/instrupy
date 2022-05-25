@@ -1,4 +1,9 @@
-"""Unit tests for instrupy.base.
+"""Unit tests for instrupy.base module.
+
+    The registration of in-built and new instruments in the ``InstrumentModelFactory`` is tested. 
+    
+    The use of the ``Instrument`` class as a interface to the different instrument types is tested taking the ``BasicSensor`` as an example.
+     
 """
 import unittest
 import numpy as np
@@ -10,6 +15,7 @@ from instrupy.basic_sensor_model import BasicSensorModel
 from instrupy.passive_optical_scanner_model import PassiveOpticalScannerModel
 from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel
 from instrupy.radiometer_model import RadiometerModel
+from instrupy.reflectometer_model import ReflectometerModel
 from instrupy.util import SphericalGeometry, Orientation, ViewGeometry, Maneuver 
 
 class TestInstrumentModelFactory(unittest.TestCase):
@@ -33,6 +39,8 @@ class TestInstrumentModelFactory(unittest.TestCase):
         self.assertEqual(factory._creators['Synthetic Aperture Radar'], SyntheticApertureRadarModel)
         self.assertIn('Radiometer', factory._creators)
         self.assertEqual(factory._creators['Radiometer'], RadiometerModel)
+        self.assertIn('Reflectometer', factory._creators)
+        self.assertEqual(factory._creators['Reflectometer'], ReflectometerModel)
     
     def test_register_instrument_model(self):
         factory = InstrumentModelFactory()
@@ -48,6 +56,8 @@ class TestInstrumentModelFactory(unittest.TestCase):
         self.assertEqual(factory._creators['Synthetic Aperture Radar'], SyntheticApertureRadarModel)
         self.assertIn('Radiometer', factory._creators)
         self.assertEqual(factory._creators['Radiometer'], RadiometerModel)
+        self.assertIn('Reflectometer', factory._creators)
+        self.assertEqual(factory._creators['Reflectometer'], ReflectometerModel)
 
     def test_get_instrument_model(self):
         factory = InstrumentModelFactory()
@@ -73,6 +83,11 @@ class TestInstrumentModelFactory(unittest.TestCase):
         specs = {"@type": 'Radiometer'} # in practice additional instrument specs shall be present in the dictionary
         rad_model = factory.get_instrument_model(specs)
         self.assertIsInstance(rad_model, RadiometerModel)
+
+        # ReflectometerModel
+        specs = {"@type": 'Reflectometer'} # in practice additional instrument specs shall be present in the dictionary
+        refl_model = factory.get_instrument_model(specs)
+        self.assertIsInstance(refl_model, ReflectometerModel)
 
         # DummyNewInstrument
         specs = {"@type": 'New Instrument 2021'} # in practice additional instrument specs shall be present in the dictionary
