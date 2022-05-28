@@ -1,7 +1,7 @@
 """ 
 .. module:: synthetic_aperture_radar_model
 
-:synopsis: *Module to handle SAR instrument model.*
+:synopsis: *Module to handle side-looking SAR instrument model.*
 
         The synthetic aperture radar model is based on the references listed below. The current version allows only for rectangular antenna specifications
         and uniform aperture excitation profile. 

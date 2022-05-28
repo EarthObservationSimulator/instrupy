@@ -20,7 +20,7 @@ from .reflectometer_model import ReflectometerModel
 class InstrumentModelFactory:
     """ Factory class which allows to register and invoke the appropriate instrument-model class. 
     
-    :class:`BasicSensorModel`, :class:`PassiveOpticalScannerModel`, :class:`SyntheticApertureRadarModel` and :class:`RadiometerModel`
+    :class:`BasicSensorModel`, :class:`PassiveOpticalScannerModel`, :class:`SyntheticApertureRadarModel`, :class:`RadiometerModel` and :class:`ReflectometerModel`
     instrument-model classes are registered in the factory. Additional user-defined instrument-model classes
     can be registered as shown below: 
 

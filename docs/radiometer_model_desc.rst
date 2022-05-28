@@ -306,9 +306,13 @@ described in :ref:`basic sensor model description<basic_sensor_model_desc>`.
 
 Pixel-resolutions
 -------------------
+Note that the current formulation is accurate only when ground-pixel is being imaged at the nadir or is at purely side-looking geometry.
+
 :math:`\rho_{at} = R \mu_{at}`
 
 :math:`\rho_{ct} = R \mu_{ct}/ \cos(\theta_i)`
+
+.. todo:: Update for the general target geometry. 
 
 Radiometric resolution
 -----------------------

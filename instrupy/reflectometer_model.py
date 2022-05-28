@@ -203,6 +203,57 @@ class ReflectometerModel(Entity):
     def __repr__(self):
         return "ReflectometerModel.from_dict({})".format(self.to_dict())
 
+    def get_id(self):
+        """ Get the instrument identifier.
+
+        :returns: instrument identifier.
+        :rtype: str
+
+        """
+        return self._id
+    
+    def get_field_of_view(self):
+        """ Get the instrument field-of-view.
+
+        :returns: Instrument field-of-view. 
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.fieldOfView
+
+    def get_scene_field_of_view(self):
+        """ Get the scene-field-of-view (sceneFOV).
+
+        :returns: Scene-field-of-view.
+        :rtype: :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.sceneFieldOfView
+
+    def get_field_of_regard(self):
+        """ Get the instrument field of regard. 
+
+        :returns: Field of regard (list of ``ViewGeometry`` objects). 
+        :rtype: list, :class:`instrupy.util.ViewGeometry`
+
+        """
+        return self.fieldOfRegard
+
+    def get_orientation(self):
+        """ Get the instrument orientation.
+
+        :returns: Instrument orientation.
+        :rtype: :class:`instrupy.util.Orientation`
+
+        """
+        return self.orientation
+
+    def get_pointing_option(self):
+        """ Return ``None`` since the ``ReflectometerModel`` class does not support the pointing-options concept.
+
+        """
+        return None
+
     def calc_data_metrics(self, sc_orbit_state, target_coords, tx_spc_orbit_state):
         """ ======= TBD =======
         

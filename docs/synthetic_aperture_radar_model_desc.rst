@@ -2,7 +2,7 @@
 
 Synthetic Aperture Radar Model
 *******************************
-The synthetic aperture radar model is based on the references listed below. The current version allows only for rectangular antenna specifications
+The side-looking synthetic aperture radar model is based on the references listed below. The current version allows only for rectangular antenna specifications
 and uniform aperture excitation profile. 
 The implementation allows for modeling different *configurations* of the instrument (see figure below): 
 

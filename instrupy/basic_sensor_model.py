@@ -69,7 +69,6 @@ class BasicSensorModel(Entity):
         :vartype _id: str or int
    
     """
-
     def __init__(self, name=None, mass=None, volume=None, power=None,  orientation=None,
                  fieldOfViewGeometry=None, sceneFieldOfViewGeometry=None, maneuver=None, pointingOption=None, dataRate=None, syntheticDataConfig=None, bitsPerPixel=None, 
                  numberDetectorRows=None, numberDetectorCols=None, _id=None):

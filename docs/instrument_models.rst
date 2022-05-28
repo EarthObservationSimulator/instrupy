@@ -10,4 +10,5 @@ Instrument Models
    passive_optical_scanner_model_desc
    synthetic_aperture_radar_model_desc
    radiometer_model_desc
+   reflectometer_model_desc
    common_model_parameters_desc
