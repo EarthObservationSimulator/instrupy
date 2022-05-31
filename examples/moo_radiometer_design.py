@@ -47,13 +47,10 @@ from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 from pymoo.util.misc import stack
 from pymoo.model.problem import Problem
-from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel
+from instrupy.radiometer_model import RadiometerModel
 
 Re = 6378.137e3 # [m]
 c = 299792458 # m/s
-h = 500e3 # [m]
-inc = [35, 45, 55] # [deg]
-orb_speed = np.sqrt(3.986004418e14/(Re + h)) # [m/s]
 
 out_dir = os.path.dirname(os.path.realpath(__file__)) + '/moo_results/'
 if os.path.exists(out_dir):
@@ -61,99 +58,65 @@ if os.path.exists(out_dir):
 os.makedirs(out_dir)
 
 class MyProblem(Problem):
-    """     # Variables: (1) Daz [m], (2) Delv [m], (3), Chirp BW [MHz] (4) Pulse width [us]
+    """     # Variables: (1) Daz [m], (2) Delv [m], (3), Bandwidth [MHz] (4) Altitude
             # Objectives: (1) Antenna area (2) -1* Swath Width (3) NESZ [dB] (4) # Speckle reduction [dB] for 1km2 pixel
             # Constraints: Valid operating point
     """
     def __init__(self):
-        super().__init__(n_var=4,
-                         n_obj=3,
-                         n_constr=1,
-                         xl=np.array([0.1, 0.1, 1, 1]),
-                         xu=np.array([15, 15, 40, 1000]),
+        super().__init__(n_var=3,
+                         n_obj=2,
+                         n_constr=0,
+                         xl=np.array([0.1, 0.1, 300]),
+                         xu=np.array([1, 1, 1000]),
                          elementwise_evaluation=True)
 
     @staticmethod
-    def define_test_sar(daz_m, delv_m, chirpbw_Mhz, pulse_w_us):
-
-        test_sar = SyntheticApertureRadarModel.from_json(   '{"@type": "Synthetic Aperture Radar",'
-                                                            '"orientation": {'
-                                                            '    "referenceFrame": "SC_BODY_FIXED",'
-                                                            '    "convention": "SIDE_LOOK",'
-                                                            '    "sideLookAngle": 45' # not of significance in this problem
-                                                            '},'
-                                                            '"pulseWidth":'+ str(pulse_w_us*1e-6) +','
-                                                            '"antenna":{"shape": "RECTANGULAR", "height":'+ str(daz_m) +',"width":'+ str(delv_m) +',' 
-                                                            '            "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM"},'
-                                                            '"operatingFrequency": 1.2757e9,' 
-                                                            '"peakTransmitPower": 1000,' 
-                                                            '"chirpBandwidth":'+ str(chirpbw_Mhz*1e6) +','     
-                                                            '"minimumPRF": 1,' 
-                                                            '"maximumPRF": 20000,' 
-                                                            '"radarLoss": 2,' 
-                                                            '"systemNoiseFigure": 2,'
-                                                            '"swathConfig": {'
-                                                            '   "@type": "fixed",'
-                                                            '   "fixedSwathSize": 25'
-                                                            '},'
-                                                            '"polarization": {'
-                                                            '   "@type": "dual",'
-                                                            '   "pulseConfig": {'
-                                                            '        "@type": "SMAP"''}' 
-                                                            '}'                                                   
-                                                            '}')
-        return test_sar            
+    def define_test_radiometer(daz_m, delv_m):
+        rad_dict = {  "@type": "Radiometer",
+                "name": "Test radiometer",
+                "orientation": {
+                   "referenceFrame": "NADIR_POINTING",
+                   "convention": "REF_FRAME_ALIGNED"
+                },
+                "antenna": {"shape": "RECTANGULAR", "height": str(daz_m), "width": str(delv_m), "radiationEfficiency": 0.6,
+                           "apertureEfficiency": 0.6, "apertureExcitationProfile": "UNIFORM", "phyTemp": 50},
+                "operatingFrequency": 1275.7e6,
+                "system": {
+                    "@type": "TOTAL_POWER",
+                    "integrationTime": 100e6,
+                    "bandwidth": 40,
+                    "predetectionGain": 83,
+                    "predetectionInpNoiseTemp": 200,
+                    "predetectionGainVariation": 2000000,
+                    "integratorVoltageGain": 1
+                },
+                "scan":{
+                    "@type": "FIXED"
+                },
+                "targetBrightnessTemp": 290
+                }
+        test_rad = RadiometerModel.from_dict(rad_dict)
+        return test_rad           
 
 
     def _evaluate(self, x, out, *args, **kwargs):
         
         daz_m = x[0]
         delv_m = x[1]
-        chirpbw_Mhz = x[2]
-        pulse_w_us = x[3]
-
-        test_sar = MyProblem.define_test_sar(daz_m, delv_m, chirpbw_Mhz, pulse_w_us)       
+        h = x[2]*1e3
+        orb_speed = np.sqrt(3.986004418e14/(Re + h)) # [m/s]
+        test_rad = MyProblem.define_test_radiometer(daz_m, delv_m)       
       
         # Calculate the metrics at the 3 incidence angles. A valid operation point must be found for all of them.
-        obsv_metrics_1 = test_sar.calc_data_metrics(alt_km = h*1e-3, sc_speed_kmps = orb_speed*1e-3, sc_gnd_speed_kmps = orb_speed*1e-3*(Re/(Re+h)), 
-                                                        inc_angle_deg = inc[0], 
-                                                        instru_look_angle_from_target_inc_angle = True)
-        
-        obsv_metrics_2 = test_sar.calc_data_metrics(alt_km = h*1e-3, sc_speed_kmps = orb_speed*1e-3, sc_gnd_speed_kmps = orb_speed*1e-3*(Re/(Re+h)), 
-                                                        inc_angle_deg = inc[1], 
-                                                        instru_look_angle_from_target_inc_angle = True)
+        obsv_metrics = test_rad.calc_data_metrics(alt_km = h*1e-3, gnd_spd = orb_speed*(Re/(Re+h)))
 
-        obsv_metrics_3 = test_sar.calc_data_metrics(alt_km = h*1e-3, sc_speed_kmps = orb_speed*1e-3, sc_gnd_speed_kmps = orb_speed*1e-3*(Re/(Re+h)), 
-                                                        inc_angle_deg = inc[2], 
-                                                        instru_look_angle_from_target_inc_angle = True)
+        atres = obsv_metrics["ground pixel along-track resolution [m]"]
+        ctres = obsv_metrics["ground pixel cross-track resolution [m]"]
+        f1 = atres*ctres
+        f2 = obsv_metrics["sensitivity [K]"]
 
-        # initialize to an invalid observation point
-        g1 = 1
-        f1 = 1e9
-        f2 = 1e9
-        f3 = 1e9
-            
-        if(obsv_metrics_1["NESZ [dB]"] and obsv_metrics_2["NESZ [dB]"] and obsv_metrics_3["NESZ [dB]"] ):
-
-            if not np.isnan(obsv_metrics_1["NESZ [dB]"]) and not np.isnan(obsv_metrics_2["NESZ [dB]"]) and not np.isnan(obsv_metrics_3["NESZ [dB]"]):
-            
-                # Include below condition in case of fixed-swath configuration. If this condition is not true it means that the illuminated swath size < the fixed swath size
-                if(obsv_metrics_1["swath-width [km]"] == 25 and obsv_metrics_2["swath-width [km]"] == 25 and obsv_metrics_3["swath-width [km]"] == 25):
-                    
-                    # valid observation point
-                    g1 = -1
-
-                    f1 = obsv_metrics_3["NESZ [dB]"]
-                    f2 = obsv_metrics_3["ground pixel along-track resolution [m]"]
-                    N_looks = 1e6 / (obsv_metrics_3["ground pixel along-track resolution [m]"] * obsv_metrics_3["ground pixel cross-track resolution [m]"])
-                    f3 = -N_looks
-                    #print(f1,f2,f3,f4)
-            
-
-
-
-        out["F"] = np.column_stack([f1, f2, f3])
-        out["G"] = np.column_stack([g1])
+        out["F"] = np.column_stack([f1, f2])
+        out["G"] = np.column_stack([atres, ctres])
 
 problem = MyProblem()
 
@@ -165,7 +128,7 @@ algorithm = NSGA2(
     eliminate_duplicates=True
 )
 
-termination = get_termination("n_eval", 4800)
+termination = get_termination("n_eval", 1200)
 
 res = minimize(problem,
                algorithm,
@@ -179,7 +142,7 @@ res = minimize(problem,
 
 # Save Pareto curve as csv file
 import pandas as pd 
-df = pd.DataFrame({"Daz [m]" : res.X[:,0], "Delv [m]" : res.X[:,1], "Chirp BW [MHz]" : res.X[:,2], "Pulse width [us]" : res.X[:,3], "NESZ [dB]" : res.F[:,0], "along-track-res" : res.F[:,1], "N_looks" : res.F[:,2]})
+df = pd.DataFrame({"Daz [m]" : res.X[:,0], "Delv [m]" : res.X[:,1], "Altitude [km]" : res.X[:,2], "pixel area" : res.F[:,0], "sensitivity" : res.F[:,1], "atres" : res.G[:,0], "ctres" : res.G[:,1]})
 df.to_csv(out_dir+"pareto_front_030122.csv")
 
 # Plot Design Space

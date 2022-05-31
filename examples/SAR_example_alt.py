@@ -203,7 +203,7 @@ print('Speckle noise improvement is {} decibels'.format(10*numpy.log10(1/numpy.s
 
 
 
-def evaluate_sar(pulseWidth, height, width, chirpBW):
+def evaluate_sar(pulseWidth, height, width, chirpBW, alt):
     custom_sar_dict = {"@type": "Synthetic Aperture Radar",
                        "name": "P-Band SAR",
                        "orientation": {
@@ -233,6 +233,9 @@ def evaluate_sar(pulseWidth, height, width, chirpBW):
                         }
                        }
     custom_sar = SyntheticApertureRadarModel.from_dict(custom_sar_dict)
+    h = float(alt)*1e3
+    orb_speed = numpy.sqrt(3.986004418e14/(Re + h)) # [m/s] orbital speed
+    gnd_spd = orb_speed*(Re/(Re+h))
     inc_deg = 35
     obsv_metrics1 = custom_sar.calc_data_metrics(alt_km=h * 1e-3, sc_speed_kmps=orb_speed * 1e-3,
                                                  sc_gnd_speed_kmps=gnd_spd * 1e-3, inc_angle_deg=inc_deg,
@@ -263,7 +266,8 @@ def index():
 		h = request.form.get("height")
 		w = request.form.get("width")
 		cbw = request.form.get("chirpBW")
-		metrics = evaluate_sar(pw,h,w,cbw)
+		alt = request.form.get("altitude")
+		metrics = evaluate_sar(pw,h,w,cbw,alt)
 		print(metrics)
 		return metrics
 	else:

@@ -49,11 +49,8 @@ from pymoo.util.misc import stack
 from pymoo.model.problem import Problem
 from instrupy.synthetic_aperture_radar_model import SyntheticApertureRadarModel
 
-Re = 6378.137e3 # [m]
 c = 299792458 # m/s
-h = 500e3 # [m]
 inc = [35, 45, 55] # [deg]
-orb_speed = np.sqrt(3.986004418e14/(Re + h)) # [m/s]
 
 out_dir = os.path.dirname(os.path.realpath(__file__)) + '/moo_results/'
 if os.path.exists(out_dir):
@@ -66,11 +63,11 @@ class MyProblem(Problem):
             # Constraints: Valid operating point
     """
     def __init__(self):
-        super().__init__(n_var=4,
+        super().__init__(n_var=5,
                          n_obj=3,
                          n_constr=1,
-                         xl=np.array([0.1, 0.1, 1, 1]),
-                         xu=np.array([15, 15, 40, 1000]),
+                         xl=np.array([0.1, 0.1, 1, 1, 300]),
+                         xu=np.array([15, 15, 40, 1000, 1000]),
                          elementwise_evaluation=True)
 
     @staticmethod
@@ -111,8 +108,12 @@ class MyProblem(Problem):
         delv_m = x[1]
         chirpbw_Mhz = x[2]
         pulse_w_us = x[3]
+        alt_km = x[4]
+        h = alt_km*1e3
+        Re = 6378.137e3 # [m]
+        orb_speed = np.sqrt(3.986004418e14/(Re + h)) # [m/s]
 
-        test_sar = MyProblem.define_test_sar(daz_m, delv_m, chirpbw_Mhz, pulse_w_us)       
+        test_sar = MyProblem.define_test_sar(daz_m, delv_m, chirpbw_Mhz, pulse_w_us)
       
         # Calculate the metrics at the 3 incidence angles. A valid operation point must be found for all of them.
         obsv_metrics_1 = test_sar.calc_data_metrics(alt_km = h*1e-3, sc_speed_kmps = orb_speed*1e-3, sc_gnd_speed_kmps = orb_speed*1e-3*(Re/(Re+h)), 
@@ -179,7 +180,7 @@ res = minimize(problem,
 
 # Save Pareto curve as csv file
 import pandas as pd 
-df = pd.DataFrame({"Daz [m]" : res.X[:,0], "Delv [m]" : res.X[:,1], "Chirp BW [MHz]" : res.X[:,2], "Pulse width [us]" : res.X[:,3], "NESZ [dB]" : res.F[:,0], "along-track-res" : res.F[:,1], "N_looks" : res.F[:,2]})
+df = pd.DataFrame({"Daz [m]" : res.X[:,0], "Delv [m]" : res.X[:,1], "Chirp BW [MHz]" : res.X[:,2], "Pulse width [us]" : res.X[:,3], "Altitude [m]" : res.X[:,4], "NESZ [dB]" : res.F[:,0], "along-track-res" : res.F[:,1], "N_looks" : res.F[:,2]})
 df.to_csv(out_dir+"pareto_front_030122.csv")
 
 # Plot Design Space
