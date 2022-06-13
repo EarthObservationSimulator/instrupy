@@ -404,10 +404,14 @@ class TotalPowerRadiometerSystem(Entity):
         G_s_bar = sys_params.G_s_bar
         G_s_delta = sys_params.G_s_delta
         B = pd_sec_params.B
-
+        print("T_SYS",T_SYS)
+        print("B",B)
+        print("t_int",t_int)
+        print("g_s_delta",G_s_delta)
+        print("g_s_bar",G_s_bar)
         # calculate the radiometric resolution, eqn 7.58 in [1]
         resolution = T_SYS*(1/(B*t_int) + ((G_s_delta/G_s_bar)**2))**0.5
-
+        print("resolution",resolution)
         return resolution        
 
 class UnbalancedDikeRadiometerSystem(Entity):
@@ -1745,7 +1749,7 @@ class RadiometerModel(Entity):
     def __repr__(self):
         return "RadiometerModel.from_dict({})".format(self.to_dict())
 
-    def calc_data_metrics(self, sc_orbit_state, target_coords, instru_look_angle_from_target_inc_angle=False):
+    def calc_data_metrics(self, alt_km, gnd_spd):
         """ Calculate typical observation data metrics. This function is invoked by the function ``Instrument.calc_data_metrics(.)`` class in the ``base`` module.
 
         :param sc_orbit_state: Spacecraft state at the time of observation.
@@ -1789,30 +1793,13 @@ class RadiometerModel(Entity):
         :rtype: dict 
 
         """
-        # Observation time in Julian Day UT1
-        tObs_JDUT1 = sc_orbit_state["time [JDUT1]"]
-
-        # Calculate Target cartesian position in EARTH_CENTERED_INERTIAL frame
-        target_pos = GeoUtilityFunctions.geo2eci([target_coords["lat [deg]"], target_coords["lon [deg]"], 0.0], tObs_JDUT1)
-
-        # Spacecraft position in Cartesian coordinates in the EARTH_CENTERED_INERTIAL frame
-        sc_pos = np.array([sc_orbit_state["x [km]"], sc_orbit_state["y [km]"], sc_orbit_state["z [km]"]])  
-        sc_vel = np.array([sc_orbit_state["vx [km/s]"], sc_orbit_state["vy [km/s]"], sc_orbit_state["vz [km/s]"]])  
-
-        alt_km = np.linalg.norm(sc_pos) - Constants.radiusOfEarthInKM # altitude
-
-        #  Calculate the range vector between spacecraft and POI (Target)
-        range_vector_km = target_pos - sc_pos
-        range_km = np.linalg.norm(range_vector_km)
-        print('range_km', range_km)
+        range_km = alt_km
 
         # Calculate look angle to the target location
-        look_angle = np.arccos(np.dot(MathUtilityFunctions.normalize(range_vector_km), -1*MathUtilityFunctions.normalize(sc_pos)))
-        print('look_angle', np.rad2deg(look_angle))
+        look_angle = 0.0
         
         # Look angle to corresponding incidence angle conversion for spherical Earth (incidence angle at the target location)
-        incidence_angle = np.arcsin(np.sin(look_angle)*(Constants.radiusOfEarthInKM + alt_km)/Constants.radiusOfEarthInKM)
-        print('incidence_angle', np.rad2deg(incidence_angle))
+        incidence_angle = 0.0
 
         ############## Calculate the pixel resolution. ##############
         # The size of the antenna footprint at the target-location corresponds to the pixel dimensions. It is assumed that
@@ -1834,45 +1821,25 @@ class RadiometerModel(Entity):
         
         ############## calculate the radiometric resolution ##############
         # calculate the dwell time per ground-pixel
-        sat_speed_mps = GeoUtilityFunctions.compute_satellite_footprint_speed(sc_pos, sc_vel)
-        print("res_AT_m, sat_speed_mps", res_AT_m, sat_speed_mps)
+        sat_speed_mps = gnd_spd
         td = self.scan.compute_dwell_time_per_ground_pixel(res_AT_m=res_AT_m, sat_speed_kmps=sat_speed_mps*1e-3, iFOV_CT_deg=iFOV_CT_deg)
 
         print('td', td)
         rad_res = self.system.compute_radiometric_resolution(td, self.antenna, self.targetBrightnessTemp)
 
         ############## calculate beam-efficiency ##############
-        be = self.antenna.get_beam_efficiency(self.operatingFrequency)
+        be = 0.0
 
         ############## Calculate the swath-width. ##############
         # The swath-width is calculated based on the instrument look angle, which may or may-not be equal to the target look angle. 
         # If the instrument look-angle = target look angle, then it implies that the target is at the middle of the swath.
-        if instru_look_angle_from_target_inc_angle is True:
-            instru_look_angle = look_angle
-        else:           
-            if (self.orientation.ref_frame==ReferenceFrame.NADIR_POINTING or self.orientation.ref_frame==ReferenceFrame.SC_BODY_FIXED):
-                # TODO: Move this snippet into a separate function,
-                # instrument look angle is calculated assuming the instrument orientation is wrt the NADIR_POINTING frame
-                # through either (1) direct specification or (2) the instrument is aligned to the spacecraft body which in turn is assumed aligned to the 
-                # NADIR_POINTING frame.
-                rot1 = Orientation.get_rotation_matrix(self.orientation.euler_seq1, self.orientation.euler_angle1)
-                rot2 = Orientation.get_rotation_matrix(self.orientation.euler_seq2, self.orientation.euler_angle2)
-                rot3 = Orientation.get_rotation_matrix(self.orientation.euler_seq3, self.orientation.euler_angle3)
-                # assume pointing axis is aligned to the sensor body z-axis
-                # express the pointing axis in the NADIR_POINTING frame
-                rot =  np.matmul(rot3 , np.matmul(rot2 , rot1))
-                pointing_axis_in_nadir_pointing_frame = np.matmul(rot, np.array([0,0,1]))
-                # find the angle between the nadir-vector (aligned to the z-axis of the NADIR_POINTING frame) and the pointing-vector.
-                instru_look_angle = np.arccos(np.dot(pointing_axis_in_nadir_pointing_frame, np.array([0,0,1]))) 
-
-        print('alt_km, instru_look_angle', alt_km, instru_look_angle)
-        swath_width_km = self.scan.compute_swath_width(alt_km, np.rad2deg(instru_look_angle), self.antenna.get_spherical_geometry(self.operatingFrequency))
+        instru_look_angle = 0.0
                 
         obsv_metrics = {}
+        obsv_metrics["fov"] = iFOV_CT_deg if iFOV_CT_deg is not None else np.nan
         obsv_metrics["ground pixel along-track resolution [m]"] = round(res_AT_m, 2) if res_AT_m is not None else np.nan
         obsv_metrics["ground pixel cross-track resolution [m]"] = round(res_CT_m, 2) if res_CT_m is not None else np.nan
-        obsv_metrics["swath-width [m]"] = round(swath_width_km*1e3, 2) if swath_width_km is not None else np.nan
-        obsv_metrics["sensitivity [K]"] = round(rad_res, 2) if rad_res is not None else np.nan
+        obsv_metrics["sensitivity [K]"] = round(rad_res, 3) if rad_res is not None else np.nan
         obsv_metrics["incidence angle [deg]"] = round(np.rad2deg(incidence_angle), 2) if incidence_angle is not None else np.nan
         obsv_metrics["beam efficiency"] = round(be, 2) if be is not np.nan else np.nan
         
