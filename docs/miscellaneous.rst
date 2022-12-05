@@ -22,11 +22,12 @@ mean equatorial plane and the mean ecliptic plane (at the J2000 epoch), in the d
 of Aries. The z-axis is normal to the Earth’s mean equator at the J2000 epoch and the 
 y-axis completes the right-handed system. The mean planes of the ecliptic and equator, 
 at the J2000 epoch, are computed using IAU-1976/FK5 theory with 1980 update for nutation.
+See: `GMAT CoordinateSystem <http://gmat.sourceforge.net/docs/nightly/html/CoordinateSystem.html>`_ 
 
 Earth Fixed
 ^^^^^^^^^^^^^^^^^^
 The Earth Fixed reference frame is referenced to the Earth's equator and the prime meridian 
-and is computed using IAU-1976/FK5 theory. This system is identical to the EarthFixed
+and is computed using IAU-1976/FK5 theory with 1980 update to nutation. This system is identical to the EarthFixed
 used in NASA GMAT software.
 
 Nadir-pointing

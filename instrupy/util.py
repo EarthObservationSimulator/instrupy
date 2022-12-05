@@ -1621,7 +1621,7 @@ class GeoUtilityFunctions:
     def geo2eci(gcoord, JDtime):
         """ *Convert geographic spherical coordinates to Earth-centered inertial coords.*    
              
-        :param gcoord: geographic coordinates of point [latitude [deg] ,longitude [deg], altitude [km]]. Geographic coordinates assume the Earth is a perfect sphere, with radius 
+        :param gcoord: Geographic coordinates of point [latitude [deg] ,longitude [deg], altitude [km]]. Geographic coordinates assume the Earth is a perfect sphere, with radius 
                      equal to its equatorial radius.
         :paramtype  gcoord: list or tuple, (float, float, float)
 
@@ -1668,6 +1668,16 @@ class GeoUtilityFunctions:
     def eci2geo(ecicoord, JDtime):
         """ *Convert Earth-centered inertial coords to geographic spherical coordinates.*    
              https://idlastro.gsfc.nasa.gov/ftp/pro/astro/eci2geo.pro
+
+        :param ecicoord: A 3-element array of ECI [X,Y,Z] coordinates in kilometers.
+        :paramtype  ecicoord: list or tuple, (float, float, float)
+
+        :param JDtime: Julian Day time.
+        :paramtype JDtime: float
+
+        :return: Geographic coordinates of point [latitude [deg] ,longitude [deg], altitude [km]]. 
+                 Geographic coordinates assume the Earth is a perfect sphere, with radius equal to its equatorial radius.                          
+        :rtype: list, (float, float, float)
        
         """
         [X,Y,Z] = ecicoord
