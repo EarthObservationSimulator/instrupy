@@ -48,12 +48,12 @@ conda install pip
     * `numpy`
     * `pandas`
     * `scipy`
-    * `lowtran==2.4.1` (requires `gfortran`)
     * `sphinx`
     * `sphinx_rtd_theme==0.5.2`
     * `metpy`
     * `netCDF4`
     * `astropy`
+    * `lowtran==2.4.1` (requires `gfortran`)
 
 5. Run tests using the `make runtest` command and get the *OK* message.
 
@@ -61,7 +61,26 @@ conda install pip
 
 The present version of OrbitPy has been tested on Ubuntu 18.04.3.
 
----
+### Lowtran
+
+Lowtran python package allows the execution of the LOWTRAN7 model. This is assumed to estimate the atmospheric losses for the visible and near-visible spectrum. 
+
+The package is is available publicly here:
+https://pypi.org/project/lowtran/
+
+An backup copy is present in the `third_party\lowtran-2.4.1` folder.
+
+This package requires the `gfortran` Fortran compiler. 
+
+If a Fortran compiler is not already installed, install `gfortran` as follows:
+
+* Linux: `apt install gfortran`
+
+* Mac: `brew install gcc`
+
+* Windows: https://www.scivision.dev/windows-gcc-gfortran-cmake-make-install/
+
+### Windows system
 
 If using a Windows system, one may consider:
 
@@ -83,25 +102,30 @@ If using a Windows system, one may consider:
     
     [https://docs.microsoft.com/en-us/windows/wsl/about](https://docs.microsoft.com/en-us/windows/wsl/about)
 
+### MacOS
+If using `homebrew` on MacOS, `gcc` shall need to be installed:
+``https://formulae.brew.sh/formula/gcc``
 
-### Lowtran
+`gcc` shall provide `gfortran` which is required by `lowtran`.
 
-Lowtran python package allows the execution of the LOWTRAN7 model. This is assumed to estimate the atmospheric losses for the visible and near-visible spectrum. 
+The `gcc` compiler may default to `clang` instead of `gcc` (although the displayed name when querying using `which gcc` shall point to a `usr/bin/gcc` folder, it is simply running `clang`). 
 
-The package is is available publicly here:
-https://pypi.org/project/lowtran/
+One way to solve the problem is by adding alias:
 
-An backup copy is present in the `third_party\lowtran-2.4.1` folder.
+Add these to ~/.zshrc file (if using zshrc) whichc an be found in the `Home` directory of the user:
+```
+alias gcc="gcc-11"
+alias g++="g++-11"
+alias cc="cc-11"
+alias c++="c++-11"
+```
+(Substitute the correct `gcc` version number which has been installed by `homebrew`.
+`gcc-11` is recommended since `OrbitPy` has been shown problems with `gcc-13`.)
 
-This package requires the `gfortran` Fortran compiler. 
+Run `gcc --version` to verify what the correct `gcc` is being invoked.ß
 
-If a Fortran compiler is not already installed, install `gfortran` as follows:
-
-* Linux: `apt install gfortran`
-
-* Mac: `brew install gcc`
-
-* Windows: https://www.scivision.dev/windows-gcc-gfortran-cmake-make-install/
+Reference: 
+[Stack Overflow](https://stackoverflow.com/questions/64992467/mac-clang-installation-seems-to-override-gcc-install)
 
 ## Directory structure
 
