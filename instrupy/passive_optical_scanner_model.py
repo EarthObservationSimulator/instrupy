@@ -53,7 +53,7 @@ class PassiveOpticalScannerModel(Entity):
        :ivar mass: Total mass (kg) of this entity.
        :vartype mass: float
 
-       :ivar volume: Total volume (m3) of this entity.
+       :ivar volume: Total volume (cm3) of this entity.
        :vartype volume: float
         
        :ivar power: Nominal operating power (W).

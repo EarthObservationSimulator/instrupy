@@ -23,7 +23,7 @@ class BasicSensorModel(Entity):
         :ivar mass: Total mass (kg) of this instrument.
         :vartype mass: float
 
-        :ivar volume: Total volume (m3) of this instrument.
+        :ivar volume: Total volume (cm3) of this instrument.
         :vartype volume: float
         
         :ivar power: Nominal operating power (W) of this instrument.
