@@ -86,10 +86,10 @@ class PassiveOpticalScannerModel(Entity):
        :ivar scanTechnique: Scan technique.
        :vartype scanTechnique: :class:`instrupy.passive_optical_scanner_model.ScanTech`
         
-       :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the along-track direction.
+       :ivar numberDetectorRows: Number of detector rows (along the Y-axis of the SENSOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the along-track direction.
        :vartype numberDetectorRows: int
 
-       :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the cross-track direction.
+       :ivar numberDetectorCols: Number of detector columns (along the X-axis of the SENSOR_BODY_FIXED frame). If the SENSOR_BODY_FIXED frame is aligned to the NADIR_POINTING frame, this direction corresponds to the cross-track direction.
        :vartype numberDetectorCols: int
 
        :ivar Fnum: F-number/ F# of lens.
@@ -108,10 +108,10 @@ class PassiveOpticalScannerModel(Entity):
     
        :vartype bandwidth: float
 
-       :ivar quantumEff: Quantum efficiency of the detector element (:math:`0 < qe < 1`)
+       :ivar quantumEff: Quantum efficiency of the detector element (:math:`0 < qe <= 1`)
        :vartype quantumEff: float
 
-       :ivar opticsSysEff: Optical systems efficiency (:math:`0 < \\tau_0 < 1`)
+       :ivar opticsSysEff: Optical systems efficiency (:math:`0 < \\tau_0 <= 1`)
        :vartype opticsSysEff: float
 
        :ivar numOfReadOutE: Number of read out electrons of the detector.
@@ -129,7 +129,7 @@ class PassiveOpticalScannerModel(Entity):
        :ivar apertureDia: Telescope aperture diameter in meters.
        :vartype apertureDia: float
 
-       :ivar maxDetectorExposureTime: Maximum exposure time of detector in seconds.
+       :ivar maxDetectorExposureTime: (Optional) Maximum exposure time of detector in seconds.
        :vartype maxDetectorExposureTime: float
        
        :ivar atmosLossModel: The atmospheric loss model. 'LOWTRAN7' model is supported. If ``None`` the atmospheric losses are not be considered.

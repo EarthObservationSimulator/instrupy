@@ -1274,7 +1274,6 @@ class Maneuver(Entity):
                                ViewGeometry(    Orientation.from_sideLookAngle(ref_frame="NADIR_POINTING", side_look_angle=w2), 
                                                 SphericalGeometry.from_dict({"shape":'RECTANGULAR', "angleHeight":x2, "angleWidth":y2})
                                )]
-
         
         return field_of_regard
 
@@ -1284,15 +1283,18 @@ class Antenna(Entity):
         .. todo:: The operating frequency is not made as an instance parameter. Change behavior in the future?
 
         :ivar shape: Antenna shape.
-        :vartype shape: :class:`instrupy.util.Antenna.AntennaApertureShape`
+        :vartype shape: :class:`instrupy.util.Antenna.Shape`
 
         :ivar apertureExcitationProfile: Antenna aperture profile.
         :vartype apertureExcitationProfile: :class:`instrupy.util.Antenna.AntennaApertureExcitationProfile`
 
-        :ivar height: [meters] Antenna height (along the along-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame).
+        :ivar diameter: [meters] Antenna diameter (applicable when the antenna shape is Circular).
+        :vartype diameter: float
+
+        :ivar height: [meters] Antenna height (along the along-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame). (Applicable when the antenna shape is Rectangular.)
         :vartype height: float
 
-        :ivar width: [meters] Antenna width (along the cross-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame).
+        :ivar width: [meters] Antenna width (along the cross-track direction when *SENSOR_BODY_FIXED* is aligned to *NADIR_POINTING* frame). (Applicable when the antenna shape is Rectangular.)
         :vartype antennaWidth: float
 
         :ivar apertureEfficiency: Aperture efficiency of antenna (:math:`0 < \\eta_{ap} < 1`).
@@ -1633,7 +1635,7 @@ class GeoUtilityFunctions:
 
         .. seealso:: 
             * :mod:`JD2GMST`
-            * `IDL Astronomy Users Library <https://idlastro.gsfc.nasa.gov/ftp/pro/astro/geo2eci.pro>`_
+            * `IDL Astronomy Users Library <https://github.com/wlandsman/IDLAstro/blob/master/pro/geo2eci.pro>`_
         
         EXAMPLES:
 

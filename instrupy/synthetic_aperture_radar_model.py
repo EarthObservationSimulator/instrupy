@@ -633,7 +633,7 @@ class SyntheticApertureRadarModel(Entity):
                 * :code:`NESZ [dB]` (:class:`float`)  The backscatter coefficient :math:`\\sigma_0` of a target for which the signal power level in final image is equal to the noise power level (units: decibels). **Numerically lesser is better instrument performance.**
                 * :code:`ground pixel along-track resolution [m]` (:class:`float`) Along-track resolution (meters) of a ground-pixel centered about observation point.
                 * :code:`ground pixel cross-track resolution [m]` (:class:`float`) Cross-track resolution (meters) of a ground-pixel centered about observation point.
-                * :code:`swath-width [m]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
+                * :code:`swath-width [km]` (:class:`float`) Swath-width (meters) of the strip of which the imaged pixel is part off.
                 * :code:`incidence angle [deg]` (:class:`float`) Observation incidence angle (degrees) at the ground-pixel.
                 * :code:`PRF [Hz]` (:class:`float`)  Highest Pulse Repetition Frequency (Hz) (within the specified PRF range) at which the observation is possible.
         

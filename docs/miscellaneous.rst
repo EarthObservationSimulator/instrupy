@@ -40,6 +40,8 @@ The axis of the Nadir-pointing reference frame are defined as follows:
         
 * :math:`\bf Z_{np}` axis: Aligned to Nadir vector (i.e. the negative of the position vector of satellite in EARTH_FIXED frame)
 
+(Note that this results in roll axis as `Y_{np}` and not `X_{np}`.)
+
 .. figure:: nadirframe.png
     :scale: 100 %
     :align: center
