@@ -49,7 +49,7 @@ conda install pip
     * `pandas`
     * `scipy`
     * `sphinx`
-    * `sphinx_rtd_theme==0.5.2`
+    * `sphinx_rtd_theme==2.0.0`
     * `metpy`
     * `netCDF4`
     * `astropy`
