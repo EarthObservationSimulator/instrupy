@@ -16,6 +16,9 @@ Requires: Unix-like operating system (Linux (Ubuntu, CentOS...), Mac), `python 3
 
 The installation can be carried out in a `conda` environment using the below steps.
 
+
+`pip install setuptools` is required for [Python 3.12](https://stackoverflow.com/questions/69919970/no-module-named-distutils-but-distutils-installed) for the `distutils` package.
+
 1. Install `gfortran`. and `make` See [here](https://fortran-lang.org/learn/os_setup/install_gfortran).
 
 *   Linux: 
